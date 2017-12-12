@@ -11,6 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>Cryengine Importer</Name>
     <RootNamespace>Cryengine Importer</RootNamespace>
+    <PublishUrl>C:\Users\Geoff\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons</PublishUrl>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>

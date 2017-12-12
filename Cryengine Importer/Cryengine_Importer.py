@@ -32,6 +32,7 @@ import math
 import mathutils
 import array
 import os
+import os.path
 import time
 import xml.etree as etree
 import xml.etree.ElementTree as ET
@@ -747,7 +748,7 @@ def create_IKs():
     # Move bones to proper layers
     set_bone_layers(armature)
 
-def import_geometry(cdffile, basedir, bodydir, mechname):
+def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
     geometry = ET.parse(cdffile)
@@ -847,8 +848,14 @@ def set_layers():
             bpy.data.objects[name].layers[1] = True
             bpy.data.objects[name].layers[0] = False
 
-def import_asset(context, filepath, *, use_dds=True, use_tif=False):
-    print("Import Asset")
+def import_asset(context, dirname, *, use_dds=True, use_tif=False):
+    """ For a provided directory, import all the materials from that directory's mtl files
+        and import each Collada file.  Assign the proper materials, and add to a group.
+        Save the .blend file (prompt to overwrite if it exists) to <directory name>.blend.
+    """
+    print("Import Asset.  Folder: " + dirname)
+    return {'FINISHED'}
+
 
 def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     print("Import Mech")
@@ -879,7 +886,7 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     materials = create_materials(matfile, basedir)
     cockpit_materials = create_materials(cockpit_matfile, basedir)
     # Import the geometry and assign materials.
-    geometry = import_geometry(cdffile, basedir, bodydir, mech)
+    geometry = import_mech_geometry(cdffile, basedir, bodydir, mech)
 
     # Set the layers for existing objects
     set_layers()
@@ -889,33 +896,11 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     create_IKs()
     return {'FINISHED'}
 
-IOOBJOrientationHelper = orientation_helper_factory("IOOBJOrientationHelper", axis_forward='Y', axis_up='Z')
-
-class CryengineImporter(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
+class CryengineImporter(bpy.types.Operator, ImportHelper):
     """ Imports Collada files from Cryengine Converter"""
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
-
-    texture_type = EnumProperty(
-    name="Texture Type",
-    description = "Identify the type of texture file imported into the Texture nodes.",
-    items = (('ON', "DDS", "Reference DDS files for textures."),
-                ('OFF', "TIF", "Reference TIF files for textures."),
-                ),
-    )
-
-
-class MechImporter(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
-    """ Create a mech from MWO"""
-    bl_idname = "import_scene.mech"
-    bl_label = "Import Mech"
-    bl_options = {'PRESET', 'UNDO'}
-    filename_ext = ".cdf"
-    filter_glob = StringProperty(
-        default="*.cdf",
-        options={'HIDDEN'},
-        )
 
     texture_type = EnumProperty(
         name="Texture Type",
@@ -923,10 +908,66 @@ class MechImporter(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
-        )
+    )
 
     path_mode = path_reference_mode
     check_extension = True
+    filename_ext = "."
+    use_filter_folder = True
+    display_type = 'FILE_IMGDISPLAY'
+    filter_glob = StringProperty(
+        default=".",
+        display_type = 'FILE_IMGDISPLAY',
+        options={'HIDDEN'},
+        )
+    def execute(self, context):
+        if self.texture_type == 'OFF':
+            self.use_tif = False
+        else:
+            self.use_dds = False
+        keywords = {}
+        userpath = self.properties.filepath
+        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
+            import os
+            keywords["relpath"] = os.path.dirname(bpy.data.filepath)
+            if not os.path.isdir(userpath):
+                msg = "Select a directory.\n" + userpath
+                self.report({'WARNING'}, msg)
+        
+        fdir = self.properties.filepath
+        #keywords["cdffile"] = fdir
+        return import_asset(context, fdir, **keywords)
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align = True)
+        box = layout.box()
+        box.label("Select texture type")
+        row = box.row()
+        row.prop(self, "texture_type", expand = True)
+
+
+class MechImporter(bpy.types.Operator, ImportHelper):
+    """ Create a mech from MWO"""
+    bl_idname = "import_scene.mech"
+    bl_label = "Import Mech"
+    bl_options = {'PRESET', 'UNDO'}
+    filename_ext = ".cdf"
+    path_mode = path_reference_mode
+    check_extension = True
+    filter_glob = StringProperty(
+        default="*.cdf",
+        options={'HIDDEN'},
+        )
+    texture_type = EnumProperty(
+        name="Texture Type",
+        description = "Identify the type of texture file imported into the Texture nodes.",
+        items = (('ON', "DDS", "Reference DDS files for textures."),
+                 ('OFF', "TIF", "Reference TIF files for textures."),
+                 ),
+    )
+
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = False
@@ -949,56 +990,23 @@ class MechImporter(bpy.types.Operator, ImportHelper, IOOBJOrientationHelper):
         row = box.row()
         row.prop(self, "texture_type", expand = True)
 
-    path_mode = path_reference_mode
-    check_extension = True
-    def execute(self, context):
-        if self.texture_type == 'OFF':
-            self.use_tif = False
-        else:
-            self.use_dds = False
-        keywords = {}
-        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
-            import os
-            keywords["relpath"] = os.path.dirname(bpy.data.filepath)
-        fdir = self.properties.filepath
-        #keywords["cdffile"] = fdir
-        return import_asset(context, fdir, **keywords)
-
-    def draw(self, context):
-        layout = self.layout
-
-        row = layout.row(align = True)
-        box = layout.box()
-        box.label("Select texture type")
-        row = box.row()
-        row.prop(self, "texture_type", expand = True)
-
-def menu_func_import(self, context):
+def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
-def menu_func(self, context):
-    self.layout.operator(ObjectCursorArray.bl_idname)
+def menu_func_import(self, context):
+    self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
 
 def register():
+    bpy.utils.register_class(CryengineImporter)
     bpy.utils.register_class(MechImporter)
-    bpy.types.VIEW3D_MT_object.append(menu_func)
-    # handle the keymap
-    #wm = bpy.context.window_manager
-    #km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
-    #kmi = km.keymap_items.new(ObjectCursorArray.bl_idname, 'SPACE', 'PRESS', ctrl=True, shift=True)
-    #kmi.properties.total = 4
-    #addon_keymaps.append(km)
+    bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
     bpy.types.INFO_MT_file_import.append(menu_func_import)
 
 def unregister():
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    #bpy.types.VIEW3D_MT_object.remove(menu_func)
-    #wm = bpy.context.window_manager
-    #for km in addon_keymaps:
-    #    wm.keyconfigs.addon.keymaps.remove(km)
-    # clear the list
-    del addon_keymaps[:]
+    bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
     bpy.utils.unregister_class(MechImporter)
+    bpy.utils.unregister_class(CryengineImporter)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.

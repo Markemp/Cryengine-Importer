@@ -54,7 +54,6 @@ from bpy_extras.io_utils import (
 from math import radians
 from progress_report import ProgressReport, ProgressReportSubstep  # TODO:  See import_obj.py for implementation
 
-
 bl_info = {
     "name": "Cryengine Importer", 
     "category": "Import-Export",

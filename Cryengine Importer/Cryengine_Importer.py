@@ -94,7 +94,13 @@ def strip_slash(line_split):
     return False
 
 def get_base_dir(filepath):
-    return os.path.abspath(os.path.join(os.path.dirname(filepath), os.pardir, os.pardir, os.pardir))
+    dirpath = filepath
+    if os.path.isfile(filepath):
+        dirpath = os.path.dirname(filepath)
+    if not os.path.basename(dirpath) == 'objects' and not os.path.basename(dirpath) == 'Objects':
+        return get_base_dir(os.path.abspath(os.path.join(dirpath, os.pardir)))
+    else:
+        return os.path.abspath(os.path.abspath(os.path.join(dirpath, os.pardir)))
 
 def get_body_dir(filepath):
     return os.path.join(os.path.dirname(filepath), "body")
@@ -854,6 +860,8 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
         Save the .blend file (prompt to overwrite if it exists) to <directory name>.blend.
     """
     print("Import Asset.  Folder: " + dirname)
+    basedir = get_base_dir(dirname)
+    
     return {'FINISHED'}
 
 
@@ -908,18 +916,26 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
-    )
+                )
+    path = StringProperty(
+        name="Import Directory",
+        description="Directory to Import",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
 
+    # From ImportHelper.  Filter filenames.
     path_mode = path_reference_mode
+    show_hidden = True
     check_extension = True
-    filename_ext = "."
+    filename_ext = ".dae"
     use_filter_folder = True
-    display_type = 'FILE_IMGDISPLAY'
+    display_type = 'THUMBNAIL'
+    title = "Directory to Import"
     filter_glob = StringProperty(
-        default=".",
-        display_type = 'FILE_IMGDISPLAY',
-        options={'HIDDEN'},
-        )
+        default="*.dae",
+        options={'HIDDEN'})
+
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = False

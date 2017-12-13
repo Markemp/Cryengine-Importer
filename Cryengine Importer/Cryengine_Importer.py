@@ -277,10 +277,11 @@ def flip_bone(obj, bone_name):
     else:
         raise MetarigError("Cannot flip bones outside of edit mode")
 
-def create_object_groups(obj):
+def create_object_groups():
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
         if (obj.name != "Camera" and obj.name != "Lamp" and obj.name != "Cube"):
+            print ("   Creating group for " + obj.name)
             bpy.data.groups.new(obj.name)
             bpy.data.groups[obj.name].objects.link(obj)
 
@@ -794,11 +795,11 @@ def import_geometry(daefile, basedir):
     print("Importing geometry...")
     try:
         bpy.ops.wm.collada_import(filepath=daefile,find_chains=True,auto_connect=True)
-        return bpy.context.selected_objects[:]      # Return the object added.
+        return bpy.context.selected_objects[:]      # Return the objects added.
     except:
         # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
         #continue
-        print("daefile: " + daefile + ", basedir: " + basedir)
+        print("Importing daefile: " + daefile + ", basedir: " + basedir)
     
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
@@ -918,9 +919,15 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
 
     for file in os.listdir(dirname):
         if file.endswith(".dae"):
-            obj = import_geometry(file, basedir)
-            create_object_groups(obj)
-
+            objects = import_geometry(file, basedir)
+            print("   Import " + str(len(objects)))
+            for obj in objects:
+                for mats in obj.material_slots:
+                    if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
+                        mats.material = materials[mats.name[:-4]]
+                    elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
+                        mats.material = materials[mats.name]
+    create_object_groups()
     return {'FINISHED'}
 
 

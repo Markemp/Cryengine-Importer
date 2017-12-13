@@ -26,14 +26,14 @@
 import bpy
 import bpy.types
 import bpy.utils
-import types
+import array
 import bmesh
+import glob
 import math
 import mathutils
-import array
-import os
-import os.path
+import os, os.path
 import time
+import types
 import xml.etree as etree
 import xml.etree.ElementTree as ET
 from bpy_extras.io_utils import unpack_list
@@ -129,6 +129,21 @@ def convert_to_location(location):
     y = float(tmp[1])
     z = float(tmp[2])
     return mathutils.Vector((x,y,z))
+
+def convert_to_rgba(color):
+    temp = color.split(',')
+    r = float(temp[0])
+    g = float(temp[1])
+    b = float(temp[2])
+    a = 1.0
+    return (r,g,b,a)
+
+def convert_to_rgb(color):
+    temp = color.split(',')
+    r = float(temp[0])
+    g = float(temp[1])
+    b = float(temp[2])
+    return (r,g,b)
 
 def get_transform_matrix(rotation, location):
     # Given a location Vector and a Quaternion rotation, get the 4x4 transform matrix.  Assumes scale is 1.
@@ -262,6 +277,13 @@ def flip_bone(obj, bone_name):
     else:
         raise MetarigError("Cannot flip bones outside of edit mode")
 
+def create_object_groups(obj):
+    # Generate group for each object to make linking into scenes easier.
+    for obj in bpy.context.selectable_objects:
+        if (obj.name != "Camera" and obj.name != "Lamp" and obj.name != "Cube"):
+            bpy.data.groups.new(obj.name)
+            bpy.data.groups[obj.name].objects.link(obj)
+
 def create_materials(matfile, basedir):
     materials = {}
     mats = ET.parse(matfile)
@@ -282,6 +304,20 @@ def create_materials(matfile, basedir):
             # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
             shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
             shaderPrincipledBSDF.location =  300,500
+            #print(mat["Diffuse"])
+            if "Diffuse" in mat.keys():
+                diffuseColor = convert_to_rgba(str(mat.attrib["Diffuse"]))
+                shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
+            if "Specular" in mat.keys():
+                specColor = convert_to_rgba(str(mat.attrib["Specular"]))
+                shaderPrincipledBSDF.inputs[5].default_value = specColor[0]    # Specular always seems to be one value repeated 3 times.
+            if "Emissive" in mat.keys():
+                emissiveColor = convert_to_rgba(str(mat.attrib["Emissive"]))
+                shaderPrincipledBSDF.inputs[15].default_value = emissiveColor[0]  # Emissive seems to be one value repeated 3 times.
+            if "IndirectColor" in mat.keys():
+                indirectColor = convert_to_rgba(str(mat.attrib["IndirectColor"]))
+                shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
+            
             shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
             shout.location = 500,500
             links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
@@ -754,6 +790,16 @@ def create_IKs():
     # Move bones to proper layers
     set_bone_layers(armature)
 
+def import_geometry(daefile, basedir):
+    print("Importing geometry...")
+    try:
+        bpy.ops.wm.collada_import(filepath=daefile,find_chains=True,auto_connect=True)
+        return bpy.context.selected_objects[:]      # Return the object added.
+    except:
+        # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
+        #continue
+        print("daefile: " + daefile + ", basedir: " + basedir)
+    
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
@@ -835,6 +881,7 @@ def set_viewport_shading():
             for space in area.spaces: 
                 if space.type == 'VIEW_3D': 
                     space.viewport_shade = 'MATERIAL'
+    bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
 
 def set_layers():
     # Set the layers that objects are on.
@@ -861,7 +908,19 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
     """
     print("Import Asset.  Folder: " + dirname)
     basedir = get_base_dir(dirname)
-    
+
+    set_viewport_shading()
+
+    os.chdir(dirname)
+    for file in os.listdir(dirname):
+        if file.endswith(".mtl"):
+            materials.update(create_materials(file, basedir))
+
+    for file in os.listdir(dirname):
+        if file.endswith(".dae"):
+            obj = import_geometry(file, basedir)
+            create_object_groups(obj)
+
     return {'FINISHED'}
 
 
@@ -878,8 +937,6 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
 
-    bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
-    
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
     

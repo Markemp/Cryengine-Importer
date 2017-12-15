@@ -54,6 +54,7 @@ from bpy_extras.io_utils import (
 from math import radians
 from progress_report import ProgressReport, ProgressReportSubstep  # TODO:  See import_obj.py for implementation
 
+
 bl_info = {
     "name": "Cryengine Importer", 
     "category": "Import-Export",
@@ -1221,18 +1222,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         options={'HIDDEN'},
         )
     def execute(self, context):
-		"""Summary line.
-
-		Extended description of function.
-
-		Args:
-			arg1 (int): Description of arg1
-			arg2 (str): Description of arg2
-
-		Returns:
-			bool: Description of return value
-
-		"""
         if self.texture_type == 'OFF':
             self.use_tif = False
         else:
@@ -1251,15 +1240,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         return import_asset(context, fdir, **keywords)
 
     def draw(self, context):
-		"""Summary line.
-
-		Extended description of function.
-
-		Args:
-			arg1 (int): Description of arg1
-			arg2 (str): Description of arg2
-
-		"""
         layout = self.layout
 
         row = layout.row(align = True)
@@ -1298,18 +1278,6 @@ class MechImporter(bpy.types.Operator, ImportHelper):
     )
 
     def execute(self, context):
-		"""Summary line.
-
-		Extended description of function.
-
-		Args:
-			arg1 (int): Description of arg1
-			arg2 (str): Description of arg2
-
-		Returns:
-			bool: Description of return value
-
-		"""
         if self.texture_type == 'OFF':
             self.use_tif = False
         else:
@@ -1323,15 +1291,6 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         return import_mech(context, fdir, **keywords)
 
     def draw(self, context):
-		"""Summary line.
-
-		Extended description of function.
-
-		Args:
-			arg1 (int): Description of arg1
-			arg2 (str): Description of arg2
-
-		"""
         layout = self.layout
 
         row = layout.row(align = True)
@@ -1341,38 +1300,18 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row.prop(self, "texture_type", expand = True)
 
 def menu_func_mech_import(self, context):
-	"""Summary line.
-
-	Extended description of function.
-
-	"""
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
 def menu_func_import(self, context):
-	"""Summary line.
-
-	Extended description of function.
-
-	"""
     self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
 
 def register():
-	"""Summary line.
-
-	Extended description of function.
-
-	"""
     bpy.utils.register_class(CryengineImporter)
     bpy.utils.register_class(MechImporter)
     bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
     bpy.types.INFO_MT_file_import.append(menu_func_import)
 
 def unregister():
-	"""Summary line.
-
-	Extended description of function.
-
-	"""
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
     bpy.utils.unregister_class(MechImporter)

@@ -917,16 +917,25 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
         if file.endswith(".mtl"):
             materials.update(create_materials(file, basedir))
 
+    for material in materials.keys():
+        print("   Material: " + material)
+
     for file in os.listdir(dirname):
         if file.endswith(".dae"):
             objects = import_geometry(file, basedir)
-            print("   Import " + str(len(objects)))
-            for obj in objects:
-                for mats in obj.material_slots:
-                    if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
-                        mats.material = materials[mats.name[:-4]]
-                    elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
-                        mats.material = materials[mats.name]
+    objects = bpy.data.objects
+    for obj in objects:
+        if not obj.name == "Lamp" and not obj.name == "Camera" and not obj.name == "Cube":
+            print("   Assigning materials for " + obj.name)
+            for obj_mat in obj.material_slots:
+                print("   Material slot matname is " + obj_mat.name)
+                mat = obj_mat.name.split('.')[0]
+                print("      Assigning material " + mat + " to " + obj.name)
+                obj_mat.material = materials[mat]
+                #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
+                #    mats.material = materials[mats.name[:-4]]
+                #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
+                #    mats.material = materials[mats.name]
     create_object_groups()
     return {'FINISHED'}
 

@@ -25,14 +25,14 @@
 import bpy
 import bpy.types
 import bpy.utils
-import types
+import array
 import bmesh
+import glob
 import math
 import mathutils
-import array
-import os
-import os.path
+import os, os.path
 import time
+import types
 import xml.etree as etree
 import xml.etree.ElementTree as ET
 from bpy_extras.io_utils import unpack_list
@@ -121,7 +121,13 @@ def get_base_dir(filepath):
         bool: Description of return value
 
     """
-    return os.path.abspath(os.path.join(os.path.dirname(filepath), os.pardir, os.pardir, os.pardir))
+    dirpath = filepath
+    if os.path.isfile(filepath):
+        dirpath = os.path.dirname(filepath)
+    if not os.path.basename(dirpath) == 'objects' and not os.path.basename(dirpath) == 'Objects':
+        return get_base_dir(os.path.abspath(os.path.join(dirpath, os.pardir)))
+    else:
+        return os.path.abspath(os.path.abspath(os.path.join(dirpath, os.pardir)))
 
 def get_body_dir(filepath):
 	"""Summary line.
@@ -204,6 +210,21 @@ def convert_to_location(location):
     y = float(tmp[1])
     z = float(tmp[2])
     return mathutils.Vector((x,y,z))
+
+def convert_to_rgba(color):
+    temp = color.split(',')
+    r = float(temp[0])
+    g = float(temp[1])
+    b = float(temp[2])
+    a = 1.0
+    return (r,g,b,a)
+
+def convert_to_rgb(color):
+    temp = color.split(',')
+    r = float(temp[0])
+    g = float(temp[1])
+    b = float(temp[2])
+    return (r,g,b)
 
 def get_transform_matrix(rotation, location):
 	"""Summary line.
@@ -401,6 +422,14 @@ def flip_bone(obj, bone_name):
     else:
         raise MetarigError("Cannot flip bones outside of edit mode")
 
+def create_object_groups():
+    # Generate group for each object to make linking into scenes easier.
+    for obj in bpy.context.selectable_objects:
+        if (obj.name != "Camera" and obj.name != "Lamp" and obj.name != "Cube"):
+            print ("   Creating group for " + obj.name)
+            bpy.data.groups.new(obj.name)
+            bpy.data.groups[obj.name].objects.link(obj)
+
 def create_materials(matfile, basedir):
 	"""Summary line.
 
@@ -433,6 +462,20 @@ def create_materials(matfile, basedir):
             # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
             shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
             shaderPrincipledBSDF.location =  300,500
+            #print(mat["Diffuse"])
+            if "Diffuse" in mat.keys():
+                diffuseColor = convert_to_rgba(str(mat.attrib["Diffuse"]))
+                shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
+            if "Specular" in mat.keys():
+                specColor = convert_to_rgba(str(mat.attrib["Specular"]))
+                shaderPrincipledBSDF.inputs[5].default_value = specColor[0]    # Specular always seems to be one value repeated 3 times.
+            if "Emissive" in mat.keys():
+                emissiveColor = convert_to_rgba(str(mat.attrib["Emissive"]))
+                shaderPrincipledBSDF.inputs[15].default_value = emissiveColor[0]  # Emissive seems to be one value repeated 3 times.
+            if "IndirectColor" in mat.keys():
+                indirectColor = convert_to_rgba(str(mat.attrib["IndirectColor"]))
+                shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
+            
             shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
             shout.location = 500,500
             links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
@@ -989,6 +1032,16 @@ def create_IKs():
     # Move bones to proper layers
     set_bone_layers(armature)
 
+def import_geometry(daefile, basedir):
+    print("Importing geometry...")
+    try:
+        bpy.ops.wm.collada_import(filepath=daefile,find_chains=True,auto_connect=True)
+        return bpy.context.selected_objects[:]      # Return the objects added.
+    except:
+        # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
+        #continue
+        print("Importing daefile: " + daefile + ", basedir: " + basedir)
+    
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
 	"""Summary line.
 
@@ -1086,6 +1139,7 @@ def set_viewport_shading():
             for space in area.spaces: 
                 if space.type == 'VIEW_3D': 
                     space.viewport_shade = 'MATERIAL'
+    bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
 
 def set_layers():
 	"""Summary line.
@@ -1129,6 +1183,35 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
 
     """
     print("Import Asset.  Folder: " + dirname)
+    basedir = get_base_dir(dirname)
+
+    set_viewport_shading()
+
+    os.chdir(dirname)
+    for file in os.listdir(dirname):
+        if file.endswith(".mtl"):
+            materials.update(create_materials(file, basedir))
+
+    for material in materials.keys():
+        print("   Material: " + material)
+
+    for file in os.listdir(dirname):
+        if file.endswith(".dae"):
+            objects = import_geometry(file, basedir)
+    objects = bpy.data.objects
+    for obj in objects:
+        if not obj.name == "Lamp" and not obj.name == "Camera" and not obj.name == "Cube":
+            print("   Assigning materials for " + obj.name)
+            for obj_mat in obj.material_slots:
+                print("   Material slot matname is " + obj_mat.name)
+                mat = obj_mat.name.split('.')[0]
+                print("      Assigning material " + mat + " to " + obj.name)
+                obj_mat.material = materials[mat]
+                #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
+                #    mats.material = materials[mats.name[:-4]]
+                #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
+                #    mats.material = materials[mats.name]
+    create_object_groups()
     return {'FINISHED'}
 
 
@@ -1160,8 +1243,6 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
 
-    bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
-    
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
     
@@ -1209,18 +1290,26 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
-    )
+                )
+    path = StringProperty(
+        name="Import Directory",
+        description="Directory to Import",
+        default="",
+        maxlen=1024,
+        subtype='DIR_PATH')
 
+    # From ImportHelper.  Filter filenames.
     path_mode = path_reference_mode
+    show_hidden = True
     check_extension = True
-    filename_ext = "."
+    filename_ext = ".dae"
     use_filter_folder = True
-    display_type = 'FILE_IMGDISPLAY'
+    display_type = 'THUMBNAIL'
+    title = "Directory to Import"
     filter_glob = StringProperty(
-        default=".",
-        display_type = 'FILE_IMGDISPLAY',
-        options={'HIDDEN'},
-        )
+        default="*.dae",
+        options={'HIDDEN'})
+
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = False

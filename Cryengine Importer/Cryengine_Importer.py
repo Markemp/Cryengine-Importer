@@ -861,6 +861,23 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                         bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
                     obj.select = False
 
+def save_file(file):
+    # Save the Blender file as the name of the directory it is in.
+    # file is the value put into the file selector.  The cdf file for mech importer,
+    # directory for asset importer.
+    print("Saving " + file)
+    if not os.path.isfile(file):  # Directory
+        basename = os.path.basename(os.path.dirname(file))
+        if not bpy.path.abspath("//"):      # not saved yet
+            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(file, basename + ".blend"))
+    else:
+        basename = os.path.basename(file)
+        if not bpy.path.abspath("//"):      # not saved yet
+            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(file), basename + ".blend"))  # CDF file
+    
+def auto_generate_preview(dirname):
+    print ("NYI")
+
 def set_viewport_shading():
     # Set material mode. # iterate through areas in current screen
     for area in bpy.context.screen.areas:
@@ -888,21 +905,21 @@ def set_layers():
             bpy.data.objects[name].layers[1] = True
             bpy.data.objects[name].layers[0] = False
 
-def import_asset(context, dirname, *, use_dds=True, use_tif=False):
-    print("Import Asset.  Folder: " + dirname)
-    basedir = get_base_dir(dirname)
+def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+    print("Import Asset.  Folder: " + path)
+    basedir = get_base_dir(path)
 
     set_viewport_shading()
 
-    os.chdir(dirname)
-    for file in os.listdir(dirname):
+    os.chdir(path)
+    for file in os.listdir(path):
         if file.endswith(".mtl"):
             materials.update(create_materials(file, basedir))
 
     for material in materials.keys():
         print("   Material: " + material)
 
-    for file in os.listdir(dirname):
+    for file in os.listdir(path):
         if file.endswith(".dae"):
             objects = import_geometry(file, basedir)
     objects = bpy.data.objects
@@ -913,24 +930,30 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
                 print("   Material slot matname is " + obj_mat.name)
                 mat = obj_mat.name.split('.')[0]
                 print("      Assigning material " + mat + " to " + obj.name)
-                obj_mat.material = materials[mat]
+                if mat in materials.keys():
+                    obj_mat.material = materials[mat]
                 #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
                 #    mats.material = materials[mats.name[:-4]]
                 #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
                 #    mats.material = materials[mats.name]
     create_object_groups()
+    # Save the file in the directory being read, given the directory name.  Then
+    # the user can create the thumbnails into the given blend file.
+    if auto_save_file == True:
+        save_file(path)
+    if auto_generate_preview == True:
+        auto_generate_preview(path)
     return {'FINISHED'}
 
-
-def import_mech(context, filepath, *, use_dds=True, use_tif=False):
+def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     print("Import Mech")
-    print(filepath)
-    cdffile = filepath      # The input file
-    # Split up filepath into the variables we want.
-    basedir = get_base_dir(filepath)
-    bodydir = get_body_dir(filepath)
-    mechdir = os.path.dirname(filepath)
-    mech = get_mech(filepath)
+    print(path)
+    cdffile = path      # The input file
+    # Split up path into the variables we want.
+    basedir = get_base_dir(path)
+    bodydir = get_body_dir(path)
+    mechdir = os.path.dirname(path)
+    mech = get_mech(path)
     matfile = os.path.join(bodydir, mech + "_body.mtl")
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
@@ -957,13 +980,18 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     bpy.ops.object.mode_set(mode='EDIT')
     create_IKs()
+    if auto_save_file == True:
+        save_file(path)
     return {'FINISHED'}
+
+def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+    print("Not Yet Implemented")
 
 class CryengineImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
-
+    
     texture_type = EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
@@ -977,7 +1005,26 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         default="",
         maxlen=1024,
         subtype='DIR_PATH')
-
+    auto_save_file = BoolProperty(
+        name = "Save File",
+        description = "Automatically save file",
+        default = True)
+    auto_generate_preview = BoolProperty(
+        name = "Generate Preview (NYI)",
+        description = "Auto-generate thumbnails",
+        default = False)
+    filter_glob = StringProperty(
+        default="*.dae",
+        options={'HIDDEN'})
+    use_dds = BoolProperty(
+        name = "Use DDS",
+        description = "Use DDS format for image textures",
+        default = True)
+    use_tif = BoolProperty(
+        name = "Use TIF",
+        description = "Use TIF format for image textures",
+        default = False)
+    
     # From ImportHelper.  Filter filenames.
     path_mode = path_reference_mode
     show_hidden = True
@@ -986,16 +1033,19 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
     use_filter_folder = True
     display_type = 'THUMBNAIL'
     title = "Directory to Import"
-    filter_glob = StringProperty(
-        default="*.dae",
-        options={'HIDDEN'})
 
     def execute(self, context):
         if self.texture_type == 'OFF':
-            self.use_tif = False
-        else:
+            self.use_tif = True
             self.use_dds = False
-        keywords = {}
+        else:
+            self.use_dds = True
+            self.use_tif = False
+        keywords = self.as_keywords(ignore=("texture_type", 
+                                            "filter_glob",
+                                            "path_mode",
+                                            "filepath"
+                                            ))
         userpath = self.properties.filepath
         if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
             import os
@@ -1003,10 +1053,9 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
             if not os.path.isdir(userpath):
                 msg = "Select a directory.\n" + userpath
                 self.report({'WARNING'}, msg)
-        
         fdir = self.properties.filepath
-        #keywords["cdffile"] = fdir
-        return import_asset(context, fdir, **keywords)
+        keywords["path"] = fdir
+        return import_asset(context, **keywords)
 
     def draw(self, context):
         layout = self.layout
@@ -1015,6 +1064,10 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         box.label("Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
+        row = layout.row(align=True)
+        row.prop(self, "auto_save_file")
+        row = layout.row(align=True)
+        row.prop(self, "auto_generate_preview")
 
 class MechImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mech"
@@ -1023,6 +1076,10 @@ class MechImporter(bpy.types.Operator, ImportHelper):
     filename_ext = ".cdf"
     path_mode = path_reference_mode
     check_extension = True
+    auto_save_file = BoolProperty(
+        name = "Save File",
+        description = "Automatically save file",
+        default = True)
     filter_glob = StringProperty(
         default="*.cdf",
         options={'HIDDEN'},
@@ -1034,19 +1091,33 @@ class MechImporter(bpy.types.Operator, ImportHelper):
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
     )
+    use_dds = BoolProperty(
+        name = "Use DDS",
+        description = "Use DDS format for image textures",
+        default = True)
+    use_tif = BoolProperty(
+        name = "Use TIF",
+        description = "Use TIF format for image textures",
+        default = False)
 
     def execute(self, context):
         if self.texture_type == 'OFF':
-            self.use_tif = False
-        else:
+            self.use_tif = True
             self.use_dds = False
-        keywords = {}
+        else:
+            self.use_dds = True
+            self.use_tif = False
+        keywords = self.as_keywords(ignore=("texture_type", 
+                                            "filter_glob",
+                                            "path_mode",
+                                            "filepath"
+                                            ))
         if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
             import os
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
         fdir = self.properties.filepath
-        #keywords["cdffile"] = fdir
-        return import_mech(context, fdir, **keywords)
+        keywords["path"] = fdir
+        return import_mech(context, **keywords)
 
     def draw(self, context):
         layout = self.layout
@@ -1056,6 +1127,70 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         box.label("Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
+        row = layout.row(align=True)
+        row.prop(self, "auto_save_file")
+
+class PrefabImporter(bpy.types.Operator, ImportHelper):
+    print("NYI")
+    bl_idname = "import_scene.prefab"
+    bl_label = "Import Cryengine Prefab"
+    bl_options = {'PRESET', 'UNDO'}
+    filename_ext = ".xml"
+    path_mode = path_reference_mode
+    check_extension = True
+    auto_save_file = BoolProperty(
+        name = "Save File",
+        description = "Automatically save file",
+        default = True)
+    filter_glob = StringProperty(
+        default="*.xml",
+        options={'HIDDEN'},
+        )
+    texture_type = EnumProperty(
+        name="Texture Type",
+        description = "Identify the type of texture file imported into the Texture nodes.",
+        items = (('ON', "DDS", "Reference DDS files for textures."),
+                 ('OFF', "TIF", "Reference TIF files for textures."),
+                 ),
+    )
+    use_dds = BoolProperty(
+        name = "Use DDS",
+        description = "Use DDS format for image textures",
+        default = True)
+    use_tif = BoolProperty(
+        name = "Use TIF",
+        description = "Use TIF format for image textures",
+        default = False)
+
+    def execute(self, context):
+        if self.texture_type == 'OFF':
+            self.use_tif = True
+            self.use_dds = False
+        else:
+            self.use_dds = True
+            self.use_tif = False
+        keywords = self.as_keywords(ignore=("texture_type", 
+                                            "filter_glob",
+                                            "path_mode",
+                                            "filepath"
+                                            ))
+        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
+            import os
+            keywords["relpath"] = os.path.dirname(bpy.data.filepath)
+        fdir = self.properties.filepath
+        keywords["path"] = fdir
+        return import_prefab(context, **keywords)
+
+    def draw(self, context):
+        layout = self.layout
+
+        row = layout.row(align = True)
+        box = layout.box()
+        box.label("Select texture type")
+        row = box.row()
+        row.prop(self, "texture_type", expand = True)
+        row = layout.row(align=True)
+        row.prop(self, "auto_save_file")
 
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
@@ -1063,17 +1198,24 @@ def menu_func_mech_import(self, context):
 def menu_func_import(self, context):
     self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
 
+def menu_func_prefab_import(self, context):
+    self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab (NYI)")
+
 def register():
     bpy.utils.register_class(CryengineImporter)
     bpy.utils.register_class(MechImporter)
+    bpy.utils.register_class(PrefabImporter)
     bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
     bpy.types.INFO_MT_file_import.append(menu_func_import)
+    bpy.types.INFO_MT_file_import.append(menu_func_prefab_import)
 
 def unregister():
     bpy.types.INFO_MT_file_import.remove(menu_func_import)
     bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
+    bpy.types.INFO_MT_file_import.remove(menu_func_prefab_import)
     bpy.utils.unregister_class(MechImporter)
     bpy.utils.unregister_class(CryengineImporter)
+    bpy.utils.unregister_class(PrefabImporter)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.

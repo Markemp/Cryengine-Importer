@@ -90,7 +90,7 @@ GEO_LAYERS = [x == 2 for x in range(0, 32)]   # Deform bones go to layer 2
 
 
 def strip_slash(line_split):
-	"""Summary line.
+    """Summary line.
 
     Extended description of function.
 
@@ -110,17 +110,6 @@ def strip_slash(line_split):
     return False
 
 def get_base_dir(filepath):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     dirpath = filepath
     if os.path.isfile(filepath):
         dirpath = os.path.dirname(filepath)
@@ -130,62 +119,17 @@ def get_base_dir(filepath):
         return os.path.abspath(os.path.abspath(os.path.join(dirpath, os.pardir)))
 
 def get_body_dir(filepath):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     return os.path.join(os.path.dirname(filepath), "body")
 
 def get_mech(filepath):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     return os.path.splitext(os.path.basename(filepath))[0]
 
 def get_scaling_factor(o):
-	"""Calculate the scaling factor.
-
-    Calculate the scaling factor that should get applied to bone shapes, so they are
-	relatively close in size to the mech they are on.  Locust is 7.4, DWF is 12.9
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
     global_bbox_center = o.matrix_world * local_bbox_center
     return global_bbox_center[2]/7.4
 
 def convert_to_rotation(rotation):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     tmp = rotation.split(',')
     w = float(tmp[0])
     x = float(tmp[1])
@@ -194,17 +138,6 @@ def convert_to_rotation(rotation):
     return mathutils.Quaternion((w,x,y,z))
 
 def convert_to_location(location):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     tmp = location.split(',')
     x = float(tmp[0])
     y = float(tmp[1])
@@ -227,18 +160,6 @@ def convert_to_rgb(color):
     return (r,g,b)
 
 def get_transform_matrix(rotation, location):
-	"""Summary line.
-
-    Given a location Vector and a Quaternion rotation, get the 4x4 transform matrix.  Assumes scale is 1.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    Returns:
-        bool: Description of return value
-
-    """
     mat_location = mathutils.Matrix.Translation(location)
     mat_rotation = mathutils.Matrix.Rotation(rotation.angle, 4, rotation.axis)
     mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
@@ -246,17 +167,6 @@ def get_transform_matrix(rotation, location):
     return mat_out
 
 def import_armature(rig):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True,auto_connect=True)
         armature = bpy.data.objects['Armature']
@@ -273,31 +183,11 @@ def import_armature(rig):
     return True
 
 def set_bone_layers(rig):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    """
     for bone in rig.data.bones:
         if bone.name not in control_bones:
             bone.layers = GEO_LAYERS
 
 def obj_to_bone(obj, rig, bone_name):
-	"""Places an object at the location/rotation/scale of the given bone.
-
-    (Copied from Rigify) Used for widget creation
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-	Raises:
-		MetarigError
-
-    """
     if bpy.context.mode == 'EDIT_ARMATURE':
         raise MetarigError("obj_to_bone(): does not work while in edit mode")
     bone = rig.data.bones[bone_name]
@@ -310,22 +200,6 @@ def obj_to_bone(obj, rig, bone_name):
     obj.scale = (bone.length * scl_avg), (bone.length * scl_avg), (bone.length * scl_avg)
 
 def copy_bone(obj, bone_name, assign_name=''):
-	"""Makes a copy of the given bone in the given armature object.
-
-    From metarig
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-
-    Returns:
-        bool: (string) The resulting bone's name
-	
-	Raises:
-		MetarigError
-
-    """
     #if bone_name not in obj.data.bones:
     if bone_name not in obj.data.edit_bones:
         raise MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
@@ -394,21 +268,6 @@ def copy_bone(obj, bone_name, assign_name=''):
         raise MetarigError("Cannot copy bones outside of edit mode")
 
 def flip_bone(obj, bone_name):
-	"""Flips an edit bone.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    Returns:
-        bool: Description of return value
-	
-	Raises:
-		MetarigError
-
-    """
     if bone_name not in obj.data.bones:
         raise MetarigError("flip_bone(): bone '%s' not found, cannot copy it" % bone_name)
 
@@ -431,18 +290,6 @@ def create_object_groups():
             bpy.data.groups[obj.name].objects.link(obj)
 
 def create_materials(matfile, basedir):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    Returns:
-        bool: Description of return value
-
-    """
     materials = {}
     mats = ET.parse(matfile)
     for mat in mats.iter("Material"):
@@ -514,19 +361,6 @@ def create_materials(matfile, basedir):
     return materials
 
 def create_widget(rig, bone_name, bone_transform_name=None):
-	"""Creates an empty widget.
-
-    (Copied from Rigify utils.py) Creates an empty widget object for a bone, and returns the object.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-
-    Returns:
-        bool: Description of return value
-
-    """
     if bone_transform_name is None:
         bone_transform_name = bone_name
     obj_name = WGT_PREFIX + rig.name + '_' + bone_name
@@ -558,20 +392,6 @@ def create_widget(rig, bone_name, bone_transform_name=None):
         return obj
 
 def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):
-	"""Create a hand widget.
-
-    (Copied from Rigify's widgets.py)
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-
-    Returns:
-        bool: Description of return value
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj is not None:
         verts = [(0.0*size, 1.5*size, -0.7000000476837158*size), (1.1920928955078125e-07*size, -0.25*size, -0.6999999284744263*size), 
@@ -592,20 +412,6 @@ def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):
         return None
 
 def create_foot_widget(rig, bone_name, size=1.0, bone_transform_name=None):
-	"""Create a foot widget.
-
-    (Copied from Rigify's widgets.py)
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-
-    Returns:
-        bool: Description of return value
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj is not None:
         verts = [(-0.6999998688697815*size, -0.5242648720741272*size, 0.0*size), (-0.7000001072883606*size, 1.2257349491119385*size, 0.0*size), 
@@ -626,17 +432,6 @@ def create_foot_widget(rig, bone_name, size=1.0, bone_transform_name=None):
         return None
 
 def create_cube_widget(rig, bone_name, radius=0.5, bone_transform_name=None):
-	"""Creates a basic cube widget.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj is not None:
         r = radius
@@ -647,22 +442,6 @@ def create_cube_widget(rig, bone_name, radius=0.5, bone_transform_name=None):
         mesh.update()
 
 def create_circle_widget(rig, bone_name, radius=1.0, head_tail=0.0, with_line=False, bone_transform_name=None):
-	"""Creates a basic circle widget.
-
-    Creates a basic circle widget, a circle around the y-axis.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        radius (float): the radius of the circle
-        head_tail (float): where along the length of the bone the circle is (0.0=head, 1.0=tail)
-        arg5 (int): Description of arg5
-        arg6 (str): Description of arg6
-
-    Returns:
-        bool: Description of return value
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj != None:
         v = [(0.7071068286895752, 2.980232238769531e-07, -0.7071065306663513), (0.8314696550369263, 2.980232238769531e-07, -0.5555699467658997), (0.9238795042037964, 2.682209014892578e-07, -0.3826831877231598), (0.9807852506637573, 2.5331974029541016e-07, -0.19509011507034302), (1.0, 2.365559055306221e-07, 1.6105803979371558e-07), (0.9807853698730469, 2.2351741790771484e-07, 0.19509044289588928), (0.9238796234130859, 2.086162567138672e-07, 0.38268351554870605), (0.8314696550369263, 1.7881393432617188e-07, 0.5555704236030579), (0.7071068286895752, 1.7881393432617188e-07, 0.7071070075035095), (0.5555702447891235, 1.7881393432617188e-07, 0.8314698934555054), (0.38268327713012695, 1.7881393432617188e-07, 0.923879861831665), (0.19509008526802063, 1.7881393432617188e-07, 0.9807855486869812), (-3.2584136988589307e-07, 1.1920928955078125e-07, 1.000000238418579), (-0.19509072601795197, 1.7881393432617188e-07, 0.9807854294776917), (-0.3826838731765747, 1.7881393432617188e-07, 0.9238795638084412), (-0.5555707216262817, 1.7881393432617188e-07, 0.8314695358276367), (-0.7071071863174438, 1.7881393432617188e-07, 0.7071065902709961), (-0.8314700126647949, 1.7881393432617188e-07, 0.5555698871612549), (-0.923879861831665, 2.086162567138672e-07, 0.3826829195022583), (-0.9807853698730469, 2.2351741790771484e-07, 0.1950896978378296), (-1.0, 2.365559907957504e-07, -7.290432222362142e-07), (-0.9807850122451782, 2.5331974029541016e-07, -0.195091113448143), (-0.9238790273666382, 2.682209014892578e-07, -0.38268423080444336), (-0.831468939781189, 2.980232238769531e-07, -0.5555710196495056), (-0.7071058750152588, 2.980232238769531e-07, -0.707107424736023), (-0.555569052696228, 2.980232238769531e-07, -0.8314701318740845), (-0.38268208503723145, 2.980232238769531e-07, -0.923879861831665), (-0.19508881866931915, 2.980232238769531e-07, -0.9807853102684021), (1.6053570561780361e-06, 2.980232238769531e-07, -0.9999997615814209), (0.19509197771549225, 2.980232238769531e-07, -0.9807847142219543), (0.3826850652694702, 2.980232238769531e-07, -0.9238786101341248), (0.5555717945098877, 2.980232238769531e-07, -0.8314683437347412)]
@@ -679,16 +458,6 @@ def create_circle_widget(rig, bone_name, radius=1.0, head_tail=0.0, with_line=Fa
         return None
 
 def create_compass_widget(rig, bone_name, bone_transform_name=None):
-	"""Creates a compass-shaped widget.
-
-    (Copied from Rigify)
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj != None:
         verts = [(0.0, 1.2000000476837158, 0.0), (0.19509032368659973, 0.9807852506637573, 0.0), (0.3826834559440613, 0.9238795042037964, 0.0), 
@@ -709,16 +478,6 @@ def create_compass_widget(rig, bone_name, bone_transform_name=None):
         mesh.update()
 
 def create_root_widget(rig, bone_name, bone_transform_name=None):
-	"""Creates a widget for the root bone.
-
-    (Copied from Rigify)
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj != None:
         verts = [(0.7071067690849304, 0.7071067690849304, 0.0), (0.7071067690849304, -0.7071067690849304, 0.0), (-0.7071067690849304, 0.7071067690849304, 0.0), 
@@ -745,15 +504,6 @@ def create_root_widget(rig, bone_name, bone_transform_name=None):
         mesh.update()
 
 def create_sphere_widget(rig, bone_name, bone_transform_name=None):
-	"""Creates a basic sphere widget.
-
-    Creates a basic sphere widget, three pependicular overlapping circles.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    """
     obj = create_widget(rig, bone_name, bone_transform_name)
     if obj != None:
         verts = [(0.3535533845424652, 0.3535533845424652, 0.0), (0.4619397521018982, 0.19134171307086945, 0.0), (0.5, -2.1855694143368964e-08, 0.0), 
@@ -786,11 +536,6 @@ def create_sphere_widget(rig, bone_name, bone_transform_name=None):
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs():
-	"""Summary line.
-
-    Extended description of function.
-
-    """
     armature = bpy.data.objects['Armature']
     amt = armature.data
     bpy.context.scene.objects.active = armature
@@ -1043,17 +788,6 @@ def import_geometry(daefile, basedir):
         print("Importing daefile: " + daefile + ", basedir: " + basedir)
     
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-
-    """
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
     geometry = ET.parse(cdffile)
@@ -1128,11 +862,6 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                     obj.select = False
 
 def set_viewport_shading():
-	"""Summary line.
-
-    Extended description of function.
-
-    """
     # Set material mode. # iterate through areas in current screen
     for area in bpy.context.screen.areas:
         if area.type == 'VIEW_3D':
@@ -1142,11 +871,6 @@ def set_viewport_shading():
     bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
 
 def set_layers():
-	"""Summary line.
-
-    Extended description of function.
-
-    """
     # Set the layers that objects are on.
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
@@ -1165,23 +889,6 @@ def set_layers():
             bpy.data.objects[name].layers[0] = False
 
 def import_asset(context, dirname, *, use_dds=True, use_tif=False):
-	"""Import all the materials from given directory.
-
-    For a provided directory, import all the materials from that directory's mtl files
-	and import each Collada file.  Assign the proper materials, and add to a group.
-	Save the .blend file (prompt to overwrite if it exists) to <directory name>.blend.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-        arg5 (int): Description of arg5
-
-    Returns:
-        bool: Description of return value
-
-    """
     print("Import Asset.  Folder: " + dirname)
     basedir = get_base_dir(dirname)
 
@@ -1216,21 +923,6 @@ def import_asset(context, dirname, *, use_dds=True, use_tif=False):
 
 
 def import_mech(context, filepath, *, use_dds=True, use_tif=False):
-	"""Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-        arg3 (int): Description of arg3
-        arg4 (str): Description of arg4
-        arg5 (int): Description of arg5
-
-    Returns:
-        bool: Description of return value
-
-    """
     print("Import Mech")
     print(filepath)
     cdffile = filepath      # The input file
@@ -1268,18 +960,6 @@ def import_mech(context, filepath, *, use_dds=True, use_tif=False):
     return {'FINISHED'}
 
 class CryengineImporter(bpy.types.Operator, ImportHelper):
-	"""Imports Collada files from Cryengine Converter.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-        arg2 (str): Description of arg2
-
-    Returns:
-        bool: Description of return value
-
-    """
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
@@ -1330,24 +1010,13 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
 
     def draw(self, context):
         layout = self.layout
-
         row = layout.row(align = True)
         box = layout.box()
         box.label("Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
 
-
 class MechImporter(bpy.types.Operator, ImportHelper):
-	"""Create a mech from MWO.
-
-	Extended description of function.
-
-	Args:
-		arg1 (int): Description of arg1
-		arg2 (str): Description of arg2
-
-	"""
     bl_idname = "import_scene.mech"
     bl_label = "Import Mech"
     bl_options = {'PRESET', 'UNDO'}

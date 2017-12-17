@@ -1062,7 +1062,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         description = "Automatically save file",
         default = True)
     auto_generate_preview = BoolProperty(
-        name = "Generate Preview (NYI)",
+        name = "Generate Preview",
         description = "Auto-generate thumbnails",
         default = False)
     filter_glob = StringProperty(

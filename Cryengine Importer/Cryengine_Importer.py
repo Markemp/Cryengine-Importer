@@ -289,8 +289,51 @@ def create_object_groups():
             bpy.data.groups.new(obj.name)
             bpy.data.groups[obj.name].objects.link(obj)
 
-def create_materials(matfile, basedir):
+def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension):
+    print("Glass material")
+    links = tree_nodes.links
+    shaderPrincipledBSDF.inputs[14].default_value = 1.001
+    shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
+    shout.location = 500,500
+    links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
+    for texture in mat.iter("Texture"):
+        if texture.attrib["Map"] == "Diffuse":
+            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+            if os.path.isfile(texturefile):
+                matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
+                shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
+                shaderDiffImg.image=matDiffuse
+                shaderDiffImg.location = 0,600
+                links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
+        if texture.attrib["Map"] == "Specular":
+            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+            if os.path.isfile(texturefile):
+                matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
+                shaderSpecImg.color_space = 'NONE'
+                shaderSpecImg.image=matSpec
+                shaderSpecImg.location = 0,325
+                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
+        if texture.attrib["Map"] == "Bumpmap":
+            if os.path.isfile(texturefile):
+                texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+                matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
+                shaderNormalImg.color_space = 'NONE'
+                shaderNormalImg.image=matNormal
+                shaderNormalImg.location = -100,0
+                converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
+                converterNormalMap.location = 100,0
+                links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
+                links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
+
+def create_materials(matfile, basedir, use_dds=True, use_tif=False):
     materials = {}
+    # Identify material format
+    if use_dds == True:
+        material_extension = ".dds"
+    elif use_tif == True:
+        material_extension = ".tif"
     mats = ET.parse(matfile)
     for mat in mats.iter("Material"):
         if "Name" in mat.attrib:
@@ -302,7 +345,6 @@ def create_materials(matfile, basedir):
             matname.use_nodes = True
             tree_nodes = matname.node_tree
             links = tree_nodes.links
-
             for n in tree_nodes.nodes:
                 tree_nodes.nodes.remove(n)
 
@@ -316,48 +358,54 @@ def create_materials(matfile, basedir):
             if "Specular" in mat.keys():
                 specColor = convert_to_rgba(str(mat.attrib["Specular"]))
                 shaderPrincipledBSDF.inputs[5].default_value = specColor[0]    # Specular always seems to be one value repeated 3 times.
-            if "Emissive" in mat.keys():
-                emissiveColor = convert_to_rgba(str(mat.attrib["Emissive"]))
-                shaderPrincipledBSDF.inputs[15].default_value = emissiveColor[0]  # Emissive seems to be one value repeated 3 times.
             if "IndirectColor" in mat.keys():
                 indirectColor = convert_to_rgba(str(mat.attrib["IndirectColor"]))
                 shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
-            
-            shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
-            shout.location = 500,500
-            links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
-            # For each Texture element, add the file and plug in to the appropriate slot on the PrincipledBSDF shader
-            for texture in mat.iter("Texture"):
-                #print("Adding texture " + texture.attrib["Map"])
-                if texture.attrib["Map"] == "Diffuse":
-                    texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + ".dds"))
-                    if os.path.isfile(texturefile):
-                        matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
-                        shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
-                        shaderDiffImg.image=matDiffuse
-                        shaderDiffImg.location = 0,600
-                        links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
-                if texture.attrib["Map"] == "Specular":
-                    texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + ".dds"))
-                    if os.path.isfile(texturefile):
-                        matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                        shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                        shaderSpecImg.color_space = 'NONE'
-                        shaderSpecImg.image=matSpec
-                        shaderSpecImg.location = 0,325
-                        links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
-                if texture.attrib["Map"] == "Bumpmap":
-                    if os.path.isfile(texturefile):
-                        texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + ".dds"))
-                        matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                        shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                        shaderNormalImg.color_space = 'NONE'
-                        shaderNormalImg.image=matNormal
-                        shaderNormalImg.location = -100,0
-                        converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
-                        converterNormalMap.location = 100,0
-                        links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
-                        links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
+            if "Opacity" in mat.keys():
+                transmission = mat.attrib["Opacity"]
+                shaderPrincipledBSDF.inputs[15].default_value = float(transmission)
+            if "Shininess" in mat.keys():
+                clearcoat = mat.attrib["Shininess"]
+                shaderPrincipledBSDF.inputs[12].default_value = float(clearcoat) / 255
+            if mat.attrib["Shader"] == "Glass":
+                # Glass material.  Make a Glass node layout.
+                create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension)
+            else:
+                shaderPrincipledBSDF.inputs[15].default_value = 0.0         # If it's not glass, the transmission should be 0.
+                shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
+                shout.location = 500,500
+                links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
+                # For each Texture element, add the file and plug in to the appropriate slot on the PrincipledBSDF shader
+                for texture in mat.iter("Texture"):
+                    if texture.attrib["Map"] == "Diffuse":
+                        texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+                        if os.path.isfile(texturefile):
+                            matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
+                            shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
+                            shaderDiffImg.image=matDiffuse
+                            shaderDiffImg.location = 0,600
+                            links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
+                    if texture.attrib["Map"] == "Specular":
+                        texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+                        if os.path.isfile(texturefile):
+                            matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                            shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
+                            shaderSpecImg.color_space = 'NONE'
+                            shaderSpecImg.image=matSpec
+                            shaderSpecImg.location = 0,325
+                            links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
+                    if texture.attrib["Map"] == "Bumpmap":
+                        if os.path.isfile(texturefile):
+                            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+                            matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                            shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
+                            shaderNormalImg.color_space = 'NONE'
+                            shaderNormalImg.image=matNormal
+                            shaderNormalImg.location = -100,0
+                            converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
+                            converterNormalMap.location = 100,0
+                            links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
+                            links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
     return materials
 
 def create_widget(rig, bone_name, bone_transform_name=None):
@@ -778,7 +826,6 @@ def create_IKs():
     set_bone_layers(armature)
 
 def import_geometry(daefile, basedir):
-    print("Importing geometry...")
     try:
         bpy.ops.wm.collada_import(filepath=daefile,find_chains=True,auto_connect=True)
         return bpy.context.selected_objects[:]      # Return the objects added.
@@ -869,14 +916,19 @@ def save_file(file):
     if not os.path.isfile(file):  # Directory
         basename = os.path.basename(os.path.dirname(file))
         if not bpy.path.abspath("//"):      # not saved yet
-            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(file, basename + ".blend"))
+            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(file, basename + ".blend"), check_existing = True)
     else:
+        if file.endswith(".cdf"):
+            file = file.replace(".cdf", "")
         basename = os.path.basename(file)
         if not bpy.path.abspath("//"):      # not saved yet
-            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(file), basename + ".blend"))  # CDF file
+            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(file), basename + ".blend"), check_existing = True)  # CDF file
     
-def auto_generate_preview(dirname):
-    print ("NYI")
+def generate_preview(file):
+    if os.path.isfile(file):
+        path = bpy.path.abspath("//")
+        filename = bpy.path.basename(bpy.context.blend_data.filepath)
+        bpy.ops.wm.previews_batch_generate(directory = path, files=[{ "name": filename }], use_groups=True,use_scenes=False,use_objects=False)
 
 def set_viewport_shading():
     # Set material mode. # iterate through areas in current screen
@@ -914,7 +966,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     os.chdir(path)
     for file in os.listdir(path):
         if file.endswith(".mtl"):
-            materials.update(create_materials(file, basedir))
+            materials.update(create_materials(file, basedir, use_dds, use_tif))
 
     for material in materials.keys():
         print("   Material: " + material)
@@ -941,8 +993,8 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     # the user can create the thumbnails into the given blend file.
     if auto_save_file == True:
         save_file(path)
-    if auto_generate_preview == True:
-        auto_generate_preview(path)
+    if auto_save_file == True and auto_generate_preview == True:
+        generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
     return {'FINISHED'}
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
@@ -969,8 +1021,8 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
         return False
 
     # Create the materials.
-    materials = create_materials(matfile, basedir)
-    cockpit_materials = create_materials(cockpit_matfile, basedir)
+    materials = create_materials(matfile, basedir, use_dds, use_tif)
+    cockpit_materials = create_materials(cockpit_matfile, basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
     geometry = import_mech_geometry(cdffile, basedir, bodydir, mech)
 
@@ -1047,12 +1099,12 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
                                             "filepath"
                                             ))
         userpath = self.properties.filepath
-        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
-            import os
-            keywords["relpath"] = os.path.dirname(bpy.data.filepath)
-            if not os.path.isdir(userpath):
-                msg = "Select a directory.\n" + userpath
-                self.report({'WARNING'}, msg)
+        #if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
+        #    import os
+        #    keywords["relpath"] = os.path.dirname(bpy.data.filepath)
+        #    if not os.path.isdir(userpath):
+        #        msg = "Select a directory.\n" + userpath
+        #        self.report({'WARNING'}, msg)
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return import_asset(context, **keywords)

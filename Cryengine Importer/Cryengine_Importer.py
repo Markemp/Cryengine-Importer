@@ -113,10 +113,10 @@ def get_base_dir(filepath):
     dirpath = filepath
     if os.path.isfile(filepath):
         dirpath = os.path.dirname(filepath)
-    if not os.path.basename(dirpath) == 'objects' and not os.path.basename(dirpath) == 'Objects':
-        return get_base_dir(os.path.abspath(os.path.join(dirpath, os.pardir)))
+    if os.path.basename(dirpath).lower() == 'objects' or os.path.basename(dirpath).lower() == 'prefabs':
+        return os.path.abspath(os.path.join(dirpath, os.pardir))
     else:
-        return os.path.abspath(os.path.abspath(os.path.join(dirpath, os.pardir)))
+        return get_base_dir(os.path.abspath(os.path.join(dirpath, os.pardir)))
 
 def get_body_dir(filepath):
     return os.path.join(os.path.dirname(filepath), "body")
@@ -908,6 +908,40 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                         bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
                     obj.select = False
 
+def link_geometry(objectname, libraryfile, itemgroupname):
+    # Link the object from the library file and translate/rotate.
+    # print("Linking " + itemgroupname + " from " + libraryfile)
+    scene = bpy.context.scene
+    if os.path.isfile(libraryfile):
+        with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
+            data_dest.groups = data_src.groups
+        for group in data_dest.groups:
+            if group.name == itemgroupname:
+                ob = bpy.data.objects.new(group.name, None)
+                ob.dupli_group = group
+                ob.dupli_type = 'GROUP'
+                ob.name = objectname
+                scene.objects.link(ob)
+                print("Imported object: " + ob.name)
+                return ob
+    elif os.path.isfile(libraryfile.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
+        libraryfile = libraryfile.replace("industrial", "frontend//mechlab_a")
+        # print ("Alt library file: " + libraryfile)
+        with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
+            data_dest.groups = data_src.groups
+        for group in data_dest.groups:
+            if group.name == itemgroupname:
+                ob = bpy.data.objects.new(group.name, None)
+                ob.dupli_group = group
+                ob.dupli_type = 'GROUP'
+                ob.name = objectname
+                scene.objects.link(ob)
+                print("Imported object: " + ob.name)
+                return ob
+    else:
+        print("Unable to find library file " + libraryfile)
+        return None
+
 def save_file(file):
     # Save the Blender file as the name of the directory it is in.
     # file is the value put into the file selector.  The cdf file for mech importer,
@@ -957,13 +991,45 @@ def set_layers():
             bpy.data.objects[name].layers[1] = True
             bpy.data.objects[name].layers[0] = False
 
+def import_light(object):
+    # For a Prefab light, create a new light object, position/rotate it and return the object.
+    # object is the xml object with all the needed attributes.
+    scene = bpy.context.scene
+    lamp_data = bpy.data.lamps.new(object.attrib["Name"], type='POINT')
+    obj = bpy.data.objects.new(name = object.attrib["Name"], object_data = lamp_data)
+    objname = object.attrib["Name"]
+    scene.objects.link(obj)
+    properties = object.find("Properties")
+    # Set shadows
+    options = properties.find("Options")
+    color = properties.find("Color")
+    if not options == None:
+        if options.attrib["bCastShadow"] == "0":
+            bpy.data.lamps[objname].cycles.cast_shadow = False
+        else:
+            bpy.data.lamps[objname].cycles.cast_shadow = True
+    if not color == None:
+        bpy.data.lamps[objname].color = convert_to_rgb(color.attrib["clrDiffuse"])
+    location = convert_to_location(object.attrib["Pos"])
+    rotation = convert_to_rotation(object.attrib["Rotate"])
+    matrix = get_transform_matrix(rotation, location)
+    # obj = bpy.data.objects["objectname"]
+    obj.rotation_mode = 'QUATERNION'
+    obj.matrix_world = matrix
+
+    return obj
+
 def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     print("Import Asset.  Folder: " + path)
     basedir = get_base_dir(path)
 
     set_viewport_shading()
 
-    os.chdir(path)
+    if os.path.isdir(path):
+        os.chdir(path)
+    elif os.path.isfile(path):
+        os.chdir(os.path.dirname(path))
+        path = os.path.dirname(path)
     for file in os.listdir(path):
         if file.endswith(".mtl"):
             materials.update(create_materials(file, basedir, use_dds, use_tif))
@@ -1037,7 +1103,52 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
     return {'FINISHED'}
 
 def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    print("Not Yet Implemented")
+    # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
+    # features). Group is group of objects. Entity = light.
+    set_viewport_shading()
+
+    basedir = get_base_dir(path)
+    #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
+    print("Basedir: " + basedir)
+    if os.path.isfile(path):
+        prefab = ET.parse(path)
+    else:
+        return {'FINISHED'}  # Couldn't parse the prefab xml.
+    # Parse all the Brush objects
+    for object in prefab.iter("Object"):
+        if object.attrib["Type"] == "Brush":
+            # We have an object to import.  Try to find the object in the asset library.
+            objectname = object.attrib["Name"]
+            libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
+            libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
+            itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
+            #print("Object Name: " + objectname + ", libraryfile: " + libraryfile + ", groupname: " + itemgroupname)
+            obj = link_geometry(objectname, libraryfile, itemgroupname)
+            if not obj == None:
+                location = convert_to_location(object.attrib["Pos"])
+                rotation = convert_to_rotation(object.attrib["Rotate"])
+                matrix = get_transform_matrix(rotation, location)
+                # obj = bpy.data.objects["objectname"]
+                obj.rotation_mode = 'QUATERNION'
+                obj.matrix_world = matrix
+        if object.attrib["Type"] == "GeomEntity":
+            objectname = object.attrib["Name"]
+            libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Geometry"]), os.path.basename(os.path.dirname(object.attrib["Geometry"])) + ".blend")
+            libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
+            itemgroupname = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
+            #print("Object Name: " + objectname + ", libraryfile: " + libraryfile + ", groupname: " + itemgroupname)
+            obj = link_geometry(objectname, libraryfile, itemgroupname)
+            if not obj == None:
+                location = convert_to_location(object.attrib["Pos"])
+                rotation = convert_to_rotation(object.attrib["Rotate"])
+                matrix = get_transform_matrix(rotation, location)
+                # obj = bpy.data.objects["objectname"]
+                obj.rotation_mode = 'QUATERNION'
+                obj.matrix_world = matrix
+        if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":
+            obj = import_light(object)
+
+    return {'FINISHED'}
 
 class CryengineImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
@@ -1183,7 +1294,6 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row.prop(self, "auto_save_file")
 
 class PrefabImporter(bpy.types.Operator, ImportHelper):
-    print("NYI")
     bl_idname = "import_scene.prefab"
     bl_label = "Import Cryengine Prefab"
     bl_options = {'PRESET', 'UNDO'}
@@ -1226,9 +1336,6 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
                                             "path_mode",
                                             "filepath"
                                             ))
-        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
-            import os
-            keywords["relpath"] = os.path.dirname(bpy.data.filepath)
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return import_prefab(context, **keywords)

@@ -37,7 +37,7 @@ import xml.etree as etree
 import xml.etree.ElementTree as ET
 from bpy_extras.io_utils import unpack_list
 from bpy_extras.image_utils import load_image
-from progress_report import ProgressReport, ProgressReportSubstep
+from bpy_extras.wm_utils import progress_report
 from bpy.props import (
         BoolProperty,
         FloatProperty,
@@ -52,15 +52,13 @@ from bpy_extras.io_utils import (
         axis_conversion,
         )
 from math import radians
-from progress_report import ProgressReport, ProgressReportSubstep  # TODO:  See import_obj.py for implementation
-
 
 bl_info = {
     "name": "Cryengine Importer", 
     "category": "Import-Export",
     'author': 'Geoff Gerber',
-    'version': (1, 0, 0),
-    'blender': (2, 7, 9),
+    'version': (1, 1, 0),
+    'blender': (2, 80, 0),
     'description': "Imports Cryengine assets that have been converted to Collada with Cryengine Converter.",
     "location": "File > Import-Export",
     "warning": "Requires all mech .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.",
@@ -1360,21 +1358,29 @@ def menu_func_import(self, context):
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab (NYI)")
 
-def register():
-    bpy.utils.register_class(CryengineImporter)
-    bpy.utils.register_class(MechImporter)
-    bpy.utils.register_class(PrefabImporter)
-    bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-    bpy.types.INFO_MT_file_import.append(menu_func_prefab_import)
+classes = (
+    MechImporter,
+    CryengineImporter,
+    PrefabImporter
+)
 
-def unregister():
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
-    bpy.types.INFO_MT_file_import.remove(menu_func_prefab_import)
-    bpy.utils.unregister_class(MechImporter)
-    bpy.utils.unregister_class(CryengineImporter)
-    bpy.utils.unregister_class(PrefabImporter)
+register, unregister = bpy.utils.register_classes_factory(classes)
+
+# def register():
+#     bpy.utils.register_class(CryengineImporter)
+#     bpy.utils.register_class(MechImporter)
+#     bpy.utils.register_class(PrefabImporter)
+#     bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
+#     bpy.types.INFO_MT_file_import.append(menu_func_import)
+#     bpy.types.INFO_MT_file_import.append(menu_func_prefab_import)
+
+# def unregister():
+#     bpy.types.INFO_MT_file_import.remove(menu_func_import)
+#     bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
+#     bpy.types.INFO_MT_file_import.remove(menu_func_prefab_import)
+#     bpy.utils.unregister_class(MechImporter)
+#     bpy.utils.unregister_class(CryengineImporter)
+#     bpy.utils.unregister_class(PrefabImporter)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.

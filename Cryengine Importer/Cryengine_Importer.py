@@ -47,7 +47,7 @@ from bpy.props import (
 from bpy_extras.io_utils import (
         ImportHelper,
         ExportHelper,
-        orientation_helper_factory,
+        orientation_helper,
         path_reference_mode,
         axis_conversion,
         )
@@ -88,17 +88,6 @@ GEO_LAYERS = [x == 2 for x in range(0, 32)]   # Deform bones go to layer 2
 
 
 def strip_slash(line_split):
-    """Summary line.
-
-    Extended description of function.
-
-    Args:
-        arg1 (int): Description of arg1
-
-    Returns:
-        bool: Description of return value
-
-    """
     if line_split[-1][-1] == 92:  # '\' char
         if len(line_split[-1]) == 1:
             line_split.pop()  # remove the \ item
@@ -282,10 +271,10 @@ def flip_bone(obj, bone_name):
 def create_object_groups():
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
-        if (obj.name != "Camera" and obj.name != "Lamp" and obj.name != "Cube"):
-            print ("   Creating group for " + obj.name)
-            bpy.data.groups.new(obj.name)
-            bpy.data.groups[obj.name].objects.link(obj)
+        if (obj.name != "Camera" and obj.name != "Light" and obj.name != "Cube"):
+            print ("   Creating collection for " + obj.name)
+            bpy.data.collections.new(obj.name)
+            bpy.data.collections[obj.name].objects.link(obj)
 
 def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension):
     print("Glass material")
@@ -993,8 +982,8 @@ def import_light(object):
     # For a Prefab light, create a new light object, position/rotate it and return the object.
     # object is the xml object with all the needed attributes.
     scene = bpy.context.scene
-    lamp_data = bpy.data.lamps.new(object.attrib["Name"], type='POINT')
-    obj = bpy.data.objects.new(name = object.attrib["Name"], object_data = lamp_data)
+    light_data = bpy.data.lights.new(object.attrib["Name"], type='POINT')
+    obj = bpy.data.objects.new(name = object.attrib["Name"], object_data = light_data)
     objname = object.attrib["Name"]
     scene.objects.link(obj)
     properties = object.find("Properties")
@@ -1003,11 +992,11 @@ def import_light(object):
     color = properties.find("Color")
     if not options == None:
         if options.attrib["bCastShadow"] == "0":
-            bpy.data.lamps[objname].cycles.cast_shadow = False
+            bpy.data.lights[objname].cycles.cast_shadow = False
         else:
-            bpy.data.lamps[objname].cycles.cast_shadow = True
+            bpy.data.lights[objname].cycles.cast_shadow = True
     if not color == None:
-        bpy.data.lamps[objname].color = convert_to_rgb(color.attrib["clrDiffuse"])
+        bpy.data.lights[objname].color = convert_to_rgb(color.attrib["clrDiffuse"])
     location = convert_to_location(object.attrib["Pos"])
     rotation = convert_to_rotation(object.attrib["Rotate"])
     matrix = get_transform_matrix(rotation, location)
@@ -1148,46 +1137,47 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
 
     return {'FINISHED'}
 
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class CryengineImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
     
-    texture_type = EnumProperty(
+    texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
                 )
-    path = StringProperty(
+    path: StringProperty(
         name="Import Directory",
         description="Directory to Import",
         default="",
         maxlen=1024,
         subtype='DIR_PATH')
-    auto_save_file = BoolProperty(
+    auto_save_file: BoolProperty(
         name = "Save File",
         description = "Automatically save file",
         default = True)
-    auto_generate_preview = BoolProperty(
+    auto_generate_preview: BoolProperty(
         name = "Generate Preview",
         description = "Auto-generate thumbnails",
         default = False)
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.dae",
         options={'HIDDEN'})
-    use_dds = BoolProperty(
+    use_dds: BoolProperty(
         name = "Use DDS",
         description = "Use DDS format for image textures",
         default = True)
-    use_tif = BoolProperty(
+    use_tif: BoolProperty(
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
     
     # From ImportHelper.  Filter filenames.
-    path_mode = path_reference_mode
+    #path_mode = path_reference_mode
     show_hidden = True
     check_extension = True
     filename_ext = ".dae"
@@ -1230,33 +1220,34 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "auto_generate_preview")
 
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mech"
     bl_label = "Import Mech"
     bl_options = {'PRESET', 'UNDO'}
     filename_ext = ".cdf"
-    path_mode = path_reference_mode
+    #path_mode = path_reference_mode
     check_extension = True
-    auto_save_file = BoolProperty(
+    auto_save_file: BoolProperty(
         name = "Save File",
         description = "Automatically save file",
         default = True)
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.cdf",
         options={'HIDDEN'},
         )
-    texture_type = EnumProperty(
+    texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
     )
-    use_dds = BoolProperty(
+    use_dds: BoolProperty(
         name = "Use DDS",
         description = "Use DDS format for image textures",
         default = True)
-    use_tif = BoolProperty(
+    use_tif: BoolProperty(
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
@@ -1291,33 +1282,34 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "auto_save_file")
 
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.prefab"
     bl_label = "Import Cryengine Prefab"
     bl_options = {'PRESET', 'UNDO'}
     filename_ext = ".xml"
-    path_mode = path_reference_mode
+    #path_mode = path_reference_mode
     check_extension = True
-    auto_save_file = BoolProperty(
+    auto_save_file: BoolProperty(
         name = "Save File",
         description = "Automatically save file",
         default = True)
-    filter_glob = StringProperty(
+    filter_glob: StringProperty(
         default="*.xml",
         options={'HIDDEN'},
         )
-    texture_type = EnumProperty(
+    texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
                  ),
     )
-    use_dds = BoolProperty(
+    use_dds: BoolProperty(
         name = "Use DDS",
         description = "Use DDS format for image textures",
         default = True)
-    use_tif = BoolProperty(
+    use_tif: BoolProperty(
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
@@ -1365,22 +1357,6 @@ classes = (
 )
 
 register, unregister = bpy.utils.register_classes_factory(classes)
-
-# def register():
-#     bpy.utils.register_class(CryengineImporter)
-#     bpy.utils.register_class(MechImporter)
-#     bpy.utils.register_class(PrefabImporter)
-#     bpy.types.INFO_MT_file_import.append(menu_func_mech_import)
-#     bpy.types.INFO_MT_file_import.append(menu_func_import)
-#     bpy.types.INFO_MT_file_import.append(menu_func_prefab_import)
-
-# def unregister():
-#     bpy.types.INFO_MT_file_import.remove(menu_func_import)
-#     bpy.types.INFO_MT_file_import.remove(menu_func_mech_import)
-#     bpy.types.INFO_MT_file_import.remove(menu_func_prefab_import)
-#     bpy.utils.unregister_class(MechImporter)
-#     bpy.utils.unregister_class(CryengineImporter)
-#     bpy.utils.unregister_class(PrefabImporter)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.

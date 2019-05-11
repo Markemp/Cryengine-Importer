@@ -187,10 +187,8 @@ def obj_to_bone(obj, rig, bone_name):
     obj.scale = (bone.length * scl_avg), (bone.length * scl_avg), (bone.length * scl_avg)
 
 def copy_bone(obj, bone_name, assign_name=''):
-    #if bone_name not in obj.data.bones:
     if bone_name not in obj.data.edit_bones:
         raise MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
-
     if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
         if assign_name == '':
             assign_name = bone_name
@@ -199,44 +197,34 @@ def copy_bone(obj, bone_name, assign_name=''):
         edit_bone_2 = obj.data.edit_bones.new(assign_name)
         bone_name_1 = bone_name
         bone_name_2 = edit_bone_2.name
-
         edit_bone_2.parent = edit_bone_1.parent
         edit_bone_2.use_connect = edit_bone_1.use_connect
-
         # Copy edit bone attributes
         edit_bone_2.layers = list(edit_bone_1.layers)
-
         edit_bone_2.head = mathutils.Vector(edit_bone_1.head)
         edit_bone_2.tail = mathutils.Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll
-
         edit_bone_2.use_inherit_rotation = edit_bone_1.use_inherit_rotation
         edit_bone_2.use_inherit_scale = edit_bone_1.use_inherit_scale
         edit_bone_2.use_local_location = edit_bone_1.use_local_location
-
         edit_bone_2.use_deform = edit_bone_1.use_deform
         edit_bone_2.bbone_segments = edit_bone_1.bbone_segments
         edit_bone_2.bbone_in = edit_bone_1.bbone_in
         edit_bone_2.bbone_out = edit_bone_1.bbone_out
-
         bpy.ops.object.mode_set(mode='OBJECT')
-
         # Get the pose bones
         pose_bone_1 = obj.pose.bones[bone_name_1]
         pose_bone_2 = obj.pose.bones[bone_name_2]
-
         # Copy pose bone attributes
         pose_bone_2.rotation_mode = pose_bone_1.rotation_mode
         pose_bone_2.rotation_axis_angle = tuple(pose_bone_1.rotation_axis_angle)
         pose_bone_2.rotation_euler = tuple(pose_bone_1.rotation_euler)
         pose_bone_2.rotation_quaternion = tuple(pose_bone_1.rotation_quaternion)
-
         pose_bone_2.lock_location = tuple(pose_bone_1.lock_location)
         pose_bone_2.lock_scale = tuple(pose_bone_1.lock_scale)
         pose_bone_2.lock_rotation = tuple(pose_bone_1.lock_rotation)
         pose_bone_2.lock_rotation_w = pose_bone_1.lock_rotation_w
         pose_bone_2.lock_rotations_4d = pose_bone_1.lock_rotations_4d
-
         # Copy custom properties
         for key in pose_bone_1.keys():
             if key != "_RNA_UI" \
@@ -247,9 +235,7 @@ def copy_bone(obj, bone_name, assign_name=''):
                 pose_bone_2[key] = pose_bone_1[key]
                 for key in prop1.keys():
                     prop2[key] = prop1[key]
-
         bpy.ops.object.mode_set(mode='EDIT')
-
         return bone_name_2
     else:
         raise MetarigError("Cannot copy bones outside of edit mode")
@@ -257,7 +243,6 @@ def copy_bone(obj, bone_name, assign_name=''):
 def flip_bone(obj, bone_name):
     if bone_name not in obj.data.bones:
         raise MetarigError("flip_bone(): bone '%s' not found, cannot copy it" % bone_name)
-
     if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
         bone = obj.data.edit_bones[bone_name]
         head = mathutils.Vector(bone.head)
@@ -334,7 +319,6 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
             links = tree_nodes.links
             for n in tree_nodes.nodes:
                 tree_nodes.nodes.remove(n)
-
             # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
             shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
             shaderPrincipledBSDF.location =  300,500
@@ -435,11 +419,9 @@ def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):
                  (1.1920928955078125e-07*size, -2.9802322387695312e-08*size, -0.699999988079071*size), (0.0*size, 2.9802322387695312e-08*size, 0.699999988079071*size), ]
         edges = [(1, 2), (0, 3), (0, 4), (3, 5), (4, 6), (1, 6), (5, 7), (2, 7)]
         faces = []
-
         mesh = obj.data
         mesh.from_pydata(verts, edges, faces)
         mesh.update()
-
         mod = obj.modifiers.new("subsurf", 'SUBSURF')
         mod.levels = 2
         return obj
@@ -455,11 +437,9 @@ def create_foot_widget(rig, bone_name, size=1.0, bone_transform_name=None):
                  (-0.7000001072883606*size, 0.975735068321228*size, 0.0*size), (0.6999998688697815*size, 0.9757352471351624*size, 0.0*size), ]
         edges = [(1, 2), (0, 3), (0, 4), (3, 5), (4, 6), (1, 6), (5, 7), (2, 7), ]
         faces = []
-
         mesh = obj.data
         mesh.from_pydata(verts, edges, faces)
         mesh.update()
-
         mod = obj.modifiers.new("subsurf", 'SUBSURF')
         mod.levels = 2
         return obj
@@ -574,10 +554,8 @@ def create_IKs():
     armature = bpy.data.objects['Armature']
     amt = armature.data
     bpy.context.scene.objects.active = armature
-    
     # EDIT MODE CHANGES
     bpy.ops.object.mode_set(mode='EDIT')
-
     # Set up hip and torso bones.  Connect Pelvis to Pitch
     print(" *** Editing Pelvis Bone ***")
     print("     Pelvis name: " + armature.data.edit_bones['Bip01_Pelvis'].name)
@@ -588,14 +566,12 @@ def create_IKs():
     # Parent Pelvis to hip_root
     armature.data.edit_bones['Bip01_Pelvis'].parent = armature.data.edit_bones['Hip_Root']
     armature.data.edit_bones['Bip01_Pitch'].use_inherit_rotation = False
-
     # Make root bone sit on floor, turn off deform.
     rootbone = armature.data.edit_bones['Bip01']
     rootbone.tail.y = rootbone.tail.z
     rootbone.tail.z = 0.0
     rootbone.use_deform = False
     rootbone.use_connect = False
-
     rightThigh = bpy.context.object.data.edit_bones['Bip01_R_Thigh']
     rightCalf = bpy.context.object.data.edit_bones['Bip01_R_Calf']
     leftThigh = bpy.context.object.data.edit_bones['Bip01_L_Thigh']
@@ -608,13 +584,11 @@ def create_IKs():
     leftHand = bpy.context.object.data.edit_bones['Bip01_L_Hand'] 
     rightFoot = bpy.context.object.data.edit_bones['Bip01_R_Foot'] 
     leftFoot = bpy.context.object.data.edit_bones['Bip01_L_Foot'] 
-
     # Determine knee IK offset.  Behind for chickenwalkers, forward for regular.  Edit mode required.
     if armature.data.edit_bones['Bip01_R_Calf'].head.y > armature.data.edit_bones['Bip01_R_Calf'].tail.y:
         offset = 4
     else:
         offset = -4
-
     ### Create IK bones
     # Right foot
     rightFootIK = amt.edit_bones.new('Foot_IK.R')
@@ -622,59 +596,50 @@ def create_IKs():
     rightFootIK.tail = rightCalf.tail + mathutils.Vector((0,1,0))
     rightFootIK.use_deform = False
     rightFootIK.parent = armature.data.edit_bones["Bip01"]
-
     # Left foot
     leftFootIK = amt.edit_bones.new('Foot_IK.L')
     leftFootIK.head = leftCalf.tail
     leftFootIK.tail = leftCalf.tail + mathutils.Vector((0,1,0))
     leftFootIK.use_deform = False
     leftFootIK.parent = armature.data.edit_bones["Bip01"]
-
     # Left knee
     leftKneeIK = amt.edit_bones.new('Knee_IK.L')
     leftKneeIK.head = leftCalf.head + mathutils.Vector((0,offset,0))
     leftKneeIK.tail = leftKneeIK.head + mathutils.Vector((0, offset/4, 0))
     leftKneeIK.use_deform = False
     leftKneeIK.parent = armature.data.edit_bones["Bip01"]
-
     # Right knee
     rightKneeIK = amt.edit_bones.new('Knee_IK.R')
     rightKneeIK.head = rightCalf.head + mathutils.Vector((0,offset,0))
     rightKneeIK.tail = rightKneeIK.head + mathutils.Vector((0, offset/4, 0))
     rightKneeIK.use_deform = False
     rightKneeIK.parent = armature.data.edit_bones["Bip01"]
-
     # Right Hand
     rightHandIK = amt.edit_bones.new('Hand_IK.R')
     rightHandIK.head = rightHand.head
     rightHandIK.tail = rightHandIK.head + mathutils.Vector((0, 1, 0))
     rightHandIK.use_deform = False
     rightHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
-
     # Right Elbow
     rightElbowIK = amt.edit_bones.new('Elbow_IK.R')
     rightElbowIK.head = rightForearm.head + mathutils.Vector((0, -4, 0))
     rightElbowIK.tail = rightElbowIK.head + mathutils.Vector((0, -1, 0))
     rightElbowIK.use_deform = False
     rightElbowIK.parent = armature.data.edit_bones["Bip01_Pitch"]
-
     # Left Hand
     leftHandIK = amt.edit_bones.new('Hand_IK.L')
     leftHandIK.head = leftHand.head
     leftHandIK.tail = leftHandIK.head + mathutils.Vector((0, 1, 0))
     leftHandIK.use_deform = False
     leftHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
-
     # Left Elbow
     leftElbowIK = amt.edit_bones.new('Elbow_IK.L')
     leftElbowIK.head = leftForearm.head + mathutils.Vector((0, -4, 0))
     leftElbowIK.tail = leftElbowIK.head + mathutils.Vector((0, -1, 0))
     leftElbowIK.use_deform = False
     leftElbowIK.parent = armature.data.edit_bones["Bip01_Pitch"]
-
     # Set custom shapes
     bpy.ops.object.mode_set(mode='OBJECT')
-    
     create_root_widget(armature, "Root", "Bip01")
     create_cube_widget(armature, "Hand_IK.R", 1.25, "Hand_IK.R")
     create_cube_widget(armature, "Hand_IK.L", 1.25, "Hand_IK.L")
@@ -687,9 +652,7 @@ def create_IKs():
     create_circle_widget(armature, "Bip01_Pitch", 2.0, 1.0, True, "Bip01_Pitch")
     create_circle_widget(armature, "Bip01_Pelvis", 2.0, 0.0, True, "Bip01_Pelvis")
     create_cube_widget(armature, "Hip_Root", 3.0, "Hip_Root")
-
     bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
-
     armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Root"]
     armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hand_IK.R"]
     armature.pose.bones['Hand_IK.L'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hand_IK.L"]
@@ -702,12 +665,10 @@ def create_IKs():
     armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Bip01_Pitch"]
     armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
     armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hip_Root"]
-
     # POSE MODE CHANGES
     # Set up IK Constraints
     bpy.ops.object.mode_set(mode='POSE')
     bpose = bpy.context.object.pose
-
     # Add copy rotation constraint to pitch
     crc = armature.pose.bones["Bip01_Pitch"].constraints.new('COPY_ROTATION')
     crc.target = armature
@@ -715,7 +676,6 @@ def create_IKs():
     crc.target_space = 'LOCAL'
     crc.owner_space = 'LOCAL'
     crc.use_offset = True
-
     # Add copy rotation constraint to Feet
     crcFootL = armature.pose.bones["Bip01_L_Foot"].constraints.new('COPY_ROTATION')
     crcFootL.target = armature
@@ -729,8 +689,6 @@ def create_IKs():
     crcFootR.target_space = 'LOCAL_WITH_PARENT'
     crcFootR.owner_space = 'LOCAL_WITH_PARENT'
     crcFootR.use_offset = True
-
-
     # Add child of constraint to hand IKs
     coc = armature.pose.bones["Hand_IK.R"].constraints.new('CHILD_OF')
     coc.target = armature
@@ -740,22 +698,18 @@ def create_IKs():
     coc.subtarget = "Bip01_Pitch"
     armature.pose.bones["Hand_IK.R"].constraints["Child Of"].influence = 0.0
     armature.pose.bones["Hand_IK.L"].constraints["Child Of"].influence = 0.0
-
     pbone = bpy.context.active_object.pose.bones["Hand_IK.R"]
     context_copy = bpy.context.copy()
     context_copy["constraint"] = pbone.constraints["Child Of"]
     bpy.context.active_object.data.bones.active = pbone.bone
     bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
-
     pbone = bpy.context.active_object.pose.bones["Hand_IK.L"]
     context_copy = bpy.context.copy()
     context_copy["constraint"] = pbone.constraints["Child Of"]
     bpy.context.active_object.data.bones.active = pbone.bone
     bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
-
     amt.bones['Bip01_L_Foot'].use_inherit_rotation = False
     amt.bones['Bip01_R_Foot'].use_inherit_rotation = False
-
     bpose.bones['Bip01_R_Hand'].constraints.new(type='IK')
     bpose.bones['Bip01_R_Hand'].constraints['IK'].target = armature
     bpose.bones['Bip01_R_Hand'].constraints['IK'].subtarget = 'Hand_IK.R'
@@ -763,8 +717,6 @@ def create_IKs():
         bpose.bones['Bip01_R_Hand'].constraints['IK'].chain_count = 5
     else:
         bpose.bones['Bip01_R_Hand'].constraints['IK'].chain_count = 3
-
-
     bpose.bones['Bip01_L_Hand'].constraints.new(type='IK')
     bpose.bones['Bip01_L_Hand'].constraints['IK'].target = armature
     bpose.bones['Bip01_L_Hand'].constraints['IK'].subtarget = 'Hand_IK.L'
@@ -772,43 +724,35 @@ def create_IKs():
         bpose.bones['Bip01_L_Hand'].constraints['IK'].chain_count = 5
     else:
         bpose.bones['Bip01_L_Hand'].constraints['IK'].chain_count = 3
-
     bpose.bones['Bip01_R_UpperArm'].constraints.new(type='IK')
     bpose.bones['Bip01_R_UpperArm'].constraints['IK'].target = armature
     bpose.bones['Bip01_R_UpperArm'].constraints['IK'].subtarget = 'Elbow_IK.R'
     bpose.bones['Bip01_R_UpperArm'].constraints['IK'].chain_count = 1
-
     bpose.bones['Bip01_L_UpperArm'].constraints.new(type='IK')
     bpose.bones['Bip01_L_UpperArm'].constraints['IK'].target = armature
     bpose.bones['Bip01_L_UpperArm'].constraints['IK'].subtarget = 'Elbow_IK.L'
     bpose.bones['Bip01_L_UpperArm'].constraints['IK'].chain_count = 1
-
     bpose.bones['Bip01_R_Calf'].constraints.new(type='IK')
     bpose.bones['Bip01_R_Calf'].constraints['IK'].target = armature
     bpose.bones['Bip01_R_Calf'].constraints['IK'].subtarget = 'Foot_IK.R'
     bpose.bones['Bip01_R_Calf'].constraints['IK'].chain_count = 2
-
     bpose.bones['Bip01_L_Calf'].constraints.new(type='IK')
     bpose.bones['Bip01_L_Calf'].constraints['IK'].target = armature
     bpose.bones['Bip01_L_Calf'].constraints['IK'].subtarget = 'Foot_IK.L'
     bpose.bones['Bip01_L_Calf'].constraints['IK'].chain_count = 2
-        
     bpose.bones['Bip01_R_Thigh'].constraints.new(type='IK')
     bpose.bones['Bip01_R_Thigh'].constraints['IK'].target = armature
     bpose.bones['Bip01_R_Thigh'].constraints['IK'].subtarget = 'Knee_IK.R'
     bpose.bones['Bip01_R_Thigh'].constraints['IK'].chain_count = 1
-
     bpose.bones['Bip01_L_Thigh'].constraints.new(type='IK')
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].target = armature
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].subtarget = 'Knee_IK.L'
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].chain_count = 1
-
     # Turn off inherit rotation for hands
     leftHand.use_inherit_rotation = False
     rightHand.use_inherit_rotation = False
     leftElbowIK.use_inherit_rotation = False
     rightElbowIK.use_inherit_rotation = False
-
     # Move bones to proper layers
     set_bone_layers(armature)
 
@@ -1003,15 +947,12 @@ def import_light(object):
     # obj = bpy.data.objects["objectname"]
     obj.rotation_mode = 'QUATERNION'
     obj.matrix_world = matrix
-
     return obj
 
 def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     print("Import Asset.  Folder: " + path)
     basedir = get_base_dir(path)
-
     set_viewport_shading()
-
     if os.path.isdir(path):
         os.chdir(path)
     elif os.path.isfile(path):
@@ -1020,10 +961,8 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     for file in os.listdir(path):
         if file.endswith(".mtl"):
             materials.update(create_materials(file, basedir, use_dds, use_tif))
-
     for material in materials.keys():
         print("   Material: " + material)
-
     for file in os.listdir(path):
         if file.endswith(".dae"):
             objects = import_geometry(file, basedir)
@@ -1062,26 +1001,21 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
     matfile = os.path.join(bodydir, mech + "_body.mtl")
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
-
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
-    
     # Try to import the armature.  If we can't find it, then return error.
     result = import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
     if result == False:    
         print("Error importing armature at: " + 
               os.path.join(bodydir, mech + ".dae"))
         return False
-
     # Create the materials.
     materials = create_materials(matfile, basedir, use_dds, use_tif)
     cockpit_materials = create_materials(cockpit_matfile, basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
     geometry = import_mech_geometry(cdffile, basedir, bodydir, mech)
-
     # Set the layers for existing objects
     set_layers()
-
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     bpy.ops.object.mode_set(mode='EDIT')
     create_IKs()
@@ -1093,7 +1027,6 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
     # features). Group is group of objects. Entity = light.
     set_viewport_shading()
-
     basedir = get_base_dir(path)
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)
@@ -1134,7 +1067,6 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
                 obj.matrix_world = matrix
         if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":
             obj = import_light(object)
-
     return {'FINISHED'}
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
@@ -1142,7 +1074,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
-    
     texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
@@ -1175,7 +1106,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
-    
     # From ImportHelper.  Filter filenames.
     #path_mode = path_reference_mode
     show_hidden = True
@@ -1184,7 +1114,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
     use_filter_folder = True
     display_type = 'THUMBNAIL'
     title = "Directory to Import"
-
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = True
@@ -1198,16 +1127,9 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
                                             "filepath"
                                             ))
         userpath = self.properties.filepath
-        #if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
-        #    import os
-        #    keywords["relpath"] = os.path.dirname(bpy.data.filepath)
-        #    if not os.path.isdir(userpath):
-        #        msg = "Select a directory.\n" + userpath
-        #        self.report({'WARNING'}, msg)
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return import_asset(context, **keywords)
-
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)
@@ -1251,7 +1173,6 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
-
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = True
@@ -1270,10 +1191,8 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return import_mech(context, **keywords)
-
     def draw(self, context):
         layout = self.layout
-
         row = layout.row(align = True)
         box = layout.box()
         box.label("Select texture type")
@@ -1313,7 +1232,6 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
-
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = True
@@ -1329,10 +1247,8 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return import_prefab(context, **keywords)
-
     def draw(self, context):
         layout = self.layout
-
         row = layout.row(align = True)
         box = layout.box()
         box.label("Select texture type")

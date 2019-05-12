@@ -19,7 +19,7 @@
 # <pep8 compliant>
 #
 
-# Cryengine Importer 1.0 (Blender Python module)
+# Cryengine Importer 1.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
 import bpy
@@ -54,34 +54,35 @@ from bpy_extras.io_utils import (
 from math import radians
 
 bl_info = {
-    "name": "Cryengine Importer", 
-    "category": "Import-Export",
+    'name': 'Cryengine Importer', 
+    'description': 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     'author': 'Geoff Gerber',
+    'category': 'Import-Export',
     'version': (1, 1, 0),
     'blender': (2, 80, 0),
-    'description': "Imports Cryengine assets that have been converted to Collada with Cryengine Converter.",
-    "location": "File > Import-Export",
-    "warning": "Requires all mech .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.",
-    "wiki_url": "https://github.com/markemp/Cryengine-Importer"
+    'location': 'File > Import-Export',
+    'warning': 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
+    'wiki_url': 'https://github.com/markemp/Cryengine-Importer',
+    'support': 'COMMUNITY'
     }
 
 # store keymaps here to access after registration
 addon_keymaps = []
 
 # There are misspelled words (missle).  Just a FYI.
-weapons = ["hero", "missile", "missle", "narc", "uac", "uac2", "uac5", "uac10", "uac20", "rac", "_lty",
-           "ac2", "ac5", "ac10", "ac20", "gauss", "ppc", "flamer", "_mg", "_lbx", "damaged", "_mount", "_rl20",
-           "_rl10", "_rl15", "laser", "ams", "_phoenix", "blank", "invasion", "hmg", "lmg", "lams", "hand", "barrel"]
+weapons = ['hero', 'missile', 'missle', 'narc', 'uac', 'uac2', 'uac5', 'uac10', 'uac20', 'rac', '_lty',
+           'ac2', 'ac5', 'ac10', 'ac20', 'gauss', 'ppc', 'flamer', '_mg', '_lbx', 'damaged', '_mount', '_rl20',
+           '_rl10', '_rl15', 'laser', 'ams', '_phoenix', 'blank', 'invasion', 'hmg', 'lmg', 'lams', 'hand', 'barrel']
 		   
-control_bones = ["Hand_IK.L", "Hand_IK.R", "Bip01", "Hip_Root", "Bip01_Pitch", "Bip01_Pelvis",
-                 "Knee_IK.R", "Knee_IK.L", "Foot_IK.R", "Foot_IK.L", "Elbow_IK.R", "Elbow_IK.L"]
+control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', 'Bip01_Pelvis',
+                 'Knee_IK.R', 'Knee_IK.L', 'Foot_IK.R', 'Foot_IK.L', 'Elbow_IK.R', 'Elbow_IK.L']
 				 
 materials = {} # All the materials found for the mech
 
 cockpit_materials = {}
 
-WGT_PREFIX = "WGT-"  # Prefix for widget objects
-ROOT_NAME = "Bip01"  # Name of the root bone.
+WGT_PREFIX = 'WGT-'  # Prefix for widget objects
+ROOT_NAME = 'Bip01'  # Name of the root bone.
 WGT_LAYERS = [x == 19 for x in range(0, 20)]  # Widgets go on the last scene layer.
 CTRL_LAYERS = [x == 1 for x in range(0, 32)]  # Control bones
 GEO_LAYERS = [x == 2 for x in range(0, 32)]   # Deform bones go to layer 2
@@ -106,7 +107,7 @@ def get_base_dir(filepath):
         return get_base_dir(os.path.abspath(os.path.join(dirpath, os.pardir)))
 
 def get_body_dir(filepath):
-    return os.path.join(os.path.dirname(filepath), "body")
+    return os.path.join(os.path.dirname(filepath), 'body')
 
 def get_mech(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
@@ -176,7 +177,7 @@ def set_bone_layers(rig):
 
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
-        raise MetarigError("obj_to_bone(): does not work while in edit mode")
+        raise MetarigError('obj_to_bone(): does not work while in edit mode')
     bone = rig.data.bones[bone_name]
     mat = rig.matrix_world * bone.matrix_local
     obj.location = mat.to_translation()
@@ -188,7 +189,7 @@ def obj_to_bone(obj, rig, bone_name):
 
 def copy_bone(obj, bone_name, assign_name=''):
     if bone_name not in obj.data.edit_bones:
-        raise MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
+        raise MetarigError('copy_bone(): bone "%s" not found, cannot copy it' % bone_name)
     if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
         if assign_name == '':
             assign_name = bone_name
@@ -227,9 +228,9 @@ def copy_bone(obj, bone_name, assign_name=''):
         pose_bone_2.lock_rotations_4d = pose_bone_1.lock_rotations_4d
         # Copy custom properties
         for key in pose_bone_1.keys():
-            if key != "_RNA_UI" \
-            and key != "rigify_parameters" \
-            and key != "rigify_type":
+            if key != '_RNA_UI' \
+            and key != 'rigify_parameters' \
+            and key != 'rigify_type':
                 prop1 = rna_idprop_ui_prop_get(pose_bone_1, key, create=False)
                 prop2 = rna_idprop_ui_prop_get(pose_bone_2, key, create=True)
                 pose_bone_2[key] = pose_bone_1[key]
@@ -238,11 +239,11 @@ def copy_bone(obj, bone_name, assign_name=''):
         bpy.ops.object.mode_set(mode='EDIT')
         return bone_name_2
     else:
-        raise MetarigError("Cannot copy bones outside of edit mode")
+        raise MetarigError('Cannot copy bones outside of edit mode')
 
 def flip_bone(obj, bone_name):
     if bone_name not in obj.data.bones:
-        raise MetarigError("flip_bone(): bone '%s' not found, cannot copy it" % bone_name)
+        raise MetarigError('flip_bone(): bone "%s" not found, cannot copy it' % bone_name)
     if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
         bone = obj.data.edit_bones[bone_name]
         head = mathutils.Vector(bone.head)
@@ -251,34 +252,34 @@ def flip_bone(obj, bone_name):
         bone.head = tail
         bone.tail = head
     else:
-        raise MetarigError("Cannot flip bones outside of edit mode")
+        raise MetarigError('Cannot flip bones outside of edit mode')
 
 def create_object_groups():
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
-        if (obj.name != "Camera" and obj.name != "Light" and obj.name != "Cube"):
-            print ("   Creating collection for " + obj.name)
+        if (obj.name != 'Camera' and obj.name != 'Light' and obj.name != 'Cube'):
+            print ('   Creating collection for ' + obj.name)
             bpy.data.collections.new(obj.name)
             bpy.data.collections[obj.name].objects.link(obj)
 
 def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension):
-    print("Glass material")
+    print('Glass material')
     links = tree_nodes.links
     shaderPrincipledBSDF.inputs[14].default_value = 1.001
     shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
     shout.location = 500,500
     links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
-    for texture in mat.iter("Texture"):
-        if texture.attrib["Map"] == "Diffuse":
-            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+    for texture in mat.iter('Texture'):
+        if texture.attrib['Map'] == 'Diffuse':
+            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
             if os.path.isfile(texturefile):
                 matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
                 shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
                 shaderDiffImg.image=matDiffuse
                 shaderDiffImg.location = 0,600
                 links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
-        if texture.attrib["Map"] == "Specular":
-            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+        if texture.attrib['Map'] == 'Specular':
+            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
             if os.path.isfile(texturefile):
                 matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
                 shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
@@ -286,9 +287,9 @@ def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, materi
                 shaderSpecImg.image=matSpec
                 shaderSpecImg.location = 0,325
                 links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
-        if texture.attrib["Map"] == "Bumpmap":
+        if texture.attrib['Map'] == 'Bumpmap':
             if os.path.isfile(texturefile):
-                texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
+                texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
                 matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
                 shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
                 shaderNormalImg.color_space = 'NONE'
@@ -1134,7 +1135,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         layout = self.layout
         row = layout.row(align = True)
         box = layout.box()
-        box.label("Select texture type")
+        box.label(text="Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
         row = layout.row(align=True)
@@ -1156,15 +1157,14 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         default = True)
     filter_glob: StringProperty(
         default="*.cdf",
-        options={'HIDDEN'},
-        )
+        options={'HIDDEN'}
+        ,)
     texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
         items = (('ON', "DDS", "Reference DDS files for textures."),
                  ('OFF', "TIF", "Reference TIF files for textures."),
-                 ),
-    )
+                 ),)
     use_dds: BoolProperty(
         name = "Use DDS",
         description = "Use DDS format for image textures",
@@ -1185,7 +1185,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
                                             "path_mode",
                                             "filepath"
                                             ))
-        if bpy.data.is_saved and context.user_preferences.filepaths.use_relative_paths:
+        if bpy.data.is_saved and context.preferences.filepaths.use_relative_paths:
             import os
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
         fdir = self.properties.filepath
@@ -1195,7 +1195,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         layout = self.layout
         row = layout.row(align = True)
         box = layout.box()
-        box.label("Select texture type")
+        box.label(text="Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
         row = layout.row(align=True)
@@ -1251,11 +1251,14 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
         layout = self.layout
         row = layout.row(align = True)
         box = layout.box()
-        box.label("Select texture type")
+        box.label(text="Select texture type")
         row = box.row()
         row.prop(self, "texture_type", expand = True)
         row = layout.row(align=True)
         row.prop(self, "auto_save_file")
+
+# -----------------------------------------------------------------------------
+#                                                                          Menu
 
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
@@ -1266,13 +1269,32 @@ def menu_func_import(self, context):
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab (NYI)")
 
-classes = (
-    MechImporter,
-    CryengineImporter,
-    PrefabImporter
-)
+# -----------------------------------------------------------------------------
+#                                                                      Register
 
-register, unregister = bpy.utils.register_classes_factory(classes)
+# classes = (
+#     MechImporter,
+#     CryengineImporter,
+#     PrefabImporter
+# )
+
+def register():
+    bpy.utils.register_class(CryengineImporter)
+    bpy.utils.register_class(MechImporter)	   
+    bpy.utils.register_class(PrefabImporter)	
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_mech_import)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)	   
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_prefab_import)
+
+def unregister():
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_mech_import)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_prefab_import)
+    bpy.utils.unregister_class(MechImporter)
+    bpy.utils.unregister_class(CryengineImporter)
+    bpy.utils.unregister_class(PrefabImporter)
+
+# register, unregister = bpy.utils.register_classes_factory(classes)
 
 # This allows you to run the script directly from blenders text editor
 # to test the addon without having to install it.

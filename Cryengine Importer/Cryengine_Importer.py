@@ -158,13 +158,14 @@ def import_armature(rig):
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True,auto_connect=True)
         armature = bpy.data.objects['Armature']
-        bpy.context.scene.objects.active = armature
+        #bpy.context.scene.objects.active = armature
+        bpy.context.view_layer.objects.active = armature
         bpy.ops.object.mode_set(mode='EDIT')
         amt=armature.data
-        armature.show_x_ray = True
+        armature.show_in_front = True
         armature.data.show_axes = True
-        armature.data.draw_type = 'BBONE'
-        armature.draw_type = 'WIRE'
+        bpy.context.object.data.display_type = 'BBONE'
+        bpy.context.object.display_type = 'WIRE'
     except:
         #File not found
         return False
@@ -902,8 +903,7 @@ def set_viewport_shading():
         if area.type == 'VIEW_3D':
             for space in area.spaces: 
                 if space.type == 'VIEW_3D': 
-                    space.viewport_shade = 'MATERIAL'
-    bpy.context.scene.render.engine = 'CYCLES'      # Set to cycles mode
+                    space.shading.type = 'MATERIAL'
 
 def set_layers():
     # Set the layers that objects are on.
@@ -1070,7 +1070,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
             obj = import_light(object)
     return {'FINISHED'}
 
-@orientation_helper(axis_forward='Y', axis_up='Z')
+#@orientation_helper(axis_forward='Y', axis_up='Z')
 class CryengineImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
@@ -1143,7 +1143,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "auto_generate_preview")
 
-@orientation_helper(axis_forward='Y', axis_up='Z')
+#@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mech"
     bl_label = "Import Mech"
@@ -1190,7 +1190,8 @@ class MechImporter(bpy.types.Operator, ImportHelper):
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
         fdir = self.properties.filepath
         keywords["path"] = fdir
-        return import_mech(context, **keywords)
+        import_mech(context, **keywords)
+        return { 'FINISHED'}
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)
@@ -1201,7 +1202,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "auto_save_file")
 
-@orientation_helper(axis_forward='Y', axis_up='Z')
+#@orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.prefab"
     bl_label = "Import Cryengine Prefab"

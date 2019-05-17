@@ -83,10 +83,9 @@ cockpit_materials = {}
 
 WGT_PREFIX = 'WGT-'  # Prefix for widget objects
 ROOT_NAME = 'Bip01'  # Name of the root bone.
-WGT_LAYERS = [x == 19 for x in range(0, 20)]  # Widgets go on the last scene layer.
-CTRL_LAYERS = [x == 1 for x in range(0, 32)]  # Control bones
-GEO_LAYERS = [x == 2 for x in range(0, 32)]   # Deform bones go to layer 2
-
+WGT_LAYER = 'Widget Layer'
+CTRL_LAYER = "Control Bones Layer"
+GEO_LAYER = "Deform Bones Layer"
 
 def strip_slash(line_split):
     if line_split[-1][-1] == 92:  # '\' char
@@ -96,6 +95,11 @@ def strip_slash(line_split):
             line_split[-1] = line_split[-1][:-1]  # remove the \ from the end last number
         return True
     return False
+
+def set_up_collections():
+    create_collection(WGT_LAYER)
+    create_collection(CTRL_LAYER)
+    create_collection(GEO_LAYER)
 
 def get_base_dir(filepath):
     dirpath = filepath
@@ -114,7 +118,7 @@ def get_mech(filepath):
 
 def get_scaling_factor(o):
     local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
-    global_bbox_center = o.matrix_world * local_bbox_center
+    global_bbox_center = o.matrix_world @ local_bbox_center
     return global_bbox_center[2]/7.4
 
 def convert_to_rotation(rotation):
@@ -151,8 +155,21 @@ def get_transform_matrix(rotation, location):
     mat_location = mathutils.Matrix.Translation(location)
     mat_rotation = mathutils.Matrix.Rotation(rotation.angle, 4, rotation.axis)
     mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
-    mat_out = mat_location * mat_rotation * mat_scale
+    mat_out = mat_location @ mat_rotation @ mat_scale
     return mat_out
+
+def create_collection(collection_name):
+    if collection_name not in bpy.data.collections.keys():
+        collection = bpy.data.collections.new(collection_name)
+        bpy.context.scene.collection.children.link(collection)
+
+def link_object_to_collection(object, collection_name):
+    collection = bpy.data.collections[collection_name]
+    collection.objects.link(object)
+
+def get_collection_object(collection_name):
+    if collection_name in bpy.data.collections.keys():
+        return bpy.data.collections[collection_name]
 
 def import_armature(rig):
     try:
@@ -174,13 +191,14 @@ def import_armature(rig):
 def set_bone_layers(rig):
     for bone in rig.data.bones:
         if bone.name not in control_bones:
-            bone.layers = GEO_LAYERS
+            link_object_to_collection(bone, GEO_LAYER)
 
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
         raise MetarigError('obj_to_bone(): does not work while in edit mode')
     bone = rig.data.bones[bone_name]
-    mat = rig.matrix_world * bone.matrix_local
+    #mat = rig.matrix_world * bone.matrix_local
+    mat = rig.matrix_world @ bone.matrix_local
     obj.location = mat.to_translation()
     obj.rotation_mode = 'XYZ'
     obj.rotation_euler = mat.to_euler()
@@ -206,13 +224,17 @@ def copy_bone(obj, bone_name, assign_name=''):
         edit_bone_2.head = mathutils.Vector(edit_bone_1.head)
         edit_bone_2.tail = mathutils.Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll
+        edit_bone_2.head_radius = edit_bone_1.head_radius
+        edit_bone_2.envelope_distance = edit_bone_1.envelope_distance
         edit_bone_2.use_inherit_rotation = edit_bone_1.use_inherit_rotation
         edit_bone_2.use_inherit_scale = edit_bone_1.use_inherit_scale
         edit_bone_2.use_local_location = edit_bone_1.use_local_location
         edit_bone_2.use_deform = edit_bone_1.use_deform
         edit_bone_2.bbone_segments = edit_bone_1.bbone_segments
-        edit_bone_2.bbone_in = edit_bone_1.bbone_in
-        edit_bone_2.bbone_out = edit_bone_1.bbone_out
+        edit_bone_2.bbone_rollin = edit_bone_1.bbone_rollin
+        edit_bone_2.bbone_rollout = edit_bone_1.bbone_rollout
+        edit_bone_2.bbone_easein = edit_bone_1.bbone_easein
+        edit_bone_2.bbone_easeout = edit_bone_1.bbone_easeout
         bpy.ops.object.mode_set(mode='OBJECT')
         # Get the pose bones
         pose_bone_1 = obj.pose.bones[bone_name_1]
@@ -237,6 +259,7 @@ def copy_bone(obj, bone_name, assign_name=''):
                 pose_bone_2[key] = pose_bone_1[key]
                 for key in prop1.keys():
                     prop2[key] = prop1[key]
+
         bpy.ops.object.mode_set(mode='EDIT')
         return bone_name_2
     else:
@@ -403,13 +426,14 @@ def create_widget(rig, bone_name, bone_transform_name=None):
         # Create mesh object
         mesh = bpy.data.meshes.new(obj_name)
         obj = bpy.data.objects.new(obj_name, mesh)
-        scene.objects.link(obj)
+        #scene.objects.link(obj)
+        scene.collection.objects.link(obj)
         # Move object to bone position and set layers
         obj_to_bone(obj, rig, bone_transform_name)
         wgts_group_name = 'WGTS_' + rig.name
         if wgts_group_name in bpy.data.objects.keys():
             obj.parent = bpy.data.objects[wgts_group_name]
-        obj.layers = WGT_LAYERS
+        link_object_to_collection(obj, WGT_LAYER)
         return obj
 
 def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):
@@ -555,7 +579,7 @@ def create_sphere_widget(rig, bone_name, bone_transform_name=None):
 def create_IKs():
     armature = bpy.data.objects['Armature']
     amt = armature.data
-    bpy.context.scene.objects.active = armature
+    bpy.context.view_layer.objects.active = armature
     # EDIT MODE CHANGES
     bpy.ops.object.mode_set(mode='EDIT')
     # Set up hip and torso bones.  Connect Pelvis to Pitch
@@ -806,7 +830,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                     bone_rotation = obj.rotation_quaternion
                     #print("    Original loc and rot: " + str(bone_location) + " and " + str(bone_rotation))
                     #print("    Materials for " + obj.name)
-                    bpy.context.scene.objects.active = obj
+                    bpy.context.view_layer.objects.active = obj
                     print("    Name: " + obj.name)
                     # If this is a parent node, rotate/translate it. Otherwise skip it.
                     if i == 0:
@@ -854,7 +878,8 @@ def link_geometry(objectname, libraryfile, itemgroupname):
                 ob.dupli_group = group
                 ob.dupli_type = 'GROUP'
                 ob.name = objectname
-                scene.objects.link(ob)
+                #scene.objects.link(ob)
+                scene.collection.objects.link(ob)
                 print("Imported object: " + ob.name)
                 return ob
     elif os.path.isfile(libraryfile.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
@@ -868,7 +893,8 @@ def link_geometry(objectname, libraryfile, itemgroupname):
                 ob.dupli_group = group
                 ob.dupli_type = 'GROUP'
                 ob.name = objectname
-                scene.objects.link(ob)
+                #scene.objects.link(ob)
+                scene.collection.objects.link(ob)
                 print("Imported object: " + ob.name)
                 return ob
     else:
@@ -930,7 +956,8 @@ def import_light(object):
     light_data = bpy.data.lights.new(object.attrib["Name"], type='POINT')
     obj = bpy.data.objects.new(name = object.attrib["Name"], object_data = light_data)
     objname = object.attrib["Name"]
-    scene.objects.link(obj)
+    #scene.objects.link(obj)
+    scene.collection.objects.link(obj)
     properties = object.find("Properties")
     # Set shadows
     options = properties.find("Options")
@@ -954,6 +981,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     print("Import Asset.  Folder: " + path)
     basedir = get_base_dir(path)
     set_viewport_shading()
+    set_up_collections()
     if os.path.isdir(path):
         os.chdir(path)
     elif os.path.isfile(path):
@@ -1004,6 +1032,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
                                    "_a_cockpit_standard.mtl")
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
+    set_up_collections()
     # Try to import the armature.  If we can't find it, then return error.
     result = import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
     if result == False:    
@@ -1028,6 +1057,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
     # features). Group is group of objects. Entity = light.
     set_viewport_shading()
+    set_up_collections()
     basedir = get_base_dir(path)
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)

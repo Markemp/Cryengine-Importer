@@ -78,7 +78,6 @@ control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', '
                  'Knee_IK.R', 'Knee_IK.L', 'Foot_IK.R', 'Foot_IK.L', 'Elbow_IK.R', 'Elbow_IK.L']
 				 
 materials = {} # All the materials found for the mech
-
 cockpit_materials = {}
 
 WGT_PREFIX = 'WGT-'  # Prefix for widget objects
@@ -98,8 +97,13 @@ def strip_slash(line_split):
 
 def set_up_collections():
     create_collection(WGT_LAYER)
+    hide_collection(WGT_LAYER)
     create_collection(CTRL_LAYER)
     create_collection(GEO_LAYER)
+
+def hide_collection(collection_name):
+    collection = get_collection_object(collection_name)
+    collection.hide_viewport = True
 
 def get_base_dir(filepath):
     dirpath = filepath
@@ -188,10 +192,15 @@ def import_armature(rig):
         return False
     return True
 
-def set_bone_layers(rig):
-    for bone in rig.data.bones:
+
+def set_bone_layers(armature):
+    original_context = bpy.context.mode
+    bpy.ops.object.mode_set(mode='POSE')
+    for bone in armature.data.bones:
         if bone.name not in control_bones:
-            link_object_to_collection(bone, GEO_LAYER)
+            bone.layers[1] = True
+            bone.layers[0] = False
+    bpy.ops.object.mode_set(mode=original_context)
 
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
@@ -404,33 +413,31 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                             links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
     return materials
 
-def create_widget(rig, bone_name, bone_transform_name=None):
+def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:
         bone_transform_name = bone_name
-    obj_name = WGT_PREFIX + rig.name + '_' + bone_name
+    obj_name = WGT_PREFIX + armature.name + '_' + bone_name
     scene = bpy.context.scene
     id_store = bpy.context.window_manager
     # Check if it already exists in the scene
     if obj_name in scene.objects:
         # Move object to bone position, in case it changed
         obj = scene.objects[obj_name]
-        obj_to_bone(obj, rig, bone_transform_name)
+        obj_to_bone(obj, armature, bone_transform_name)
         return None
     else:
         # Delete object if it exists in blend data but not scene data.
-        # This is necessary so we can then create the object without
-        # name conflicts.
+        # This is necessary so we can then create the object without name conflicts.
         if obj_name in bpy.data.objects:
             bpy.data.objects[obj_name].user_clear()
             bpy.data.objects.remove(bpy.data.objects[obj_name])
         # Create mesh object
         mesh = bpy.data.meshes.new(obj_name)
         obj = bpy.data.objects.new(obj_name, mesh)
-        #scene.objects.link(obj)
-        scene.collection.objects.link(obj)
+        #link_object_to_collection(obj, WGT_LAYER)
         # Move object to bone position and set layers
-        obj_to_bone(obj, rig, bone_transform_name)
-        wgts_group_name = 'WGTS_' + rig.name
+        obj_to_bone(obj, armature, bone_transform_name)
+        wgts_group_name = 'WGTS_' + armature.name
         if wgts_group_name in bpy.data.objects.keys():
             obj.parent = bpy.data.objects[wgts_group_name]
         link_object_to_collection(obj, WGT_LAYER)

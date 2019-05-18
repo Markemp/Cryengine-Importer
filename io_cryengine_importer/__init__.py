@@ -22,20 +22,21 @@
 # Cryengine Importer 1.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
-import bpy
 import collections
-import bpy.types
-import bpy.utils
 import array
-import bmesh
 import glob
 import math
-import mathutils
+from math import radians
 import os, os.path
 import time
 import types
 import xml.etree as etree
 import xml.etree.ElementTree as ET
+import bpy
+import bpy.types
+import bpy.utils
+import bmesh
+import mathutils
 from bpy_extras.image_utils import load_image
 from bpy_extras.wm_utils import progress_report
 from bpy.props import (
@@ -52,11 +53,12 @@ from bpy_extras.io_utils import (
         axis_conversion,
         unpack_list,
         )
-from math import radians
-from . import (
-    collections,
-    Cryengine_Importer,
-    )
+
+from . import constants, cc_collections, Cryengine_Importer
+# from constants import *
+# from cc_collections import *
+# from Cryengine_Importer import *
+
 
 bl_info = {
     'name': 'Cryengine Importer', 
@@ -131,7 +133,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         userpath = self.properties.filepath
         fdir = self.properties.filepath
         keywords["path"] = fdir
-        return import_asset(context, **keywords)
+        return Cryengine_Importer.import_asset(context, **keywords)
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)

@@ -1,4 +1,6 @@
 import bpy
+# from constants import *
+from . import constants
 
 def create_collection(collection_name):
     if collection_name not in bpy.data.collections.keys():
@@ -14,10 +16,10 @@ def get_collection_object(collection_name):
         return bpy.data.collections[collection_name]
 
 def set_up_collections():
-    create_collection(WGT_LAYER)
-    hide_collection(WGT_LAYER)
-    create_collection(CTRL_LAYER)
-    create_collection(GEO_LAYER)
+    create_collection(constants.WGT_LAYER)
+    hide_collection(constants.WGT_LAYER)
+    create_collection(constants.CTRL_LAYER)
+    create_collection(constants.GEO_LAYER)
 
 def hide_collection(collection_name):
     collection = get_collection_object(collection_name)

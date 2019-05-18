@@ -22,20 +22,19 @@
 # Cryengine Importer 1.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
-import bpy
-#import collections
-import bpy.types
-import bpy.utils
 import array
-import bmesh
 import glob
 import math
-import mathutils
 import os, os.path
 import time
 import types
 import xml.etree as etree
 import xml.etree.ElementTree as ET
+import bpy
+import bmesh
+import bpy.types
+import bpy.utils
+import mathutils
 from bpy_extras.io_utils import unpack_list
 from bpy_extras.image_utils import load_image
 from bpy_extras.wm_utils import progress_report
@@ -53,40 +52,32 @@ from bpy_extras.io_utils import (
         axis_conversion,
         )
 from math import radians
-from . import collections
 
-#bl_info = {
-#    'name': 'Cryengine Importer', 
-#    'description': 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
-#    'author': 'Geoff Gerber',
-#    'category': 'Import-Export',
-#    'version': (1, 1, 0),
-#    'blender': (2, 80, 0),
-#    'location': 'File > Import-Export',
-#    'warning': 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
-#    'wiki_url': 'https://github.com/markemp/Cryengine-Importer',
-#    'support': 'COMMUNITY'
-#    }
+from . import constants, cc_collections, bones, widgets
+# from widgets import *
+# from constants import *
+# from cc_collections import *
+# from bones import *
 
-# store keymaps here to access after registration
-addon_keymaps = []
+# # store keymaps here to access after registration
+# addon_keymaps = []
 
-# There are misspelled words (missle).  Just a FYI.
-weapons = ['hero', 'missile', 'missle', 'narc', 'uac', 'uac2', 'uac5', 'uac10', 'uac20', 'rac', '_lty',
-           'ac2', 'ac5', 'ac10', 'ac20', 'gauss', 'ppc', 'flamer', '_mg', '_lbx', 'damaged', '_mount', '_rl20',
-           '_rl10', '_rl15', 'laser', 'ams', '_phoenix', 'blank', 'invasion', 'hmg', 'lmg', 'lams', 'hand', 'barrel']
+# # There are misspelled words (missle).  Just a FYI.
+# weapons = ['hero', 'missile', 'missle', 'narc', 'uac', 'uac2', 'uac5', 'uac10', 'uac20', 'rac', '_lty',
+#            'ac2', 'ac5', 'ac10', 'ac20', 'gauss', 'ppc', 'flamer', '_mg', '_lbx', 'damaged', '_mount', '_rl20',
+#            '_rl10', '_rl15', 'laser', 'ams', '_phoenix', 'blank', 'invasion', 'hmg', 'lmg', 'lams', 'hand', 'barrel']
 		   
-control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', 'Bip01_Pelvis',
-                 'Knee_IK.R', 'Knee_IK.L', 'Foot_IK.R', 'Foot_IK.L', 'Elbow_IK.R', 'Elbow_IK.L']
+# control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', 'Bip01_Pelvis',
+#                  'Knee_IK.R', 'Knee_IK.L', 'Foot_IK.R', 'Foot_IK.L', 'Elbow_IK.R', 'Elbow_IK.L']
 				 
-materials = {} # All the materials found for the mech
-cockpit_materials = {}
+# materials = {} # All the materials found for the mech
+# cockpit_materials = {}
 
-WGT_PREFIX = 'WGT-'  # Prefix for widget objects
-ROOT_NAME = 'Bip01'  # Name of the root bone.
-WGT_LAYER = 'Widget Layer'
-CTRL_LAYER = "Control Bones Layer"
-GEO_LAYER = "Deform Bones Layer"
+# WGT_PREFIX = 'WGT-'  # Prefix for widget objects
+# ROOT_NAME = 'Bip01'  # Name of the root bone.
+# WGT_LAYER = 'Widget Layer'
+# CTRL_LAYER = "Control Bones Layer"
+# GEO_LAYER = "Deform Bones Layer"
 
 def strip_slash(line_split):
     if line_split[-1][-1] == 92:  # '\' char
@@ -113,7 +104,7 @@ def get_mech(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 def get_scaling_factor(o):
-    local_bbox_center = 0.125 * sum((Vector(b) for b in o.bound_box), Vector())
+    local_bbox_center = 0.125 * sum((mathutils.Vector(b) for b in o.bound_box), mathutils.Vector())
     global_bbox_center = o.matrix_world @ local_bbox_center
     return global_bbox_center[2]/7.4
 
@@ -153,118 +144,6 @@ def get_transform_matrix(rotation, location):
     mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
     mat_out = mat_location @ mat_rotation @ mat_scale
     return mat_out
-
-def import_armature(rig):
-    try:
-        bpy.ops.wm.collada_import(filepath=rig, find_chains=True,auto_connect=True)
-        armature = bpy.data.objects['Armature']
-        #bpy.context.scene.objects.active = armature
-        bpy.context.view_layer.objects.active = armature
-        bpy.ops.object.mode_set(mode='EDIT')
-        amt=armature.data
-        armature.show_in_front = True
-        armature.data.show_axes = True
-        bpy.context.object.data.display_type = 'BBONE'
-        bpy.context.object.display_type = 'WIRE'
-    except:
-        #File not found
-        return False
-    return True
-
-
-def set_bone_layers(armature):
-    original_context = bpy.context.mode
-    bpy.ops.object.mode_set(mode='POSE')
-    for bone in armature.data.bones:
-        if bone.name not in control_bones:
-            bone.layers[1] = True
-            bone.layers[0] = False
-    bpy.ops.object.mode_set(mode=original_context)
-
-def obj_to_bone(obj, rig, bone_name):
-    if bpy.context.mode == 'EDIT_ARMATURE':
-        raise MetarigError('obj_to_bone(): does not work while in edit mode')
-    bone = rig.data.bones[bone_name]
-    #mat = rig.matrix_world * bone.matrix_local
-    mat = rig.matrix_world @ bone.matrix_local
-    obj.location = mat.to_translation()
-    obj.rotation_mode = 'XYZ'
-    obj.rotation_euler = mat.to_euler()
-    scl = mat.to_scale()
-    scl_avg = (scl[0] + scl[1] + scl[2]) / 3
-    obj.scale = (bone.length * scl_avg), (bone.length * scl_avg), (bone.length * scl_avg)
-
-def copy_bone(obj, bone_name, assign_name=''):
-    if bone_name not in obj.data.edit_bones:
-        raise MetarigError('copy_bone(): bone "%s" not found, cannot copy it' % bone_name)
-    if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
-        if assign_name == '':
-            assign_name = bone_name
-        # Copy the edit bone
-        edit_bone_1 = obj.data.edit_bones[bone_name]
-        edit_bone_2 = obj.data.edit_bones.new(assign_name)
-        bone_name_1 = bone_name
-        bone_name_2 = edit_bone_2.name
-        edit_bone_2.parent = edit_bone_1.parent
-        edit_bone_2.use_connect = edit_bone_1.use_connect
-        # Copy edit bone attributes
-        edit_bone_2.layers = list(edit_bone_1.layers)
-        edit_bone_2.head = mathutils.Vector(edit_bone_1.head)
-        edit_bone_2.tail = mathutils.Vector(edit_bone_1.tail)
-        edit_bone_2.roll = edit_bone_1.roll
-        edit_bone_2.head_radius = edit_bone_1.head_radius
-        edit_bone_2.envelope_distance = edit_bone_1.envelope_distance
-        edit_bone_2.use_inherit_rotation = edit_bone_1.use_inherit_rotation
-        edit_bone_2.use_inherit_scale = edit_bone_1.use_inherit_scale
-        edit_bone_2.use_local_location = edit_bone_1.use_local_location
-        edit_bone_2.use_deform = edit_bone_1.use_deform
-        edit_bone_2.bbone_segments = edit_bone_1.bbone_segments
-        edit_bone_2.bbone_rollin = edit_bone_1.bbone_rollin
-        edit_bone_2.bbone_rollout = edit_bone_1.bbone_rollout
-        edit_bone_2.bbone_easein = edit_bone_1.bbone_easein
-        edit_bone_2.bbone_easeout = edit_bone_1.bbone_easeout
-        bpy.ops.object.mode_set(mode='OBJECT')
-        # Get the pose bones
-        pose_bone_1 = obj.pose.bones[bone_name_1]
-        pose_bone_2 = obj.pose.bones[bone_name_2]
-        # Copy pose bone attributes
-        pose_bone_2.rotation_mode = pose_bone_1.rotation_mode
-        pose_bone_2.rotation_axis_angle = tuple(pose_bone_1.rotation_axis_angle)
-        pose_bone_2.rotation_euler = tuple(pose_bone_1.rotation_euler)
-        pose_bone_2.rotation_quaternion = tuple(pose_bone_1.rotation_quaternion)
-        pose_bone_2.lock_location = tuple(pose_bone_1.lock_location)
-        pose_bone_2.lock_scale = tuple(pose_bone_1.lock_scale)
-        pose_bone_2.lock_rotation = tuple(pose_bone_1.lock_rotation)
-        pose_bone_2.lock_rotation_w = pose_bone_1.lock_rotation_w
-        pose_bone_2.lock_rotations_4d = pose_bone_1.lock_rotations_4d
-        # Copy custom properties
-        for key in pose_bone_1.keys():
-            if key != '_RNA_UI' \
-            and key != 'rigify_parameters' \
-            and key != 'rigify_type':
-                prop1 = rna_idprop_ui_prop_get(pose_bone_1, key, create=False)
-                prop2 = rna_idprop_ui_prop_get(pose_bone_2, key, create=True)
-                pose_bone_2[key] = pose_bone_1[key]
-                for key in prop1.keys():
-                    prop2[key] = prop1[key]
-
-        bpy.ops.object.mode_set(mode='EDIT')
-        return bone_name_2
-    else:
-        raise MetarigError('Cannot copy bones outside of edit mode')
-
-def flip_bone(obj, bone_name):
-    if bone_name not in obj.data.bones:
-        raise MetarigError('flip_bone(): bone "%s" not found, cannot copy it' % bone_name)
-    if obj == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
-        bone = obj.data.edit_bones[bone_name]
-        head = mathutils.Vector(bone.head)
-        tail = mathutils.Vector(bone.tail)
-        bone.tail = head + tail
-        bone.head = tail
-        bone.tail = head
-    else:
-        raise MetarigError('Cannot flip bones outside of edit mode')
 
 def create_object_groups():
     # Generate group for each object to make linking into scenes easier.
@@ -392,174 +271,6 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                             links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
     return materials
 
-def create_widget(armature, bone_name, bone_transform_name=None):
-    if bone_transform_name is None:
-        bone_transform_name = bone_name
-    obj_name = WGT_PREFIX + armature.name + '_' + bone_name
-    scene = bpy.context.scene
-    id_store = bpy.context.window_manager
-    # Check if it already exists in the scene
-    if obj_name in scene.objects:
-        # Move object to bone position, in case it changed
-        obj = scene.objects[obj_name]
-        obj_to_bone(obj, armature, bone_transform_name)
-        return None
-    else:
-        # Delete object if it exists in blend data but not scene data.
-        # This is necessary so we can then create the object without name conflicts.
-        if obj_name in bpy.data.objects:
-            bpy.data.objects[obj_name].user_clear()
-            bpy.data.objects.remove(bpy.data.objects[obj_name])
-        # Create mesh object
-        mesh = bpy.data.meshes.new(obj_name)
-        obj = bpy.data.objects.new(obj_name, mesh)
-        # Move object to bone position and set layers
-        obj_to_bone(obj, armature, bone_transform_name)
-        wgts_group_name = 'WGTS_' + armature.name
-        if wgts_group_name in bpy.data.objects.keys():
-            obj.parent = bpy.data.objects[wgts_group_name]
-        collections.link_object_to_collection(obj, WGT_LAYER)
-        return obj
-
-def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj is not None:
-        verts = [(0.0*size, 1.5*size, -0.7000000476837158*size), (1.1920928955078125e-07*size, -0.25*size, -0.6999999284744263*size), 
-                 (0.0*size, -0.25*size, 0.7000000476837158*size), (-1.1920928955078125e-07*size, 1.5*size, 0.6999999284744263*size), 
-                 (5.960464477539063e-08*size, 0.7229999899864197*size, -0.699999988079071*size), (-5.960464477539063e-08*size, 0.7229999899864197*size, 0.699999988079071*size), 
-                 (1.1920928955078125e-07*size, -2.9802322387695312e-08*size, -0.699999988079071*size), (0.0*size, 2.9802322387695312e-08*size, 0.699999988079071*size), ]
-        edges = [(1, 2), (0, 3), (0, 4), (3, 5), (4, 6), (1, 6), (5, 7), (2, 7)]
-        faces = []
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, faces)
-        mesh.update()
-        mod = obj.modifiers.new("subsurf", 'SUBSURF')
-        mod.levels = 2
-        return obj
-    else:
-        return None
-
-def create_foot_widget(rig, bone_name, size=1.0, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj is not None:
-        verts = [(-0.6999998688697815*size, -0.5242648720741272*size, 0.0*size), (-0.7000001072883606*size, 1.2257349491119385*size, 0.0*size), 
-                 (0.6999998688697815*size, 1.2257351875305176*size, 0.0*size), (0.7000001072883606*size, -0.5242648720741272*size, 0.0*size), 
-                 (-0.6999998688697815*size, 0.2527350187301636*size, 0.0*size), (0.7000001072883606*size, 0.2527352571487427*size, 0.0*size), 
-                 (-0.7000001072883606*size, 0.975735068321228*size, 0.0*size), (0.6999998688697815*size, 0.9757352471351624*size, 0.0*size), ]
-        edges = [(1, 2), (0, 3), (0, 4), (3, 5), (4, 6), (1, 6), (5, 7), (2, 7), ]
-        faces = []
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, faces)
-        mesh.update()
-        mod = obj.modifiers.new("subsurf", 'SUBSURF')
-        mod.levels = 2
-        return obj
-    else:
-        return None
-
-def create_cube_widget(rig, bone_name, radius=0.5, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj is not None:
-        r = radius
-        verts = [(r, r, r), (r, -r, r), (-r, -r, r), (-r, r, r), (r, r, -r), (r, -r, -r), (-r, -r, -r), (-r, r, -r)]
-        edges = [(0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7)]
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, [])
-        mesh.update()
-
-def create_circle_widget(rig, bone_name, radius=1.0, head_tail=0.0, with_line=False, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj != None:
-        v = [(0.7071068286895752, 2.980232238769531e-07, -0.7071065306663513), (0.8314696550369263, 2.980232238769531e-07, -0.5555699467658997), (0.9238795042037964, 2.682209014892578e-07, -0.3826831877231598), (0.9807852506637573, 2.5331974029541016e-07, -0.19509011507034302), (1.0, 2.365559055306221e-07, 1.6105803979371558e-07), (0.9807853698730469, 2.2351741790771484e-07, 0.19509044289588928), (0.9238796234130859, 2.086162567138672e-07, 0.38268351554870605), (0.8314696550369263, 1.7881393432617188e-07, 0.5555704236030579), (0.7071068286895752, 1.7881393432617188e-07, 0.7071070075035095), (0.5555702447891235, 1.7881393432617188e-07, 0.8314698934555054), (0.38268327713012695, 1.7881393432617188e-07, 0.923879861831665), (0.19509008526802063, 1.7881393432617188e-07, 0.9807855486869812), (-3.2584136988589307e-07, 1.1920928955078125e-07, 1.000000238418579), (-0.19509072601795197, 1.7881393432617188e-07, 0.9807854294776917), (-0.3826838731765747, 1.7881393432617188e-07, 0.9238795638084412), (-0.5555707216262817, 1.7881393432617188e-07, 0.8314695358276367), (-0.7071071863174438, 1.7881393432617188e-07, 0.7071065902709961), (-0.8314700126647949, 1.7881393432617188e-07, 0.5555698871612549), (-0.923879861831665, 2.086162567138672e-07, 0.3826829195022583), (-0.9807853698730469, 2.2351741790771484e-07, 0.1950896978378296), (-1.0, 2.365559907957504e-07, -7.290432222362142e-07), (-0.9807850122451782, 2.5331974029541016e-07, -0.195091113448143), (-0.9238790273666382, 2.682209014892578e-07, -0.38268423080444336), (-0.831468939781189, 2.980232238769531e-07, -0.5555710196495056), (-0.7071058750152588, 2.980232238769531e-07, -0.707107424736023), (-0.555569052696228, 2.980232238769531e-07, -0.8314701318740845), (-0.38268208503723145, 2.980232238769531e-07, -0.923879861831665), (-0.19508881866931915, 2.980232238769531e-07, -0.9807853102684021), (1.6053570561780361e-06, 2.980232238769531e-07, -0.9999997615814209), (0.19509197771549225, 2.980232238769531e-07, -0.9807847142219543), (0.3826850652694702, 2.980232238769531e-07, -0.9238786101341248), (0.5555717945098877, 2.980232238769531e-07, -0.8314683437347412)]
-        verts = [(a[0] * radius, head_tail, a[2] * radius) for a in v]
-        if with_line:
-            edges = [(28, 12), (0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (11, 12), (12, 13), (13, 14), (14, 15), (15, 16), (16, 17), (17, 18), (18, 19), (19, 20), (20, 21), (21, 22), (22, 23), (23, 24), (24, 25), (25, 26), (26, 27), (27, 28), (28, 29), (29, 30), (30, 31), (0, 31)]
-        else:
-            edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (11, 12), (12, 13), (13, 14), (14, 15), (15, 16), (16, 17), (17, 18), (18, 19), (19, 20), (20, 21), (21, 22), (22, 23), (23, 24), (24, 25), (25, 26), (26, 27), (27, 28), (28, 29), (29, 30), (30, 31), (0, 31)]
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, [])
-        mesh.update()
-        return obj
-    else:
-        return None
-
-def create_compass_widget(rig, bone_name, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj != None:
-        verts = [(0.0, 1.2000000476837158, 0.0), (0.19509032368659973, 0.9807852506637573, 0.0), (0.3826834559440613, 0.9238795042037964, 0.0), 
-                 (0.5555702447891235, 0.8314695954322815, 0.0), (0.7071067690849304, 0.7071067690849304, 0.0), (0.8314696550369263, 0.5555701851844788, 0.0), 
-                 (0.9238795042037964, 0.3826834261417389, 0.0), (0.9807852506637573, 0.19509035348892212, 0.0), (1.2000000476837158, 7.549790126404332e-08, 0.0), 
-                 (0.9807853102684021, -0.19509020447731018, 0.0), (0.9238795638084412, -0.38268327713012695, 0.0), (0.8314696550369263, -0.5555701851844788, 0.0), 
-                 (0.7071067690849304, -0.7071067690849304, 0.0), (0.5555701851844788, -0.8314696550369263, 0.0), (0.38268327713012695, -0.9238796234130859, 0.0), 
-                 (0.19509008526802063, -0.9807853102684021, 0.0), (-3.2584136988589307e-07, -1.2999999523162842, 0.0), (-0.19509072601795197, -0.9807851910591125, 0.0), 
-                 (-0.3826838731765747, -0.9238793253898621, 0.0), (-0.5555707216262817, -0.8314692974090576, 0.0), (-0.7071072459220886, -0.707106351852417, 0.0), 
-                 (-0.8314700126647949, -0.5555696487426758, 0.0), (-0.923879861831665, -0.3826826810836792, 0.0), (-0.9807854294776917, -0.1950894594192505, 0.0), 
-                 (-1.2000000476837158, 9.655991561885457e-07, 0.0), (-0.980785071849823, 0.1950913518667221, 0.0), (-0.923879086971283, 0.38268446922302246, 0.0), 
-                 (-0.831468939781189, 0.5555712580680847, 0.0), (-0.7071058750152588, 0.707107663154602, 0.0), (-0.5555691123008728, 0.8314703702926636, 0.0), 
-                 (-0.38268208503723145, 0.9238801002502441, 0.0), (-0.19508881866931915, 0.9807855486869812, 0.0)]
-        edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (11, 12), (12, 13), (13, 14), (14, 15), (15, 16), (16, 17), 
-                 (17, 18), (18, 19), (19, 20), (20, 21), (21, 22), (22, 23), (23, 24), (24, 25), (25, 26), (26, 27), (27, 28), (28, 29), (29, 30), (30, 31), (0, 31)]
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, [])
-        mesh.update()
-
-def create_root_widget(rig, bone_name, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj != None:
-        verts = [(0.7071067690849304, 0.7071067690849304, 0.0), (0.7071067690849304, -0.7071067690849304, 0.0), (-0.7071067690849304, 0.7071067690849304, 0.0), 
-                 (-0.7071067690849304, -0.7071067690849304, 0.0), (0.8314696550369263, 0.5555701851844788, 0.0), (0.8314696550369263, -0.5555701851844788, 0.0), 
-                 (-0.8314696550369263, 0.5555701851844788, 0.0), (-0.8314696550369263, -0.5555701851844788, 0.0), (0.9238795042037964, 0.3826834261417389, 0.0), 
-                 (0.9238795042037964, -0.3826834261417389, 0.0), (-0.9238795042037964, 0.3826834261417389, 0.0), (-0.9238795042037964, -0.3826834261417389, 0.0), 
-                 (0.9807852506637573, 0.19509035348892212, 0.0), (0.9807852506637573, -0.19509035348892212, 0.0), (-0.9807852506637573, 0.19509035348892212, 0.0), 
-                 (-0.9807852506637573, -0.19509035348892212, 0.0), (0.19509197771549225, 0.9807849526405334, 0.0), (0.19509197771549225, -0.9807849526405334, 0.0), 
-                 (-0.19509197771549225, 0.9807849526405334, 0.0), (-0.19509197771549225, -0.9807849526405334, 0.0), (0.3826850652694702, 0.9238788485527039, 0.0), 
-                 (0.3826850652694702, -0.9238788485527039, 0.0), (-0.3826850652694702, 0.9238788485527039, 0.0), (-0.3826850652694702, -0.9238788485527039, 0.0), 
-                 (0.5555717945098877, 0.8314685821533203, 0.0), (0.5555717945098877, -0.8314685821533203, 0.0), (-0.5555717945098877, 0.8314685821533203, 0.0), 
-                 (-0.5555717945098877, -0.8314685821533203, 0.0), (0.19509197771549225, 1.2807848453521729, 0.0), (0.19509197771549225, -1.2807848453521729, 0.0), 
-                 (-0.19509197771549225, 1.2807848453521729, 0.0), (-0.19509197771549225, -1.2807848453521729, 0.0), (1.280785322189331, 0.19509035348892212, 0.0), 
-                 (1.280785322189331, -0.19509035348892212, 0.0), (-1.280785322189331, 0.19509035348892212, 0.0), (-1.280785322189331, -0.19509035348892212, 0.0), 
-                 (0.3950919806957245, 1.2807848453521729, 0.0), (0.3950919806957245, -1.2807848453521729, 0.0), (-0.3950919806957245, 1.2807848453521729, 0.0), 
-                 (-0.3950919806957245, -1.2807848453521729, 0.0), (1.280785322189331, 0.39509034156799316, 0.0), (1.280785322189331, -0.39509034156799316, 0.0), 
-                 (-1.280785322189331, 0.39509034156799316, 0.0), (-1.280785322189331, -0.39509034156799316, 0.0), (0.0, 1.5807849168777466, 0.0), 
-                 (0.0, -1.5807849168777466, 0.0), (1.5807852745056152, 0.0, 0.0), (-1.5807852745056152, 0.0, 0.0)]
-        edges = [(0, 4), (1, 5), (2, 6), (3, 7), (4, 8), (5, 9), (6, 10), (7, 11), (8, 12), (9, 13), (10, 14), (11, 15), (16, 20), (17, 21), (18, 22), (19, 23), (20, 24), 
-                 (21, 25), (22, 26), (23, 27), (0, 24), (1, 25), (2, 26), (3, 27), (16, 28), (17, 29), (18, 30), (19, 31), (12, 32), (13, 33), (14, 34), (15, 35), (28, 36), 
-                 (29, 37), (30, 38), (31, 39), (32, 40), (33, 41), (34, 42), (35, 43), (36, 44), (37, 45), (38, 44), (39, 45), (40, 46), (41, 46), (42, 47), (43, 47)]
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, [])
-        mesh.update()
-
-def create_sphere_widget(rig, bone_name, bone_transform_name=None):
-    obj = create_widget(rig, bone_name, bone_transform_name)
-    if obj != None:
-        verts = [(0.3535533845424652, 0.3535533845424652, 0.0), (0.4619397521018982, 0.19134171307086945, 0.0), (0.5, -2.1855694143368964e-08, 0.0), 
-                 (0.4619397521018982, -0.19134175777435303, 0.0), (0.3535533845424652, -0.3535533845424652, 0.0), (0.19134174287319183, -0.4619397521018982, 0.0), 
-                 (7.549790126404332e-08, -0.5, 0.0), (-0.1913416087627411, -0.46193981170654297, 0.0), (-0.35355329513549805, -0.35355350375175476, 0.0), 
-                 (-0.4619397521018982, -0.19134178757667542, 0.0), (-0.5, 5.962440319251527e-09, 0.0), (-0.4619397222995758, 0.1913418024778366, 0.0), 
-                 (-0.35355326533317566, 0.35355350375175476, 0.0), (-0.19134148955345154, 0.46193987131118774, 0.0), (3.2584136988589307e-07, 0.5, 0.0), 
-                 (0.1913420855998993, 0.46193960309028625, 0.0), (7.450580596923828e-08, 0.46193960309028625, 0.19134199619293213), (5.9254205098113744e-08, 0.5, 2.323586443253589e-07), 
-                 (4.470348358154297e-08, 0.46193987131118774, -0.1913415789604187), (2.9802322387695312e-08, 0.35355350375175476, -0.3535533547401428), 
-                 (2.9802322387695312e-08, 0.19134178757667542, -0.46193981170654297), (5.960464477539063e-08, -1.1151834122813398e-08, -0.5000000596046448), 
-                 (5.960464477539063e-08, -0.1913418024778366, -0.46193984150886536), (5.960464477539063e-08, -0.35355350375175476, -0.3535533845424652), 
-                 (7.450580596923828e-08, -0.46193981170654297, -0.19134166836738586), (9.348272556053416e-08, -0.5, 1.624372103492533e-08), 
-                 (1.043081283569336e-07, -0.4619397521018982, 0.19134168326854706), (1.1920928955078125e-07, -0.3535533845424652, 0.35355329513549805), 
-                 (1.1920928955078125e-07, -0.19134174287319183, 0.46193966269493103), (1.1920928955078125e-07, -4.7414250303745575e-09, 0.49999991059303284), 
-                 (1.1920928955078125e-07, 0.19134172797203064, 0.46193966269493103), (8.940696716308594e-08, 0.3535533845424652, 0.35355329513549805), 
-                 (0.3535534739494324, 0.0, 0.35355329513549805), (0.1913418173789978, -2.9802322387695312e-08, 0.46193966269493103), 
-                 (8.303572940349113e-08, -5.005858838558197e-08, 0.49999991059303284), (-0.19134165346622467, -5.960464477539063e-08, 0.46193966269493103), 
-                 (-0.35355329513549805, -8.940696716308594e-08, 0.35355329513549805), (-0.46193963289260864, -5.960464477539063e-08, 0.19134168326854706), 
-                 (-0.49999991059303284, -5.960464477539063e-08, 1.624372103492533e-08), (-0.4619397521018982, -2.9802322387695312e-08, -0.19134166836738586), 
-                 (-0.3535534143447876, -2.9802322387695312e-08, -0.3535533845424652), (-0.19134171307086945, 0.0, -0.46193984150886536), 
-                 (7.662531942287387e-08, 9.546055501630235e-09, -0.5000000596046448), (0.19134187698364258, 5.960464477539063e-08, -0.46193981170654297), 
-                 (0.3535535931587219, 5.960464477539063e-08, -0.3535533547401428), (0.4619399905204773, 5.960464477539063e-08, -0.1913415789604187), 
-                 (0.5000000596046448, 5.960464477539063e-08, 2.323586443253589e-07), (0.4619396924972534, 2.9802322387695312e-08, 0.19134199619293213)]
-        edges = [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (11, 12), (12, 13), (13, 14), (14, 15), (0, 15), (16, 31), (16, 17), 
-                 (17, 18), (18, 19), (19, 20), (20, 21), (21, 22), (22, 23), (23, 24), (24, 25), (25, 26), (26, 27), (27, 28), (28, 29), (29, 30), (30, 31), (32, 33), (33, 34), 
-                 (34, 35), (35, 36), (36, 37), (37, 38), (38, 39), (39, 40), (40, 41), (41, 42), (42, 43), (43, 44), (44, 45), (45, 46), (46, 47), (32, 47)]
-        mesh = obj.data
-        mesh.from_pydata(verts, edges, [])
-        mesh.update()
-
 # This subroutine needs to be broken up in smaller parts
 def create_IKs():
     bpy.ops.object.mode_set(mode='EDIT')
@@ -572,9 +283,9 @@ def create_IKs():
     print(" *** Editing Pelvis Bone ***")
     print("     Pelvis name: " + armature.data.edit_bones['Bip01_Pelvis'].name)
     # armature.data.edit_bones['Bip01_Pelvis'].tail = armature.data.edit_bones['Bip01_Pitch'].head      # Causes Pelvis bone to disappear sometimes
-    hip_root_bone = copy_bone(armature, "Bip01_Pelvis", "Hip_Root")
+    hip_root_bone = bones.copy_bone(armature, "Bip01_Pelvis", "Hip_Root")
     armature.data.edit_bones['Hip_Root'].use_connect = False
-    flip_bone(armature, "Hip_Root")
+    bones.flip_bone(armature, "Hip_Root")
     # Parent Pelvis to hip_root
     armature.data.edit_bones['Bip01_Pelvis'].parent = armature.data.edit_bones['Hip_Root']
     armature.data.edit_bones['Bip01_Pitch'].use_inherit_rotation = False
@@ -652,31 +363,31 @@ def create_IKs():
     leftElbowIK.parent = armature.data.edit_bones["Bip01_Pitch"]
     # Set custom shapes
     bpy.ops.object.mode_set(mode='OBJECT')
-    create_root_widget(armature, "Root", "Bip01")
-    create_cube_widget(armature, "Hand_IK.R", 1.25, "Hand_IK.R")
-    create_cube_widget(armature, "Hand_IK.L", 1.25, "Hand_IK.L")
-    create_cube_widget(armature, "Foot_IK.R", 1.0, "Foot_IK.R")
-    create_cube_widget(armature, "Foot_IK.L", 1.0, "Foot_IK.L")
-    create_sphere_widget(armature, "Knee_IK.R", "Knee_IK.R")
-    create_sphere_widget(armature, "Knee_IK.L", "Knee_IK.L")
-    create_sphere_widget(armature, "Elbow_IK.R", "Elbow_IK.R")
-    create_sphere_widget(armature, "Elbow_IK.L", "Elbow_IK.L")
-    create_circle_widget(armature, "Bip01_Pitch", 2.0, 1.0, True, "Bip01_Pitch")
-    create_circle_widget(armature, "Bip01_Pelvis", 2.0, 0.0, True, "Bip01_Pelvis")
-    create_cube_widget(armature, "Hip_Root", 3.0, "Hip_Root")
-    bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
-    armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Root"]
-    armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hand_IK.R"]
-    armature.pose.bones['Hand_IK.L'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hand_IK.L"]
-    armature.pose.bones["Foot_IK.R"].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Foot_IK.R"]
-    armature.pose.bones["Foot_IK.L"].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Foot_IK.L"]
-    armature.pose.bones['Knee_IK.R'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Knee_IK.R"]
-    armature.pose.bones['Knee_IK.L'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Knee_IK.L"]
-    armature.pose.bones['Elbow_IK.R'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Elbow_IK.R"]
-    armature.pose.bones['Elbow_IK.L'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Elbow_IK.L"]
-    armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Bip01_Pitch"]
-    armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
-    armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[WGT_PREFIX + armature.name + "_" + "Hip_Root"]
+    widgets.create_root_widget(armature, "Root", "Bip01")
+    widgets.create_cube_widget(armature, "Hand_IK.R", 1.25, "Hand_IK.R")
+    widgets.create_cube_widget(armature, "Hand_IK.L", 1.25, "Hand_IK.L")
+    widgets.create_cube_widget(armature, "Foot_IK.R", 1.0, "Foot_IK.R")
+    widgets.create_cube_widget(armature, "Foot_IK.L", 1.0, "Foot_IK.L")
+    widgets.create_sphere_widget(armature, "Knee_IK.R", "Knee_IK.R")
+    widgets.create_sphere_widget(armature, "Knee_IK.L", "Knee_IK.L")
+    widgets.create_sphere_widget(armature, "Elbow_IK.R", "Elbow_IK.R")
+    widgets.create_sphere_widget(armature, "Elbow_IK.L", "Elbow_IK.L")
+    widgets.create_circle_widget(armature, "Bip01_Pitch", 2.0, 1.0, True, "Bip01_Pitch")
+    widgets.create_circle_widget(armature, "Bip01_Pelvis", 2.0, 0.0, True, "Bip01_Pelvis")
+    widgets.create_cube_widget(armature, "Hip_Root", 3.0, "Hip_Root")
+    bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
+    armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"]
+    armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hand_IK.R"]
+    armature.pose.bones['Hand_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hand_IK.L"]
+    armature.pose.bones["Foot_IK.R"].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Foot_IK.R"]
+    armature.pose.bones["Foot_IK.L"].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Foot_IK.L"]
+    armature.pose.bones['Knee_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Knee_IK.R"]
+    armature.pose.bones['Knee_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Knee_IK.L"]
+    armature.pose.bones['Elbow_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Elbow_IK.R"]
+    armature.pose.bones['Elbow_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Elbow_IK.L"]
+    armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pitch"]
+    armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
+    armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hip_Root"]
     # POSE MODE CHANGES
     # Set up IK Constraints
     bpy.ops.object.mode_set(mode='POSE')
@@ -766,7 +477,7 @@ def create_IKs():
     leftElbowIK.use_inherit_rotation = False
     rightElbowIK.use_inherit_rotation = False
     # Move bones to proper layers
-    set_bone_layers(armature)
+    bones.set_bone_layers(armature)
 
 def import_geometry(daefile, basedir):
     try:
@@ -794,7 +505,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             # Materials depend on the part type.  For most, <mech>_body.  Weapons is <mech>_variant.  Window/cockpit is 
             # <mech>_window.  Also need to figure out how to deal with _generic materials after the import.
             materialname = mechname + "_body"
-            if any(weapon in aname for weapon in weapons):
+            if any(weapon in aname for weapon in constants.weapons):
                 materialname = mechname + "_variant"
             if "_damaged" in aname or "_prop" in aname:
                 materialname = mechname + "_body"
@@ -931,7 +642,7 @@ def set_layers():
     # Set weapons and special geometry to layer 2
     names = bpy.data.objects.keys()
     for name in names:
-        if any(x in name for x in weapons):
+        if any(x in name for x in constants.weapons):
             bpy.data.objects[name].layers[1] = True
             bpy.data.objects[name].layers[0] = False
 
@@ -942,7 +653,6 @@ def import_light(object):
     light_data = bpy.data.lights.new(object.attrib["Name"], type='POINT')
     obj = bpy.data.objects.new(name = object.attrib["Name"], object_data = light_data)
     objname = object.attrib["Name"]
-    #scene.objects.link(obj)
     scene.collection.objects.link(obj)
     properties = object.find("Properties")
     # Set shadows
@@ -967,7 +677,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     print("Import Asset.  Folder: " + path)
     basedir = get_base_dir(path)
     set_viewport_shading()
-    collections.set_up_collections()
+    cc_collections.set_up_collections()
     if os.path.isdir(path):
         os.chdir(path)
     elif os.path.isfile(path):
@@ -975,8 +685,8 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
         path = os.path.dirname(path)
     for file in os.listdir(path):
         if file.endswith(".mtl"):
-            materials.update(create_materials(file, basedir, use_dds, use_tif))
-    for material in materials.keys():
+            constants.materials.update(create_materials(file, basedir, use_dds, use_tif))
+    for material in constants.materials.keys():
         print("   Material: " + material)
     for file in os.listdir(path):
         if file.endswith(".dae"):
@@ -989,8 +699,8 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
                 print("   Material slot matname is " + obj_mat.name)
                 mat = obj_mat.name.split('.')[0]
                 print("      Assigning material " + mat + " to " + obj.name)
-                if mat in materials.keys():
-                    obj_mat.material = materials[mat]
+                if mat in constants.materials.keys():
+                    obj_mat.material = constants.materials[mat]
                 #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
                 #    mats.material = materials[mats.name[:-4]]
                 #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
@@ -1018,18 +728,18 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
                                    "_a_cockpit_standard.mtl")
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
-    collections.set_up_collections()
+    cc_collections.set_up_collections()
     # Try to import the armature.  If we can't find it, then return error.
-    result = import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
+    result = bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
     if result == False:    
         print("Error importing armature at: " + 
               os.path.join(bodydir, mech + ".dae"))
         return False
     # Create the materials.
-    materials = create_materials(matfile, basedir, use_dds, use_tif)
-    cockpit_materials = create_materials(cockpit_matfile, basedir, use_dds, use_tif)
+    constants.materials = create_materials(matfile, basedir, use_dds, use_tif)
+    constants.cockpit_materials = create_materials(cockpit_matfile, basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
-    geometry = import_mech_geometry(cdffile, basedir, bodydir, mech)
+    import_mech_geometry(cdffile, basedir, bodydir, mech)
     # Set the layers for existing objects
     set_layers()
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
@@ -1043,7 +753,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
     # features). Group is group of objects. Entity = light.
     set_viewport_shading()
-    collections.set_up_collections()
+    cc_collections.set_up_collections()
     basedir = get_base_dir(path)
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)

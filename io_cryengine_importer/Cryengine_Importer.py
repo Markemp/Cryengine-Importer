@@ -323,7 +323,8 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             for obj in obj_objects:
                 if not obj.type == 'EMPTY':
                     armature.select_set(True)
-                    bpy.context.scene.objects.active = armature
+                    #bpy.context.scene.objects.active = armature
+                    bpy.context.view_layer.objects.active = armature
                     bpy.context.view_layer.objects.active = obj
                     print("    Name: " + obj.name)
                     # If this is a parent node, rotate/translate it. Otherwise skip it.
@@ -337,7 +338,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                         obj.matrix_world = matrix
                         i = i + 1
                     # Vertex groups
-                    vg = obj.vertex_groups.new(bonename)
+                    vg = obj.vertex_groups.new(name=bonename)
                     nverts = len(obj.data.vertices)
                     for i in range(nverts):
                         vg.add([i], 1.0, 'REPLACE')

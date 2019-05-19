@@ -1,8 +1,5 @@
 import bpy
 from . import constants, cc_collections, bones
-# from collections import *
-# from constants import *
-# from bones import *
 
 def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:

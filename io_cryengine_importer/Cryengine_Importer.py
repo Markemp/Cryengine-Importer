@@ -35,49 +35,9 @@ import bmesh
 import bpy.types
 import bpy.utils
 import mathutils
-from bpy_extras.io_utils import unpack_list
-from bpy_extras.image_utils import load_image
-from bpy_extras.wm_utils import progress_report
-from bpy.props import (
-        BoolProperty,
-        FloatProperty,
-        StringProperty,
-        EnumProperty,
-        )
-from bpy_extras.io_utils import (
-        ImportHelper,
-        ExportHelper,
-        orientation_helper,
-        path_reference_mode,
-        axis_conversion,
-        )
 from math import radians
 
-from . import constants, cc_collections, bones, widgets
-# from widgets import *
-# from constants import *
-# from cc_collections import *
-# from bones import *
-
-# # store keymaps here to access after registration
-# addon_keymaps = []
-
-# # There are misspelled words (missle).  Just a FYI.
-# weapons = ['hero', 'missile', 'missle', 'narc', 'uac', 'uac2', 'uac5', 'uac10', 'uac20', 'rac', '_lty',
-#            'ac2', 'ac5', 'ac10', 'ac20', 'gauss', 'ppc', 'flamer', '_mg', '_lbx', 'damaged', '_mount', '_rl20',
-#            '_rl10', '_rl15', 'laser', 'ams', '_phoenix', 'blank', 'invasion', 'hmg', 'lmg', 'lams', 'hand', 'barrel']
-		   
-# control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', 'Bip01_Pelvis',
-#                  'Knee_IK.R', 'Knee_IK.L', 'Foot_IK.R', 'Foot_IK.L', 'Elbow_IK.R', 'Elbow_IK.L']
-				 
-# materials = {} # All the materials found for the mech
-# cockpit_materials = {}
-
-# WGT_PREFIX = 'WGT-'  # Prefix for widget objects
-# ROOT_NAME = 'Bip01'  # Name of the root bone.
-# WGT_LAYER = 'Widget Layer'
-# CTRL_LAYER = "Control Bones Layer"
-# GEO_LAYER = "Deform Bones Layer"
+from . import constants, cc_collections, bones, widgets, materials, utilities
 
 def strip_slash(line_split):
     if line_split[-1][-1] == 92:  # '\' char
@@ -103,48 +63,6 @@ def get_body_dir(filepath):
 def get_mech(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
-def get_scaling_factor(o):
-    local_bbox_center = 0.125 * sum((mathutils.Vector(b) for b in o.bound_box), mathutils.Vector())
-    global_bbox_center = o.matrix_world @ local_bbox_center
-    return global_bbox_center[2]/7.4
-
-def convert_to_rotation(rotation):
-    tmp = rotation.split(',')
-    w = float(tmp[0])
-    x = float(tmp[1])
-    y = float(tmp[2])
-    z = float(tmp[3])
-    return mathutils.Quaternion((w,x,y,z))
-
-def convert_to_location(location):
-    tmp = location.split(',')
-    x = float(tmp[0])
-    y = float(tmp[1])
-    z = float(tmp[2])
-    return mathutils.Vector((x,y,z))
-
-def convert_to_rgba(color):
-    temp = color.split(',')
-    r = float(temp[0])
-    g = float(temp[1])
-    b = float(temp[2])
-    a = 1.0
-    return (r,g,b,a)
-
-def convert_to_rgb(color):
-    temp = color.split(',')
-    r = float(temp[0])
-    g = float(temp[1])
-    b = float(temp[2])
-    return (r,g,b)
-
-def get_transform_matrix(rotation, location):
-    mat_location = mathutils.Matrix.Translation(location)
-    mat_rotation = mathutils.Matrix.Rotation(rotation.angle, 4, rotation.axis)
-    mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
-    mat_out = mat_location @ mat_rotation @ mat_scale
-    return mat_out
-
 def create_object_groups():
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
@@ -152,124 +70,6 @@ def create_object_groups():
             print ('   Creating collection for ' + obj.name)
             bpy.data.collections.new(obj.name)
             bpy.data.collections[obj.name].objects.link(obj)
-
-def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension):
-    print('Glass material')
-    links = tree_nodes.links
-    shaderPrincipledBSDF.inputs[14].default_value = 1.001
-    shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
-    shout.location = 500,500
-    links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
-    for texture in mat.iter('Texture'):
-        if texture.attrib['Map'] == 'Diffuse':
-            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
-            if os.path.isfile(texturefile):
-                matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
-                shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
-                shaderDiffImg.image=matDiffuse
-                shaderDiffImg.location = 0,600
-                links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
-        if texture.attrib['Map'] == 'Specular':
-            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
-            if os.path.isfile(texturefile):
-                matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                shaderSpecImg.color_space = 'NONE'
-                shaderSpecImg.image=matSpec
-                shaderSpecImg.location = 0,325
-                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
-        if texture.attrib['Map'] == 'Bumpmap':
-            if os.path.isfile(texturefile):
-                texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
-                matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                shaderNormalImg.color_space = 'NONE'
-                shaderNormalImg.image=matNormal
-                shaderNormalImg.location = -100,0
-                converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
-                converterNormalMap.location = 100,0
-                links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
-                links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
-
-def create_materials(matfile, basedir, use_dds=True, use_tif=False):
-    materials = {}
-    # Identify material format
-    if use_dds == True:
-        material_extension = ".dds"
-    elif use_tif == True:
-        material_extension = ".tif"
-    mats = ET.parse(matfile)
-    for mat in mats.iter("Material"):
-        if "Name" in mat.attrib:
-            # An actual material.  Create the material, set to nodes, clear and rebuild using the info from the material XML file.
-            name = mat.attrib["Name"]
-            matname = bpy.data.materials.new(mat.attrib["Name"])
-            materials[name] = matname
-            #print("Found material: " + matname.name)
-            matname.use_nodes = True
-            tree_nodes = matname.node_tree
-            links = tree_nodes.links
-            for n in tree_nodes.nodes:
-                tree_nodes.nodes.remove(n)
-            # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
-            shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
-            shaderPrincipledBSDF.location =  300,500
-            #print(mat["Diffuse"])
-            if "Diffuse" in mat.keys():
-                diffuseColor = convert_to_rgba(str(mat.attrib["Diffuse"]))
-                shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
-            if "Specular" in mat.keys():
-                specColor = convert_to_rgba(str(mat.attrib["Specular"]))
-                shaderPrincipledBSDF.inputs[5].default_value = specColor[0]    # Specular always seems to be one value repeated 3 times.
-            if "IndirectColor" in mat.keys():
-                indirectColor = convert_to_rgba(str(mat.attrib["IndirectColor"]))
-                shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
-            if "Opacity" in mat.keys():
-                transmission = mat.attrib["Opacity"]
-                shaderPrincipledBSDF.inputs[15].default_value = float(transmission)
-            if "Shininess" in mat.keys():
-                clearcoat = mat.attrib["Shininess"]
-                shaderPrincipledBSDF.inputs[12].default_value = float(clearcoat) / 255
-            if mat.attrib["Shader"] == "Glass":
-                # Glass material.  Make a Glass node layout.
-                create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension)
-            else:
-                shaderPrincipledBSDF.inputs[15].default_value = 0.0         # If it's not glass, the transmission should be 0.
-                shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
-                shout.location = 500,500
-                links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
-                # For each Texture element, add the file and plug in to the appropriate slot on the PrincipledBSDF shader
-                for texture in mat.iter("Texture"):
-                    if texture.attrib["Map"] == "Diffuse":
-                        texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
-                        if os.path.isfile(texturefile):
-                            matDiffuse = bpy.data.images.load(filepath=texturefile, check_existing=True)
-                            shaderDiffImg = tree_nodes.nodes.new('ShaderNodeTexImage')
-                            shaderDiffImg.image=matDiffuse
-                            shaderDiffImg.location = 0,600
-                            links.new(shaderDiffImg.outputs[0], shaderPrincipledBSDF.inputs[0])
-                    if texture.attrib["Map"] == "Specular":
-                        texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
-                        if os.path.isfile(texturefile):
-                            matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                            shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                            shaderSpecImg.color_space = 'NONE'
-                            shaderSpecImg.image=matSpec
-                            shaderSpecImg.location = 0,325
-                            links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
-                    if texture.attrib["Map"] == "Bumpmap":
-                        if os.path.isfile(texturefile):
-                            texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
-                            matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
-                            shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                            shaderNormalImg.color_space = 'NONE'
-                            shaderNormalImg.image=matNormal
-                            shaderNormalImg.location = -100,0
-                            converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
-                            converterNormalMap.location = 100,0
-                            links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
-                            links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
-    return materials
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs():
@@ -486,7 +286,7 @@ def import_geometry(daefile, basedir):
     except:
         # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
         #continue
-        print("Importing daefile: " + daefile + ", basedir: " + basedir)
+        print("Error importing Collada file: " + daefile + ", basedir: " + basedir)
     
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
@@ -497,8 +297,8 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             print("Importing " + geo.attrib["AName"])
             # Get all the attribs
             aname    = geo.attrib["AName"]
-            rotation = convert_to_rotation(geo.attrib["Rotation"])
-            location = convert_to_location(geo.attrib["Position"])
+            rotation = utilities.convert_to_rotation(geo.attrib["Rotation"])
+            location = utilities.convert_to_location(geo.attrib["Position"])
             bonename = geo.attrib["BoneName"].replace(' ','_')
             binding  = os.path.join(basedir, os.path.splitext(geo.attrib["Binding"])[0] + ".dae")
             flags    = geo.attrib["Flags"]
@@ -512,6 +312,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             if "head_cockpit" in aname:
                 materialname = mechname + "_window"
             # We now have all the geometry parts that need to be imported, their loc/rot, and material.  Import.
+            print('Material: ' + materialname)
             try:
                 bpy.ops.wm.collada_import(filepath=binding,find_chains=True,auto_connect=True)
             except:
@@ -521,20 +322,15 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             i = 0
             for obj in obj_objects:
                 if not obj.type == 'EMPTY':
-                    armature.select = True
+                    armature.select_set(True)
                     bpy.context.scene.objects.active = armature
-                    bone_location = bpy.context.object.pose.bones[bonename].head
-                    bone_rotation = obj.rotation_quaternion
-                    #print("    Original loc and rot: " + str(bone_location) + " and " + str(bone_rotation))
-                    #print("    Materials for " + obj.name)
                     bpy.context.view_layer.objects.active = obj
                     print("    Name: " + obj.name)
                     # If this is a parent node, rotate/translate it. Otherwise skip it.
                     if i == 0:
-                        matrix = get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
+                        matrix = utilities.get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
                         #parent this first object to the appropriate bone
                         obj.rotation_mode = 'QUATERNION'
-                        bone = armature.data.bones[bonename]
                         obj.parent = armature
                         obj.parent_bone = bonename
                         obj.parent_type = 'BONE'
@@ -560,7 +356,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                         if "_prop" in obj.name:
                             materialname = mechname + "_body"
                         bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
-                    obj.select = False
+                    obj.select_set(False)
 
 def link_geometry(objectname, libraryfile, itemgroupname):
     # Link the object from the library file and translate/rotate.
@@ -575,13 +371,11 @@ def link_geometry(objectname, libraryfile, itemgroupname):
                 ob.dupli_group = group
                 ob.dupli_type = 'GROUP'
                 ob.name = objectname
-                #scene.objects.link(ob)
                 scene.collection.objects.link(ob)
                 print("Imported object: " + ob.name)
                 return ob
     elif os.path.isfile(libraryfile.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
         libraryfile = libraryfile.replace("industrial", "frontend//mechlab_a")
-        # print ("Alt library file: " + libraryfile)
         with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
             data_dest.groups = data_src.groups
         for group in data_dest.groups:
@@ -664,10 +458,10 @@ def import_light(object):
         else:
             bpy.data.lights[objname].cycles.cast_shadow = True
     if not color == None:
-        bpy.data.lights[objname].color = convert_to_rgb(color.attrib["clrDiffuse"])
-    location = convert_to_location(object.attrib["Pos"])
-    rotation = convert_to_rotation(object.attrib["Rotate"])
-    matrix = get_transform_matrix(rotation, location)
+        bpy.data.lights[objname].color = utilities.convert_to_rgb(color.attrib["clrDiffuse"])
+    location = utilities.convert_to_location(object.attrib["Pos"])
+    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+    matrix = utilities.get_transform_matrix(rotation, location)
     # obj = bpy.data.objects["objectname"]
     obj.rotation_mode = 'QUATERNION'
     obj.matrix_world = matrix
@@ -685,7 +479,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
         path = os.path.dirname(path)
     for file in os.listdir(path):
         if file.endswith(".mtl"):
-            constants.materials.update(create_materials(file, basedir, use_dds, use_tif))
+            constants.materials.update(materials.create_materials(file, basedir, use_dds, use_tif))
     for material in constants.materials.keys():
         print("   Material: " + material)
     for file in os.listdir(path):
@@ -736,8 +530,8 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
               os.path.join(bodydir, mech + ".dae"))
         return False
     # Create the materials.
-    constants.materials = create_materials(matfile, basedir, use_dds, use_tif)
-    constants.cockpit_materials = create_materials(cockpit_matfile, basedir, use_dds, use_tif)
+    constants.materials = materials.create_materials(matfile, basedir, use_dds, use_tif)
+    constants.cockpit_materials = materials.create_materials(cockpit_matfile, basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
     import_mech_geometry(cdffile, basedir, bodydir, mech)
     # Set the layers for existing objects
@@ -771,9 +565,9 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
             itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
             obj = link_geometry(objectname, libraryfile, itemgroupname)
             if not obj == None:
-                location = convert_to_location(object.attrib["Pos"])
-                rotation = convert_to_rotation(object.attrib["Rotate"])
-                matrix = get_transform_matrix(rotation, location)
+                location = utilities.convert_to_location(object.attrib["Pos"])
+                rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                matrix = utilities.get_transform_matrix(rotation, location)
                 obj.rotation_mode = 'QUATERNION'
                 obj.matrix_world = matrix
         if object.attrib["Type"] == "GeomEntity":
@@ -783,9 +577,9 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
             itemgroupname = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
             obj = link_geometry(objectname, libraryfile, itemgroupname)
             if not obj == None:
-                location = convert_to_location(object.attrib["Pos"])
-                rotation = convert_to_rotation(object.attrib["Rotate"])
-                matrix = get_transform_matrix(rotation, location)
+                location = utilities.convert_to_location(object.attrib["Pos"])
+                rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                matrix = utilities.get_transform_matrix(rotation, location)
                 obj.rotation_mode = 'QUATERNION'
                 obj.matrix_world = matrix
         if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":

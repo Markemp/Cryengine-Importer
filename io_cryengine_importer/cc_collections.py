@@ -20,6 +20,9 @@ def set_up_collections():
     hide_collection(constants.WGT_LAYER)
     create_collection(constants.CTRL_LAYER)
     create_collection(constants.GEO_LAYER)
+    create_collection(constants.EMPTIES_LAYER)
+    create_collection(constants.WEAPONS_LAYER)
+    create_collection(constants.DAMAGED_PARTS_LAYER)
 
 def hide_collection(collection_name):
     collection = get_collection_object(collection_name)

@@ -6,7 +6,6 @@ def import_armature(rig):
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True,auto_connect=True)
         armature = bpy.data.objects['Armature']
-        #bpy.context.scene.objects.active = armature
         bpy.context.view_layer.objects.active = armature
         bpy.ops.object.mode_set(mode='EDIT')
         armature.show_in_front = True
@@ -32,7 +31,6 @@ def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
         raise MetarigError('obj_to_bone(): does not work while in edit mode')
     bone = rig.data.bones[bone_name]
-    #mat = rig.matrix_world * bone.matrix_local
     mat = rig.matrix_world @ bone.matrix_local
     obj.location = mat.to_translation()
     obj.rotation_mode = 'XYZ'

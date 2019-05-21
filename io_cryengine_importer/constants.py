@@ -1,8 +1,11 @@
 WGT_PREFIX = 'WGT-'  # Prefix for widget objects
 ROOT_NAME = 'Bip01'  # Name of the root bone.
-WGT_LAYER = 'Widget Layer'
+WGT_LAYER = 'Widgets Layer'
 CTRL_LAYER = "Control Bones Layer"
 GEO_LAYER = "Deform Bones Layer"
+EMPTIES_LAYER = "Empties"
+WEAPONS_LAYER = "Weapons Layer"
+DAMAGED_PARTS_LAYER = "Damaged Parts"
 
 # store keymaps here to access after registration
 addon_keymaps = []

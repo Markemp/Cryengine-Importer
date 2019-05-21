@@ -6,7 +6,6 @@ def create_widget(armature, bone_name, bone_transform_name=None):
         bone_transform_name = bone_name
     obj_name = constants.WGT_PREFIX + armature.name + '_' + bone_name
     scene = bpy.context.scene
-    id_store = bpy.context.window_manager
     # Check if it already exists in the scene
     if obj_name in scene.objects:
         # Move object to bone position, in case it changed

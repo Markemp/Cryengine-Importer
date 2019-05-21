@@ -323,7 +323,6 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             for obj in obj_objects:
                 if not obj.type == 'EMPTY':
                     armature.select_set(True)
-                    #bpy.context.scene.objects.active = armature
                     bpy.context.view_layer.objects.active = armature
                     bpy.context.view_layer.objects.active = obj
                     print("    Name: " + obj.name)
@@ -423,8 +422,7 @@ def set_viewport_shading():
                 if space.type == 'VIEW_3D': 
                     space.shading.type = 'MATERIAL'
 
-def set_layers():
-    # Set the layers that objects are on.
+def add_objects_to_collections():
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
                or 'physics_proxy' in obj.name 
@@ -432,14 +430,18 @@ def set_layers():
                or obj.name.endswith('_case')
                or obj.name.startswith('animation')]
     for empty in empties:
-        empty.layers[4] = True
-        empty.layers[0] = False
-    # Set weapons and special geometry to layer 2
-    names = bpy.data.objects.keys()
-    for name in names:
-        if any(x in name for x in constants.weapons):
-            bpy.data.objects[name].layers[1] = True
-            bpy.data.objects[name].layers[0] = False
+        cc_collections.link_object_to_collection(empty, constants.EMPTIES_LAYER)
+    # Set weapons and special geometry to Weapons Collection
+    #names = bpy.data.objects.keys()
+    for weapon in bpy.data.objects:
+        if any(x in weapon.name for x in constants.weapons):
+            cc_collections.link_object_to_collection(weapon, constants.WEAPONS_LAYER)
+    move_damaged_parts_to_collection()
+
+def move_damaged_parts_to_collection():
+    for obj in bpy.data.objects:
+        if obj.name.endswith('_damaged') or obj.name.endswith('_damged'):
+            cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_LAYER)
 
 def import_light(object):
     # For a Prefab light, create a new light object, position/rotate it and return the object.
@@ -536,7 +538,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
     # Import the geometry and assign materials.
     import_mech_geometry(cdffile, basedir, bodydir, mech)
     # Set the layers for existing objects
-    set_layers()
+    add_objects_to_collections()
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     
     create_IKs()

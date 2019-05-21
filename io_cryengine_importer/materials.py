@@ -64,8 +64,9 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                         texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
                         if os.path.isfile(texturefile):
                             matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                            matSpec.colorspace_settings.name = 'Non-Color'
                             shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                            shaderSpecImg.color_space = 'NONE'
+                            #shaderSpecImg.colorspace_settings.name = 'Non-Color'
                             shaderSpecImg.image=matSpec
                             shaderSpecImg.location = 0,325
                             links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
@@ -73,14 +74,15 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                         if os.path.isfile(texturefile):
                             texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib["File"])[0] + material_extension))
                             matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                            matNormal.colorspace_settings.name = 'Non-Color'
                             shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                            shaderNormalImg.color_space = 'NONE'
+                            #shaderNormalImg.colorspace_settings.name = 'Non-Color'
                             shaderNormalImg.image=matNormal
                             shaderNormalImg.location = -100,0
                             converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
                             converterNormalMap.location = 100,0
                             links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
-                            links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
+                            links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[19])
     return materials
 
 def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, material_extension):
@@ -103,8 +105,9 @@ def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, materi
             texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
             if os.path.isfile(texturefile):
                 matSpec=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                matSpec.colorspace_settings.name = 'Non-Color'
                 shaderSpecImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                shaderSpecImg.color_space = 'NONE'
+                #shaderSpecImg.colorspace_settings.name = 'Non-Color'
                 shaderSpecImg.image=matSpec
                 shaderSpecImg.location = 0,325
                 links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[5])
@@ -112,11 +115,12 @@ def create_glass_material(mat, basedir, tree_nodes, shaderPrincipledBSDF, materi
             if os.path.isfile(texturefile):
                 texturefile = os.path.normpath(os.path.join(basedir, os.path.splitext(texture.attrib['File'])[0] + material_extension))
                 matNormal=bpy.data.images.load(filepath=texturefile, check_existing=True)
+                matNormal.colorspace_settings.name = 'Non-Color'
                 shaderNormalImg=tree_nodes.nodes.new('ShaderNodeTexImage')
-                shaderNormalImg.color_space = 'NONE'
+                # shaderNormalImg.colorspace_settings.name = 'Non-Color'
                 shaderNormalImg.image=matNormal
                 shaderNormalImg.location = -100,0
                 converterNormalMap=tree_nodes.nodes.new('ShaderNodeNormalMap')
                 converterNormalMap.location = 100,0
                 links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
-                links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[17])
+                links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[19])

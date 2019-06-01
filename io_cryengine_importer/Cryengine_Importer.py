@@ -79,8 +79,6 @@ def create_IKs():
     bpy.context.view_layer.objects.active = armature
     # EDIT MODE CHANGES
     # Set up hip and torso bones.  Connect Pelvis to Pitch
-    print(" *** Editing Pelvis Bone ***")
-    print("     Pelvis name: " + armature.data.edit_bones['Bip01_Pelvis'].name)
     # armature.data.edit_bones['Bip01_Pelvis'].tail = armature.data.edit_bones['Bip01_Pitch'].head      # Causes Pelvis bone to disappear sometimes
     hip_root_bone = bones.copy_bone(armature, "Bip01_Pelvis", "Hip_Root")
     armature.data.edit_bones['Hip_Root'].use_connect = False
@@ -109,34 +107,27 @@ def create_IKs():
         offset = -4
     ### Create IK bones
     # Right foot
-    # rightFootIK = amt.edit_bones.new('Foot_IK.R')
-    # rightFootIK.head = rightCalf.tail
-    # rightFootIK.tail = rightCalf.tail + mathutils.Vector((0,1,0))
-    # rightFootIK.head = rightFoot.head
-    # rightFootIK.tail = rightFoot.head + mathutils.Vector((0,1,0))
-    # rightFootIK.roll = rightFoot.roll
     bones.copy_bone(armature, "Bip01_R_Foot", "Foot_IK.R")
     rightFootIK = amt.edit_bones["Foot_IK.R"]
     rightFootIK.use_connect = False
     rightFootIK.use_deform = False
     rightFootIK.parent = armature.data.edit_bones["Bip01"]
     # Left foot
-    leftFootIK = amt.edit_bones.new('Foot_IK.L')
-    # leftFootIK.head = leftCalf.tail
-    # leftFootIK.tail = leftCalf.tail + mathutils.Vector((0,1,0))
-    leftFootIK.head = leftFoot.head
-    leftFootIK.tail = leftFoot.tail + mathutils.Vector((0,1,0))
-    leftFootIK.roll = leftFoot.roll
+    bones.copy_bone(armature, "Bip01_L_Foot", "Foot_IK.L")
+    leftFootIK = amt.edit_bones["Foot_IK.L"]
+    leftFootIK.use_connect = False
     leftFootIK.use_deform = False
     leftFootIK.parent = armature.data.edit_bones["Bip01"]
     # Left knee
-    leftKneeIK = amt.edit_bones.new('Knee_IK.L')
+    leftKneeIKName = bones.new_bone(armature, "Knee_IK.L")
+    leftKneeIK = amt.edit_bones[leftKneeIKName]
     leftKneeIK.head = leftCalf.head + mathutils.Vector((0,offset,0))
     leftKneeIK.tail = leftKneeIK.head + mathutils.Vector((0, offset/4, 0))
     leftKneeIK.use_deform = False
     leftKneeIK.parent = armature.data.edit_bones["Bip01"]
     # Right knee
-    rightKneeIK = amt.edit_bones.new('Knee_IK.R')
+    rightKneeIKName = bones.new_bone(armature, "Knee_IK.R")
+    rightKneeIK = amt.edit_bones[rightKneeIKName]
     rightKneeIK.head = rightCalf.head + mathutils.Vector((0,offset,0))
     rightKneeIK.tail = rightKneeIK.head + mathutils.Vector((0, offset/4, 0))
     rightKneeIK.use_deform = False
@@ -148,7 +139,8 @@ def create_IKs():
     rightHandIK.use_deform = False
     rightHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
     # Right Elbow
-    rightElbowIK = amt.edit_bones.new('Elbow_IK.R')
+    rightElbowIKName = bones.new_bone(armature, "Elbow_IK.R")
+    rightElbowIK = amt.edit_bones[rightElbowIKName]
     rightElbowIK.head = rightForearm.head + mathutils.Vector((0, -4, 0))
     rightElbowIK.tail = rightElbowIK.head + mathutils.Vector((0, -1, 0))
     rightElbowIK.use_deform = False
@@ -160,7 +152,8 @@ def create_IKs():
     leftHandIK.use_deform = False
     leftHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
     # Left Elbow
-    leftElbowIK = amt.edit_bones.new('Elbow_IK.L')
+    leftElbowIKName = bones.new_bone(armature, "Elbow_IK.L")
+    leftElbowIK = amt.edit_bones[leftElbowIKName]
     leftElbowIK.head = leftForearm.head + mathutils.Vector((0, -4, 0))
     leftElbowIK.tail = leftElbowIK.head + mathutils.Vector((0, -1, 0))
     leftElbowIK.use_deform = False

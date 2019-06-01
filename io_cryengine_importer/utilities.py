@@ -41,3 +41,15 @@ def get_transform_matrix(rotation, location):
     mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
     mat_out = mat_location @ mat_rotation @ mat_scale
     return mat_out
+
+#=======================================================================
+# Error handling
+#=======================================================================
+class MetarigError(Exception):
+    """ Exception raised for errors.
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return repr(self.message)

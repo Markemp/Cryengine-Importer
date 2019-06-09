@@ -73,6 +73,7 @@ def create_object_groups():
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs():
+    print("Creating IKs.  v1.0.4")
     bpy.ops.object.mode_set(mode='EDIT')
     armature = bpy.data.objects['Armature']
     amt = armature.data
@@ -92,86 +93,89 @@ def create_IKs():
     rootbone.tail.z = 0.0
     rootbone.use_deform = False
     rootbone.use_connect = False
-    rightCalf = bpy.context.object.data.edit_bones['Bip01_R_Calf']
-    leftCalf = bpy.context.object.data.edit_bones['Bip01_L_Calf']
-    leftForearm = bpy.context.object.data.edit_bones['Bip01_L_Forearm']
-    rightForearm = bpy.context.object.data.edit_bones['Bip01_R_Forearm']
-    rightHand = bpy.context.object.data.edit_bones['Bip01_R_Hand']
-    leftHand = bpy.context.object.data.edit_bones['Bip01_L_Hand'] 
-    rightFoot = bpy.context.object.data.edit_bones['Bip01_R_Foot'] 
-    leftFoot = bpy.context.object.data.edit_bones['Bip01_L_Foot'] 
+    
     # Determine knee IK offset.  Behind for chickenwalkers, forward for regular.  Edit mode required.
-    if armature.data.edit_bones['Bip01_R_Calf'].head.y > armature.data.edit_bones['Bip01_R_Calf'].tail.y:
-        offset = 4
-    else:
+    offset = 4
+    if amt.edit_bones['Bip01_R_Calf'].head.y < amt.edit_bones['Bip01_R_Calf'].tail.y:
         offset = -4
+
+    print("Offset is " + str(offset))
     ### Create IK bones
+    print("Creating IK Bones")
     # Right foot
-    bones.copy_bone(armature, "Bip01_R_Foot", "Foot_IK.R")
-    rightFootIK = amt.edit_bones["Foot_IK.R"]
-    rightFootIK.use_connect = False
-    rightFootIK.use_deform = False
-    rightFootIK.parent = armature.data.edit_bones["Bip01"]
-    # Left foot
-    bones.copy_bone(armature, "Bip01_L_Foot", "Foot_IK.L")
-    leftFootIK = amt.edit_bones["Foot_IK.L"]
-    leftFootIK.use_connect = False
-    leftFootIK.use_deform = False
-    leftFootIK.parent = armature.data.edit_bones["Bip01"]
-    # Left knee
-    leftKneeIKName = bones.new_bone(armature, "Knee_IK.L")
-    leftKneeIK = amt.edit_bones[leftKneeIKName]
-    leftKneeIK.head = leftCalf.head + mathutils.Vector((0,offset,0))
-    leftKneeIK.tail = leftKneeIK.head + mathutils.Vector((0, offset/4, 0))
-    leftKneeIK.use_deform = False
-    leftKneeIK.parent = armature.data.edit_bones["Bip01"]
+    rightFootIKName = bones.copy_bone(armature, "Bip01_R_Foot", "Foot_IK.R")
+    amt.edit_bones[rightFootIKName].use_connect = False
+    amt.edit_bones[rightFootIKName].use_deform = False
+    amt.edit_bones[rightFootIKName].parent = armature.data.edit_bones["Bip01"]
+
     # Right knee
     rightKneeIKName = bones.new_bone(armature, "Knee_IK.R")
-    rightKneeIK = amt.edit_bones[rightKneeIKName]
-    rightKneeIK.head = rightCalf.head + mathutils.Vector((0,offset,0))
-    rightKneeIK.tail = rightKneeIK.head + mathutils.Vector((0, offset/4, 0))
-    rightKneeIK.use_deform = False
-    rightKneeIK.parent = armature.data.edit_bones["Bip01"]
+    amt.edit_bones[rightKneeIKName].head = amt.edit_bones["Bip01_R_Calf"].head + mathutils.Vector((0,offset,0))
+    amt.edit_bones[rightKneeIKName].tail = amt.edit_bones[rightKneeIKName].head + mathutils.Vector((0, offset/4, 0))
+    amt.edit_bones[rightKneeIKName].use_deform = False
+    amt.edit_bones[rightKneeIKName].parent = armature.data.edit_bones["Bip01"]
+
+    # Left foot
+    leftFootIKName = bones.copy_bone(armature, "Bip01_L_Foot", "Foot_IK.L")
+    amt.edit_bones[leftFootIKName].use_connect = False
+    amt.edit_bones[leftFootIKName].use_deform = False
+    amt.edit_bones[leftFootIKName].parent = armature.data.edit_bones["Bip01"]
+    
+    # Left knee
+    leftKneeIKName = bones.new_bone(armature, "Knee_IK.L")
+    amt.edit_bones[leftKneeIKName].head = amt.edit_bones['Bip01_L_Calf'].head + mathutils.Vector((0,offset,0))
+    amt.edit_bones[leftKneeIKName].tail = amt.edit_bones[leftKneeIKName].head + mathutils.Vector((0, offset/4, 0))
+    amt.edit_bones[leftKneeIKName].use_deform = False
+    amt.edit_bones[leftKneeIKName].parent = amt.edit_bones["Bip01"]
+    
     # Right Hand
-    rightHandIK = amt.edit_bones.new('Hand_IK.R')
-    rightHandIK.head = rightHand.head
-    rightHandIK.tail = rightHandIK.head + mathutils.Vector((0, 1, 0))
-    rightHandIK.use_deform = False
-    rightHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
+    rightHandIKName = bones.copy_bone(armature, "Bip01_R_Hand", "Hand_IK.R")
+    amt.edit_bones[rightHandIKName].head = amt.edit_bones["Bip01_R_Hand"].head
+    amt.edit_bones[rightHandIKName].tail = amt.edit_bones[rightHandIKName].head + mathutils.Vector((0, 1, 0))
+    amt.edit_bones[rightHandIKName].use_deform = False
+    amt.edit_bones[rightHandIKName].parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones["Bip01_R_Hand"].use_inherit_rotation = False
+
     # Right Elbow
     rightElbowIKName = bones.new_bone(armature, "Elbow_IK.R")
-    rightElbowIK = amt.edit_bones[rightElbowIKName]
-    rightElbowIK.head = rightForearm.head + mathutils.Vector((0, -4, 0))
-    rightElbowIK.tail = rightElbowIK.head + mathutils.Vector((0, -1, 0))
-    rightElbowIK.use_deform = False
-    rightElbowIK.parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones[rightElbowIKName].head = amt.edit_bones["Bip01_R_Forearm"].head + mathutils.Vector((0, -4, 0))
+    amt.edit_bones[rightElbowIKName].tail = amt.edit_bones[rightElbowIKName].head + mathutils.Vector((0, -1, 0))
+    amt.edit_bones[rightElbowIKName].use_deform = False
+    amt.edit_bones[rightElbowIKName].parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones[rightElbowIKName].use_inherit_rotation = False
+
     # Left Hand
-    leftHandIK = amt.edit_bones.new('Hand_IK.L')
-    leftHandIK.head = leftHand.head
-    leftHandIK.tail = leftHandIK.head + mathutils.Vector((0, 1, 0))
-    leftHandIK.use_deform = False
-    leftHandIK.parent = armature.data.edit_bones["Bip01_Pitch"]
+    leftHandIKName = bones.copy_bone(armature, "Bip01_L_Hand", "Hand_IK.L")
+    amt.edit_bones[leftHandIKName].head = armature.data.edit_bones['Bip01_L_Hand'] .head
+    amt.edit_bones[leftHandIKName].tail = amt.edit_bones[leftHandIKName].head + mathutils.Vector((0, 1, 0))
+    amt.edit_bones[leftHandIKName].use_deform = False
+    amt.edit_bones[leftHandIKName].parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones["Bip01_L_Hand"].use_inherit_rotation = False
+
     # Left Elbow
     leftElbowIKName = bones.new_bone(armature, "Elbow_IK.L")
-    leftElbowIK = amt.edit_bones[leftElbowIKName]
-    leftElbowIK.head = leftForearm.head + mathutils.Vector((0, -4, 0))
-    leftElbowIK.tail = leftElbowIK.head + mathutils.Vector((0, -1, 0))
-    leftElbowIK.use_deform = False
-    leftElbowIK.parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones[leftElbowIKName].head = amt.edit_bones["Bip01_L_Forearm"].head + mathutils.Vector((0, -4, 0))
+    amt.edit_bones[leftElbowIKName].tail = amt.edit_bones[leftElbowIKName].head + mathutils.Vector((0, -1, 0))
+    amt.edit_bones[leftElbowIKName].use_deform = False
+    amt.edit_bones[leftElbowIKName].parent = armature.data.edit_bones["Bip01_Pitch"]
+    amt.edit_bones[leftElbowIKName].use_inherit_rotation = False
+    print("End creating IK Bones")
+    
     # Set custom shapes
+    print("Setting up widgets")
     bpy.ops.object.mode_set(mode='OBJECT')
     widgets.create_root_widget(armature, "Root", "Bip01")
-    widgets.create_cube_widget(armature, "Hand_IK.R", 1.25, "Hand_IK.R")
-    widgets.create_cube_widget(armature, "Hand_IK.L", 1.25, "Hand_IK.L")
-    widgets.create_cube_widget(armature, "Foot_IK.R", 1.0, "Foot_IK.R")
-    widgets.create_cube_widget(armature, "Foot_IK.L", 1.0, "Foot_IK.L")
-    widgets.create_sphere_widget(armature, "Knee_IK.R", "Knee_IK.R")
-    widgets.create_sphere_widget(armature, "Knee_IK.L", "Knee_IK.L")
-    widgets.create_sphere_widget(armature, "Elbow_IK.R", "Elbow_IK.R")
-    widgets.create_sphere_widget(armature, "Elbow_IK.L", "Elbow_IK.L")
-    widgets.create_circle_widget(armature, "Bip01_Pitch", 2.0, 1.0, True, "Bip01_Pitch")
-    widgets.create_circle_widget(armature, "Bip01_Pelvis", 2.0, 0.0, True, "Bip01_Pelvis")
-    widgets.create_cube_widget(armature, "Hip_Root", 3.0, "Hip_Root")
+    widgets.create_cube_widget(armature, "Hand_IK.R", 1.25)
+    widgets.create_cube_widget(armature, "Hand_IK.L", 1.25)
+    widgets.create_cube_widget(armature, "Foot_IK.R", 1.0)
+    widgets.create_cube_widget(armature, "Foot_IK.L", 1.0)
+    widgets.create_sphere_widget(armature, "Knee_IK.R")
+    widgets.create_sphere_widget(armature, "Knee_IK.L")
+    widgets.create_sphere_widget(armature, "Elbow_IK.R")
+    widgets.create_sphere_widget(armature, "Elbow_IK.L")
+    widgets.create_circle_widget(armature, "Bip01_Pitch", 2.0, 1.0, True)
+    widgets.create_circle_widget(armature, "Bip01_Pelvis", 2.0, 0.0, True)
+    widgets.create_cube_widget(armature, "Hip_Root", 3.0)
     bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
     armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"]
     armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hand_IK.R"]
@@ -185,6 +189,8 @@ def create_IKs():
     armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pitch"]
     armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
     armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hip_Root"]
+    print("End setting up widgets")
+
     # POSE MODE CHANGES
     # Set up IK Constraints
     bpy.ops.object.mode_set(mode='POSE')
@@ -268,11 +274,7 @@ def create_IKs():
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].target = armature
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].subtarget = 'Knee_IK.L'
     bpose.bones['Bip01_L_Thigh'].constraints['IK'].chain_count = 1
-    # Turn off inherit rotation for hands
-    leftHand.use_inherit_rotation = False
-    rightHand.use_inherit_rotation = False
-    leftElbowIK.use_inherit_rotation = False
-    rightElbowIK.use_inherit_rotation = False
+    
     # Move bones to proper layers
     bones.set_bone_layers(armature)
 

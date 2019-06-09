@@ -1,3 +1,4 @@
+import bpy
 import mathutils
 
 def get_scaling_factor(o):
@@ -42,6 +43,9 @@ def get_transform_matrix(rotation, location):
     mat_out = mat_location @ mat_rotation @ mat_scale
     return mat_out
 
+def set_mode(new_mode):
+    bpy.ops.object.mode_set(mode=new_mode)
+
 #=======================================================================
 # Error handling
 #=======================================================================
@@ -50,6 +54,7 @@ class MetarigError(Exception):
     """
     def __init__(self, message):
         self.message = message
+        print("Metarig Error thrown: " + message)
 
     def __str__(self):
         return repr(self.message)

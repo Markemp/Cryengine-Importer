@@ -20,8 +20,8 @@ def import_armature(rig):
         return False
     return True
 
-
 def set_bone_layers(armature):
+    print("set_bone_layers:  Setting layers for armature.")
     original_context = bpy.context.mode
     bpy.ops.object.mode_set(mode='POSE')
     for bone in armature.data.bones:
@@ -29,7 +29,8 @@ def set_bone_layers(armature):
             bone.layers[1] = True
             bone.layers[0] = False
     bpy.ops.object.mode_set(mode=original_context)
-
+    print("set_bone_layers:  End setting layers.")
+    
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
         raise utilities.MetarigError('obj_to_bone(): does not work while in edit mode')
@@ -53,12 +54,12 @@ def new_bone(armature, bone_name):
         edit_bone.head = (0, 0, 0)
         edit_bone.tail = (0, 1, 0)
         edit_bone.roll = 0
-        bpy.ops.object.mode_set(mode='OBJECT')
-        bpy.ops.object.mode_set(mode='EDIT')
-        print("new_bone:  End creating new bone")
+        # bpy.ops.object.mode_set(mode='OBJECT')
+        # bpy.ops.object.mode_set(mode='EDIT')
+        print("new_bone:  End creating new bone - " + name)
         return name
     else:
-        raise MetarigError("Can't add new bone '%s' outside of edit mode" % bone_name)
+        raise utilities.MetarigError("Can't add new bone '%s' outside of edit mode" % bone_name)
 
 def copy_bone(armature, bone_name, assign_name=''):
     """ Makes a copy of the given bone in the given armature object.
@@ -130,13 +131,14 @@ def copy_bone(armature, bone_name, assign_name=''):
         print("copy_bone:  End copy")
         return bone_name_2
     else:
-        raise MetarigError("Cannot copy bones outside of edit mode")
+        raise utilities.MetarigError("Cannot copy bones outside of edit mode")
 
 def copy_bone_simple(armature, bone_name, assign_name=''):
     """ Makes a copy of the given bone in the given armature object.
         but only copies head, tail positions and roll. Does not
         address parenting either.
     """
+    print("copy_bone_simple:  Creating simple bone " + assign_name + " from " + bone_name)
     if bone_name not in armature.data.edit_bones:
         raise utilities.MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
 
@@ -155,10 +157,10 @@ def copy_bone_simple(armature, bone_name, assign_name=''):
         edit_bone_2.head = Vector(edit_bone_1.head)
         edit_bone_2.tail = Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll
-
+        print("copy_bone_simple:  End creating simple bone.")
         return bone_name_2
     else:
-        raise MetarigError("Cannot copy bones outside of edit mode")
+        raise utilities.MetarigError("Cannot copy bones outside of edit mode")
 
 def flip_bone(armature, bone_name):
     if bone_name not in armature.data.bones:

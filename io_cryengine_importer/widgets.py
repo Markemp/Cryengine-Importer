@@ -4,6 +4,7 @@ from . import constants, cc_collections, bones
 def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:
         bone_transform_name = bone_name
+    print("Creating Widget " + constants.WGT_PREFIX + armature.name + '_' + bone_name)
     obj_name = constants.WGT_PREFIX + armature.name + '_' + bone_name
     scene = bpy.context.scene
     # Check if it already exists in the scene

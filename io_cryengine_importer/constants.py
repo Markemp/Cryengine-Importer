@@ -20,3 +20,6 @@ control_bones = ['Hand_IK.L', 'Hand_IK.R', 'Bip01', 'Hip_Root', 'Bip01_Pitch', '
 				 
 materials = {} # All the materials found for the mech
 cockpit_materials = {}
+
+shoulder_only_mechs = ["catapult", "cicada", "locust", "jenner", "flea", "urbanmech", "stalker", "jagermech", "jagermechiic",
+    "rifleman", "riflemaniic", "raven", "jenneriic", "blackjack", "firefly"]

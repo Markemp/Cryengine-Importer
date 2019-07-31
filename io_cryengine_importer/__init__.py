@@ -61,16 +61,16 @@ from . import constants, cc_collections, Cryengine_Importer
 
 
 bl_info = {
-    'name': 'Cryengine Importer', 
-    'description': 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
-    'author': 'Geoff Gerber',
-    'category': 'Import-Export',
-    'version': (1, 1, 0),
-    'blender': (2, 80, 0),
-    'location': 'File > Import-Export',
-    'warning': 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
-    'wiki_url': 'https://github.com/markemp/Cryengine-Importer',
-    'support': 'TESTING'
+    "name": 'Cryengine Importer', 
+    "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
+    "author": 'Geoff Gerber',
+    "category": 'Import-Export',
+    "version": (2, 0, 0),
+    "blender": (2, 80, 0),
+    "location": 'File > Import-Export',
+    "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
+    "wiki_url": 'https://github.com/markemp/Cryengine-Importer',
+    "support": "COMMUNITY"
     }
 
 #@orientation_helper(axis_forward='Y', axis_up='Z')

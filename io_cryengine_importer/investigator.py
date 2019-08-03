@@ -8,6 +8,8 @@ import xml.etree as etree
 import xml.etree.ElementTree as ET
 from math import radians
 
+schema = "{http://www.collada.org/2005/11/COLLADASchema}"
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 dir_path2 = os.getcwd()
 
@@ -26,6 +28,11 @@ root = geometry.getroot()
 print(root.tag)
 print(root.attrib)
 
-for geo in geometry.iter("visual_scene"):
+for geo in geometry.iter(schema + "visual_scene"):
     print("Found visual_scene")
     print(geo.attrib["id"])
+
+for node in geometry.iter("node"):
+    print(node.attrib["id"])
+
+    

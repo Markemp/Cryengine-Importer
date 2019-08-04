@@ -76,5 +76,9 @@ def find_hand_bone(bone, depth):
     
     return depth
 
+def GetParentMap(tree):
+    parent_map = {c:p for p in tree.iter() for c in p}
+    return parent_map
+
         
 

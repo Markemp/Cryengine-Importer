@@ -1,0 +1,669 @@
+<?xml version="1.0" encoding="utf-8"?>
+<COLLADA xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" version="1.4.1" xmlns="http://www.collada.org/2005/11/COLLADASchema">
+  <asset>
+    <created>2019-04-30T20:02:43.2817032-07:00</created>
+    <modified>2019-04-30T20:02:43.2817032-07:00</modified>
+    <unit meter="1" name="meter" />
+    <up_axis>Z_UP</up_axis>
+    <contributor>
+      <author>Heffay</author>
+      <author_email>markemp@gmail.com</author_email>
+      <author_website>https://github.com/Markemp/Cryengine-Converter</author_website>
+      <source_data>catapult</source_data>
+    </contributor>
+    <contributor>
+      <author>amit.joshi@AJOSHI</author>
+      <source_data>D:\Projects\MWO\OmicronGame\Game\Objects\mechs\catapult\body\catapult_body_LOD1.max</source_data>
+    </contributor>
+    <revision>1.0.0.0</revision>
+    <title>catapult</title>
+  </asset>
+  <library_images />
+  <library_effects>
+    <effect id="centre_torso-effect" name="centre_torso">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">1 1 0</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="right_torso-effect" name="right_torso">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">1 0.51764709 0</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="left_torso-effect" name="left_torso">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0 0.70588237 0.81176478</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">9.999999</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="left_arm-effect" name="left_arm">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.098039225 0.1137255 0.4039216</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="right_arm-effect" name="right_arm">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.64313728 0.36078432 0.36078432</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="left_leg-effect" name="left_leg">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.14509805 0.57647061 0.97647065</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="right_leg-effect" name="right_leg">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.99215692 0 0</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="head-effect" name="head">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0 1 0</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="centre_torso_rear-effect" name="centre_torso_rear">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0.14901961 0.14901961 0</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="left_torso_rear-effect" name="left_torso_rear">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0 0.1137255 0.12941177</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+    <effect id="right_torso_rear-effect" name="right_torso_rear">
+      <profile_COMMON>
+        <technique sid="common">
+          <phong>
+            <emission>
+              <color sid="emission">0 0 0</color>
+            </emission>
+            <diffuse>
+              <color sid="diffuse">0 0 1</color>
+            </diffuse>
+            <specular>
+              <color sid="specular">0 0 0</color>
+            </specular>
+            <transparent>
+              <color>0</color>
+            </transparent>
+            <shininess>
+              <float sid="shininess">10</float>
+            </shininess>
+            <index_of_refraction>
+              <float>0</float>
+            </index_of_refraction>
+          </phong>
+        </technique>
+      </profile_COMMON>
+    </effect>
+  </library_effects>
+  <library_materials>
+    <material id="centre_torso-material" name="centre_torso">
+      <instance_effect url="#centre_torso-effect" />
+    </material>
+    <material id="right_torso-material" name="right_torso">
+      <instance_effect url="#right_torso-effect" />
+    </material>
+    <material id="left_torso-material" name="left_torso">
+      <instance_effect url="#left_torso-effect" />
+    </material>
+    <material id="left_arm-material" name="left_arm">
+      <instance_effect url="#left_arm-effect" />
+    </material>
+    <material id="right_arm-material" name="right_arm">
+      <instance_effect url="#right_arm-effect" />
+    </material>
+    <material id="left_leg-material" name="left_leg">
+      <instance_effect url="#left_leg-effect" />
+    </material>
+    <material id="right_leg-material" name="right_leg">
+      <instance_effect url="#right_leg-effect" />
+    </material>
+    <material id="head-material" name="head">
+      <instance_effect url="#head-effect" />
+    </material>
+    <material id="centre_torso_rear-material" name="centre_torso_rear">
+      <instance_effect url="#centre_torso_rear-effect" />
+    </material>
+    <material id="left_torso_rear-material" name="left_torso_rear">
+      <instance_effect url="#left_torso_rear-effect" />
+    </material>
+    <material id="right_torso_rear-material" name="right_torso_rear">
+      <instance_effect url="#right_torso_rear-effect" />
+    </material>
+  </library_materials>
+  <library_controllers>
+    <controller id="Controller">
+      <skin source="#catapult-mesh">
+        <bind_shape_matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</bind_shape_matrix>
+        <source id="Controller-joints">
+          <Name_array id="Controller-joints-array" count="69">Bip01 Bip01_Pelvis Bip01_L_Hip Bip01_L_Leg_Flap_Front Bip01_Pitch Bip01_R_Hip Bip01_R_Leg_Flap_Front Bip01_L_Thigh Bip01_L_Calf Bip01_L_Foot target06 Bip01_L_Heel Bip01_L_index1 Bip01_L_pinky1 Bip01_L_talon1 Bip01_L_Toe0 Bip01_L_index2 Bip01_L_index2_Nub Bip01_L_pinky2 Bip01_L_pinky2_Nub Bip01_L_talon2 Bip01_L_talon2_Nub Bip01_L_Toe0Helper Bip01_L_Toe0Nub Bip01_L_Leg_Flap_Front_Nub Bip01_Spine Bip01_Spine1 Bip01_Spine2 Bip01_L_Clavicle Bip01_R_Clavicle Bip01_Torso_Flap_Front COCKPIT COCKPIT_CAM jet1_l jet2_l target01 target02 target03 Bip01_L_UpperArm Bip01_L_Forearm Bip01_L_UpperArm_Door Bip01_L_Hand target05 Bip01_L_UpperArm_DoorNub Bip01_R_UpperArm Bip01_R_Forearm Bip01_R_UpperArm_Door Bip01_R_Hand target04 Bip01_R_UpperArm_DoorNub Bip01_Torso_Flap_Front_Nub Bip01_R_Thigh Bip01_R_Calf Bip01_R_Foot target07 Bip01_R_Heel Bip01_R_index1 Bip01_R_pinky1 Bip01_R_talon1 Bip01_R_Toe0 Bip01_R_index2 Bip01_R_index2_Nub Bip01_R_pinky2 Bip01_R_pinky2_Nub Bip01_R_talon2 Bip01_R_talon2_Nub Bip01_R_Toe0Helper Bip01_R_Toe0Nub Bip01_R_Leg_Flap_Front_Nub</Name_array>
+          <technique_common>
+            <accessor count="69" offset="0" source="#Controller-joints-array" stride="1" />
+          </technique_common>
+        </source>
+        <source id="Controller-bind_poses">
+          <float_array id="Controller-bind_poses-array" count="1104" digits="0" magnitude="0">0 1 0 0 -1 0 0 0 0 0 1 0 0 0 0 1 0 0.044329 0.999017 -6.884078 -0.000001 0.999017 -0.044329 0.292283 -1 -0.000001 0 0.000001 0 0 0 1 -1 -0.000001 0 -1.597737 0 0.022123 0.999755 -6.888869 -0.000001 0.999755 -0.022123 0.139269 0 0 0 1 0 0.333265 -0.942833 5.037711 0.006285 0.942814 0.333259 -2.622273 0.999980 -0.005925 -0.002095 1.441177 0 0 0 1 0 0.042161 0.999111 -7.210964 0.000026 0.999111 -0.042161 0.276636 -1 0.000026 -0.000001 0.000008 0 0 0 1 1 0.000001 0 -1.597739 0 -0.022123 -0.999755 6.888870 -0.000001 0.999755 -0.022123 0.139268 0 0 0 1 0 0.333267 -0.942832 5.037706 0.006285 0.942814 0.333260 -2.640234 0.999980 -0.005926 -0.002095 -1.414749 0 0 0 1 -0.027305 -0.743860 -0.667777 4.533592 -0.025339 0.668327 -0.743436 5.041883 0.999306 -0.003379 -0.037097 3.086902 0 0 0 1 -0.036914 0.485522 -0.873444 5.265375 -0.001922 0.874004 0.485915 -0.561157 0.999317 0.019616 -0.031330 3.107183 0 0 0 1 -0.001544 0.082392 -0.996599 0.892296 -0.221964 0.971711 0.080679 -0.883127 0.975054 0.221334 0.016788 2.962545 0 0 0 1 0.999317 0.019614 -0.031330 3.187179 -0.016165 0.994151 0.106778 1.546864 0.033241 -0.106198 0.993789 -4.997262 0 0 0 1 1 0 0 3.083284 0 1 0 -0.128915 0 0 1 0.000003 0 0 0 1 0.248131 0.961546 -0.117733 -0.534949 -0.025078 0.127869 0.991474 -0.691720 0.968402 -0.243063 0.055842 2.090494 0 0 0 1 -0.255089 0.959422 -0.120159 -2.016785 -0.004045 0.123210 0.992372 -0.655221 0.966909 0.253630 -0.027549 3.565162 0 0 0 1 0.000001 -0.818434 -0.574600 -0.365402 0.009094 0.574577 -0.818400 1.060593 0.999959 -0.005225 0.007443 3.073766 0 0 0 1 0 0.652204 -0.758043 -0.074194 -0.007247 0.758024 0.652187 -0.981748 0.999974 0.005494 0.004726 3.076250 0 0 0 1 0.227356 0.771961 -0.593621 -0.767872 0.164198 0.570467 0.804739 -1.094660 0.959869 -0.280434 0.002944 2.166115 0 0 0 1 0.127440 0.905957 -0.403734 -1.836590 0.007077 0.406212 0.913751 -0.977244 0.991821 -0.119305 0.045356 1.846505 0 0 0 1 -0.238312 0.768742 -0.593500 -2.132686 -0.059263 0.598458 0.798959 -1.664009 0.969379 0.225574 -0.097062 3.655307 0 0 0 1 -0.227830 0.732613 -0.641382 -2.594830 -0.073388 0.643912 0.761572 -1.825122 0.970931 0.220579 -0.092938 3.673012 0 0 0 1 0.000002 -0.945749 -0.324898 -1.005865 0.010508 0.324880 -0.945697 0.816610 0.999945 -0.003412 0.009938 3.074874 0 0 0 1 0.000002 -0.945749 -0.324898 -2.165852 0.010508 0.324880 -0.945697 0.816610 0.999945 -0.003412 0.009939 3.074874 0 0 0 1 0 0.652204 -0.758044 -0.773320 -0.007247 0.758024 0.652187 -0.981748 0.999974 0.005493 0.004726 3.076250 0 0 0 1 1 0 0.000001 3.083283 0 1 0.000010 -1.231652 -0.000001 -0.000010 1 0.000014 0 0 0 1 0 0.333265 -0.942833 4.625179 0.006285 0.942814 0.333259 -2.622273 0.999980 -0.005926 -0.002095 1.441179 0 0 0 1 0 0.044328 0.999017 -7.395766 -0.000003 0.999017 -0.044328 0.292682 -1 -0.000003 0 0.000004 0 0 0 1 0 0.002974 0.999996 -7.571023 -0.000040 0.999995 -0.002974 -0.020451 -1 -0.000040 0 0.000004 0 0 0 1 0 0.002974 0.999996 -7.798463 -0.000040 0.999996 -0.002974 -0.020451 -1 -0.000040 0 0.000004 0 0 0 1 -1 -0.000040 0 -1.543000 0.000040 -0.999982 -0.005963 -1.391559 0 -0.005963 0.999982 -10.140598 0 0 0 1 1 0.000040 0.000001 -1.543011 0.000040 -0.999972 0.007498 -1.527935 0.000001 -0.007498 -0.999972 10.120953 0 0 0 1 0.000011 -0.280984 -0.959712 8.404596 0.000038 -0.959713 0.280984 1.798604 -1 -0.000040 0 0.000001 0 0 0 1 1 0.000040 0 -0.003201 -0.000040 0.999996 -0.002974 -3.970994 0 0.002974 0.999995 -9.590462 0 0 0 1 1 0.000040 0.000001 -0.003206 -0.000040 0.999995 -0.002974 -3.970994 -0.000001 0.002974 0.999996 -9.590462 0 0 0 1 -1 -0.000040 0 -1.736675 0.000028 -0.709206 -0.705001 4.364898 0.000028 -0.705001 0.709206 -8.000633 0 0 0 1 -1 -0.000040 0 1.726507 0.000028 -0.709207 -0.705001 4.360383 0.000029 -0.705001 0.709207 -7.998036 0 0 0 1 1 0.000040 0.000001 -0.040719 -0.000040 0.999995 -0.002974 -2.399988 -0.000001 0.002974 0.999996 -9.693344 0 0 0 1 1 0.000040 0.000001 -1.310348 -0.000040 0.999995 -0.002974 0.796490 -0.000001 0.002974 0.999996 -10.044660 0 0 0 1 1 0.000040 0.000001 2.089006 -0.000040 0.999995 -0.002974 0.796490 -0.000001 0.002974 0.999996 -10.044661 0 0 0 1 -1 0.000001 0.000200 -2.182973 -0.000001 -1 -0.000648 -1.445528 0.000200 -0.000648 1 -10.132622 0 0 0 1 -0.000040 0.999996 -0.002974 1.482014 -0.011113 -0.002974 -0.999934 10.070837 -0.999938 -0.000007 0.011113 -5.231403 0 0 0 1 0 -0.002974 -0.999996 13.145412 0.000040 -0.999995 0.002974 0.071144 -1 -0.000040 0 -3.663571 0 0 0 1 -0.000040 0.999995 -0.002974 0.379011 -0.011113 -0.002974 -0.999934 10.070839 -0.999938 -0.000007 0.011113 -5.231401 0 0 0 1 0.011113 0.002974 0.999934 -10.070837 0.999938 0.000007 -0.011113 5.231404 -0.000040 0.999996 -0.002974 1.482014 0 0 0 1 0 -0.002974 -0.999996 11.645413 0.000040 -0.999995 0.002974 0.071144 -1 -0.000040 0 -3.663569 0 0 0 1 1 0.000080 0.000197 -2.182941 0.000080 -1 -0.000648 -1.445528 0.000197 0.000648 -1 10.132635 0 0 0 1 -0.000040 0.999995 -0.002974 1.482013 -0.000002 -0.002974 -0.999996 10.128352 -1 -0.000040 0.000002 5.119146 0 0 0 1 0 -0.002975 -0.999996 13.145429 0.000047 -0.999995 0.002975 0.071094 -1 -0.000047 0 3.662577 0 0 0 1 -0.000040 0.999995 -0.002974 0.379011 -0.000002 -0.002974 -0.999996 10.128355 -1 -0.000040 0.000002 5.119147 0 0 0 1 -0.000002 -0.002974 -0.999996 10.128352 -1 -0.000040 0.000002 5.119150 -0.000040 0.999996 -0.002974 1.482012 0 0 0 1 0 -0.002975 -0.999996 11.645431 0.000040 -0.999995 0.002975 0.071120 -1 -0.000040 0 3.662576 0 0 0 1 0.000012 -0.280984 -0.959713 7.927656 0.000039 -0.959713 0.280984 1.798604 -1 -0.000041 0 0.000009 0 0 0 1 0.028975 -0.743724 -0.667859 4.529425 0.039809 0.668468 -0.742675 4.995632 0.998787 -0.005068 0.048976 -3.167172 0 0 0 1 0.039155 0.485438 -0.873394 5.257834 -0.006564 0.874170 0.485575 -0.534609 0.999212 -0.013280 0.037415 -3.128425 0 0 0 1 0.010026 0.083797 -0.996432 0.865661 0.235464 0.968264 0.083798 -0.930733 0.971831 -0.235464 -0.010024 -2.971740 0 0 0 1 0.999212 -0.013280 0.037415 -3.038425 0.009227 0.994271 0.106486 1.698359 -0.038614 -0.106057 0.993610 -4.999963 0 0 0 1 1 0.000001 0.000001 -3.098505 -0.000001 1 -0.000001 -0.128913 -0.000001 0.000001 1 0.000005 0 0 0 1 -0.271759 0.955159 -0.117553 -0.469091 -0.011575 0.118897 0.992839 -0.611923 0.962296 0.271174 -0.021255 -2.178074 0 0 0 1 0.254848 0.959500 -0.120052 -2.019847 -0.017951 0.128824 0.991505 -0.573551 0.966814 -0.250528 0.050055 -3.594340 0 0 0 1 0.000002 -0.818434 -0.574600 -0.365407 0.009095 0.574577 -0.818400 1.004375 0.999959 -0.005225 0.007445 -3.107768 0 0 0 1 0 0.652204 -0.758044 -0.074192 -0.007248 0.758024 0.652187 -0.936948 0.999974 0.005494 0.004727 -3.105376 0 0 0 1 -0.234008 0.766670 -0.597878 -0.727928 -0.175299 0.571602 0.801587 -1.064639 0.956300 0.292385 0.000637 -2.215183 0 0 0 1 -0.096707 0.902461 -0.419776 -1.860095 -0.038966 0.417997 0.907612 -0.944968 0.994550 0.104129 -0.005258 -1.850234 0 0 0 1 0.243973 0.767626 -0.592644 -2.158492 0.039644 0.602705 0.796978 -1.590322 0.968971 -0.217936 0.116612 -3.690208 0 0 0 1 0.233702 0.734671 -0.636900 -2.629346 0.053167 0.644403 0.762836 -1.740803 0.970854 -0.212138 0.111538 -3.711118 0 0 0 1 0.000001 -0.945749 -0.324898 -1.005873 0.010510 0.324880 -0.945697 0.751649 0.999945 -0.003414 0.009940 -3.106576 0 0 0 1 0.000001 -0.945749 -0.324898 -2.181304 0.010510 0.324880 -0.945697 0.751648 0.999945 -0.003414 0.009940 -3.106577 0 0 0 1 0 0.652204 -0.758044 -0.773316 -0.007248 0.758024 0.652187 -0.936946 0.999974 0.005495 0.004727 -3.105379 0 0 0 1 1 0.000001 0.000002 -3.098507 -0.000001 1 -0.000017 -1.231647 -0.000002 0.000017 1 -0.000014 0 0 0 1 -0.000001 0.333267 -0.942833 4.591421 0.006285 0.942814 0.333260 -2.640231 0.999980 -0.005925 -0.002095 -1.414750 0 0 0 1</float_array>
+          <technique_common>
+            <accessor count="69" offset="0" source="#Controller-bind_poses-array" stride="16">
+              <param name="TRANSFORM" type="float4x4" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="Controller-weights">
+          <float_array id="Controller-weights-array" count="3" digits="0" magnitude="0">1 0 0 0 1 0 0 0 1 0 0 0</float_array>
+          <technique_common>
+            <accessor count="12" offset="0" source="#Controller-weights-array" stride="1">
+              <param name="WEIGHT" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <joints>
+          <input semantic="JOINT" source="#Controller-joints" />
+          <input semantic="INV_BIND_MATRIX" source="#Controller-bind_poses" />
+        </joints>
+        <vertex_weights count="3">
+          <input semantic="JOINT" source="#Controller-joints" offset="0" set="0" />
+          <input semantic="WEIGHT" source="#Controller-weights" offset="1" set="0" />
+          <vcount>4 4 4</vcount>
+          <v>1 0 0 1 0 2 0 3 1 4 0 5 0 6 0 7 1 8 0 9 0 10 0 11</v>
+        </vertex_weights>
+      </skin>
+      <extra>
+        <technique profile="FCOLLADA">
+          <user_properties>SkinController</user_properties>
+        </technique>
+      </extra>
+    </controller>
+  </library_controllers>
+  <library_geometries>
+    <geometry id="catapult-mesh" name="catapult">
+      <mesh>
+        <source id="catapult-mesh-pos" name="catapult-pos">
+          <float_array id="catapult-mesh-pos-array" count="9">0 0.070196 7.702325 0.016270 0.028285 7.704185 -0.016269 0.028285 7.704185</float_array>
+          <technique_common>
+            <accessor count="3" offset="0" source="#catapult-mesh-pos-array" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="catapult-mesh-norm" name="catapult-norm">
+          <float_array id="catapult-mesh-norm-array" count="9">0 -0.044332 -0.999017 0 -0.044332 -0.999017 0 -0.044332 -0.999017</float_array>
+          <technique_common>
+            <accessor count="3" offset="0" source="#catapult-mesh-norm-array" stride="3">
+              <param name="X" type="float" />
+              <param name="Y" type="float" />
+              <param name="Z" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <source id="catapult-mesh-UV" name="catapult-UV">
+          <float_array id="catapult-mesh-UV-array" count="6">0.500000 1 0.527778 1 0.472222 1</float_array>
+          <technique_common>
+            <accessor count="3" offset="0" source="#catapult-mesh-UV-array" stride="2">
+              <param name="S" type="float" />
+              <param name="T" type="float" />
+            </accessor>
+          </technique_common>
+        </source>
+        <vertices id="catapult-vertices">
+          <input semantic="POSITION" source="#catapult-mesh-pos" />
+        </vertices>
+        <polylist count="1" material="centre_torso-material">
+          <input semantic="VERTEX" source="#catapult-vertices" offset="0" set="0" />
+          <input semantic="NORMAL" source="#catapult-mesh-norm" offset="1" set="0" />
+          <input semantic="TEXCOORD" source="#catapult-mesh-UV" offset="2" set="0" />
+          <p>0 0 0 1 1 1 2 2 2</p>
+          <vcount>3</vcount>
+        </polylist>
+      </mesh>
+    </geometry>
+  </library_geometries>
+  <library_visual_scenes>
+    <visual_scene id="Scene">
+      <node id="Armature" sid="Bip01" name="Bip01" type="JOINT">
+        <matrix>0 -1 0 0 1 0 0 0 0 0 1 0 0 0 0 1</matrix>
+        <node id="Armature_Bip01_Pelvis" sid="Bip01_Pelvis" name="Bip01_Pelvis" type="JOINT">
+          <matrix>0.044329 0.999017 -0.000001 0.013167 0 0.000001 1 -0.000001 0.999017 -0.044329 0 6.890267 0 0 0 1</matrix>
+          <node id="Armature_Bip01_L_Hip" sid="Bip01_L_Hip" name="Bip01_L_Hip" type="JOINT">
+            <matrix>0 0.999753 0.022217 -0.000003 0 -0.022217 0.999753 0 1 0 0 1.597738 0 0 0 1</matrix>
+            <node id="Armature_Bip01_L_Thigh" sid="Bip01_L_Thigh" name="Bip01_L_Thigh" type="JOINT">
+              <matrix>0.027306 0.025338 -0.999306 1.235475 -0.684070 -0.728469 -0.037163 0 -0.728905 0.684610 -0.002558 0 0 0 0 1</matrix>
+              <node id="Armature_Bip01_L_Calf" sid="Bip01_L_Calf" name="Bip01_L_Calf" type="JOINT">
+                <matrix>0.223113 -0.974567 -0.020957 2.877047 0.974773 0.222922 0.011081 0.000002 -0.006127 -0.022900 0.999719 0.000002 0 0 0 1</matrix>
+                <node id="Armature_Bip01_L_Foot" sid="Bip01_L_Foot" name="Bip01_L_Foot" type="JOINT">
+                  <matrix>0.910534 0.409513 0.056806 4.646271 -0.412248 0.888909 0.199730 0.000001 0.031297 -0.205279 0.978203 0 0 0 0 1</matrix>
+                  <node id="Armature_Bip01_L_Heel" sid="Bip01_L_Heel" name="Bip01_L_Heel" type="JOINT">
+                    <matrix>-0.001544 0.082392 -0.996599 0.907682 -0.221964 0.971711 0.080678 -0.073481 0.975054 0.221334 0.016787 -0.015289 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_Bip01_L_index1" sid="Bip01_L_index1" name="Bip01_L_index1" type="JOINT">
+                    <matrix>0.196173 -0.977528 -0.077174 0.482394 0.869770 0.209808 -0.446632 0.660966 0.452787 0.020494 0.891383 1.355508 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_L_index2" sid="Bip01_L_index2" name="Bip01_L_index2" type="JOINT">
+                      <matrix>0.868578 0.494529 -0.031823 0.742282 -0.495552 0.866705 -0.057011 -0.000001 -0.000612 0.065289 0.997866 0 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_L_index2_Nub" sid="Bip01_L_index2_Nub" name="Bip01_L_index2_Nub" type="JOINT">
+                        <matrix>0.968002 -0.227233 0.106473 0.591287 0.212844 0.968224 0.131296 0 -0.132924 -0.104433 0.985609 0 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_L_pinky1" sid="Bip01_L_pinky1" name="Bip01_L_pinky1" type="JOINT">
+                    <matrix>0.199193 -0.978839 0.046859 0.485610 0.979208 0.200686 0.029613 1.117642 -0.038391 0.039986 0.998462 -0.648362 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_L_pinky2" sid="Bip01_L_pinky2" name="Bip01_L_pinky2" type="JOINT">
+                      <matrix>0.869654 0.493289 -0.019195 0.728913 -0.493292 0.866841 -0.072450 0 -0.019100 0.072475 0.997187 0.000001 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_L_pinky2_Nub" sid="Bip01_L_pinky2_Nub" name="Bip01_L_pinky2_Nub" type="JOINT">
+                        <matrix>0.998146 0.060499 -0.006658 0.592204 -0.060498 0.998168 0.000214 0 0.006659 0.000189 0.999978 0 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_L_talon1" sid="Bip01_L_talon1" name="Bip01_L_talon1" type="JOINT">
+                    <matrix>0.505213 0.862943 -0.009392 0.190539 -0.841640 0.490277 -0.226431 -1.014651 -0.190793 0.122301 0.973982 -0.230675 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_L_talon2" sid="Bip01_L_talon2" name="Bip01_L_talon2" type="JOINT">
+                      <matrix>0.960720 0.277505 -0.002917 0.383309 -0.277509 0.960722 -0.001001 -0.000001 0.002525 0.001771 0.999995 0 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_L_talon2_Nub" sid="Bip01_L_talon2_Nub" name="Bip01_L_talon2_Nub" type="JOINT">
+                        <matrix>1 0 0 1.159987 0 1 0 0.000001 0 0 1 0 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_L_Toe0" sid="Bip01_L_Toe0" name="Bip01_L_Toe0" type="JOINT">
+                    <matrix>0.809202 -0.587502 -0.005802 0.393402 0.572596 0.790806 -0.216239 0.600933 0.131629 0.171659 0.976323 0.137422 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_L_Toe0Helper" sid="Bip01_L_Toe0Helper" name="Bip01_L_Toe0Helper" type="JOINT">
+                      <matrix>1 0 0 0.699126 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+                    </node>
+                    <node id="Armature_Bip01_L_Toe0Nub" sid="Bip01_L_Toe0Nub" name="Bip01_L_Toe0Nub" type="JOINT">
+                      <matrix>0 0.652196 -0.758050 0.729097 -0.007246 0.758030 0.652179 -0.025785 0.999974 0.005493 0.004726 -0.000187 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+                <node id="Armature_target06" sid="target06" name="target06" type="JOINT">
+                  <matrix>-0.000001 0.390015 -0.920808 0.060557 -0.000002 0.920808 0.390015 -0.036509 1 0.000002 0 -0.080001 0 0 0 1</matrix>
+                </node>
+              </node>
+            </node>
+          </node>
+          <node id="Armature_Bip01_L_Leg_Flap_Front" sid="Bip01_L_Leg_Flap_Front" name="Bip01_L_Leg_Flap_Front" type="JOINT">
+            <matrix>-0.927133 0.374725 -0.002355 -1.227424 0.374732 0.927115 -0.005827 0.844036 0 -0.006285 -0.999980 1.424668 0 0 0 1</matrix>
+            <node id="Armature_Bip01_L_Leg_Flap_Front_Nub" sid="Bip01_L_Leg_Flap_Front_Nub" name="Bip01_L_Leg_Flap_Front_Nub" type="JOINT">
+              <matrix>1 0 0 0.412532 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+            </node>
+          </node>
+          <node id="Armature_Bip01_Pitch" sid="Bip01_Pitch" name="Bip01_Pitch" type="JOINT">
+            <matrix>0.999998 0.002170 0 0.326269 -0.002170 0.999997 0.000026 0 0 -0.000026 1 0 0 0 0 1</matrix>
+            <node id="Armature_Bip01_Spine" sid="Bip01_Spine" name="Bip01_Spine" type="JOINT">
+              <matrix>0.999997 -0.002170 0 0.185420 0.002170 0.999997 -0.000029 0 0 0.000029 1 -0.000001 0 0 0 1</matrix>
+              <node id="Armature_Bip01_Spine1" sid="Bip01_Spine1" name="Bip01_Spine1" type="JOINT">
+                <matrix>0.999144 0.041357 -0.000002 0.169626 -0.041357 0.999144 -0.000037 0 0 0.000037 1 0 0 0 0 1</matrix>
+                <node id="Armature_Bip01_Spine2" sid="Bip01_Spine2" name="Bip01_Spine2" type="JOINT">
+                  <matrix>1 0 0 0.227440 0 1 0 0 0 0 1 0.000001 0 0 0 1</matrix>
+                  <node id="Armature_Bip01_L_Clavicle" sid="Bip01_L_Clavicle" name="Bip01_L_Clavicle" type="JOINT">
+                    <matrix>0 -0.008937 0.999960 2.329295 0 -0.999960 -0.008937 -1.502580 1 0 0 1.543004 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_L_UpperArm" sid="Bip01_L_UpperArm" name="Bip01_L_UpperArm" type="JOINT">
+                      <matrix>1 0.000041 -0.000200 0.638000 -0.000042 0.999986 -0.005315 0 0.000200 0.005315 0.999986 0 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_L_Forearm" sid="Bip01_L_Forearm" name="Bip01_L_Forearm" type="JOINT">
+                        <matrix>0.000040 0.010912 0.999940 2.938163 -0.999993 0.003622 0.000001 0 -0.003622 -0.999934 0.010912 0.000005 0 0 0 1</matrix>
+                        <node id="Armature_Bip01_L_Hand" sid="Bip01_L_Hand" name="Bip01_L_Hand" type="JOINT">
+                          <matrix>1 0 0 1.103003 0 1 0 -0.000002 0 0 1 -0.000002 0 0 0 1</matrix>
+                        </node>
+                        <node id="Armature_target05" sid="target05" name="target05" type="JOINT">
+                          <matrix>0 0 1 0 -1 0 0 0 0 -1 0 0 0 0 0 1</matrix>
+                        </node>
+                      </node>
+                      <node id="Armature_Bip01_L_UpperArm_Door" sid="Bip01_L_UpperArm_Door" name="Bip01_L_UpperArm_Door" type="JOINT">
+                        <matrix>-0.000200 -0.000040 1 1.483233 0.003622 0.999993 0.000041 -1.564133 -0.999993 0.003622 -0.000200 3.011712 0 0 0 1</matrix>
+                        <node id="Armature_Bip01_L_UpperArm_DoorNub" sid="Bip01_L_UpperArm_DoorNub" name="Bip01_L_UpperArm_DoorNub" type="JOINT">
+                          <matrix>1 0 0 1.499999 0 1 0 0 0 0 1 -0.000001 0 0 0 1</matrix>
+                        </node>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_R_Clavicle" sid="Bip01_R_Clavicle" name="Bip01_R_Clavicle" type="JOINT">
+                    <matrix>0 0.004524 -0.999990 2.329299 0 -0.999990 -0.004524 -1.502581 -1 0 0 -1.543004 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_R_UpperArm" sid="Bip01_R_UpperArm" name="Bip01_R_UpperArm" type="JOINT">
+                      <matrix>1 0.000040 0.000196 0.638001 -0.000039 0.999967 -0.008146 0 -0.000196 0.008146 0.999967 0 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_R_Forearm" sid="Bip01_R_Forearm" name="Bip01_R_Forearm" type="JOINT">
+                        <matrix>0.000039 -0.000199 -1 2.938162 -0.999993 0.003622 -0.000040 0 0.003622 0.999993 -0.000199 0 0 0 0 1</matrix>
+                        <node id="Armature_Bip01_R_Hand" sid="Bip01_R_Hand" name="Bip01_R_Hand" type="JOINT">
+                          <matrix>1 0 0 1.103003 0 1 0 -0.000003 0 0 1 0 0 0 0 1</matrix>
+                        </node>
+                        <node id="Armature_target04" sid="target04" name="target04" type="JOINT">
+                          <matrix>0 0 1 0 1 0 0 -0.000003 0 1 0 0 0 0 0 1</matrix>
+                        </node>
+                      </node>
+                      <node id="Armature_Bip01_R_UpperArm_Door" sid="Bip01_R_UpperArm_Door" name="Bip01_R_UpperArm_Door" type="JOINT">
+                        <matrix>-0.000197 -0.000032 -1 1.482227 0.003623 0.999993 -0.000033 -1.564127 0.999993 -0.003623 -0.000197 -3.011729 0 0 0 1</matrix>
+                        <node id="Armature_Bip01_R_UpperArm_DoorNub" sid="Bip01_R_UpperArm_DoorNub" name="Bip01_R_UpperArm_DoorNub" type="JOINT">
+                          <matrix>1 0 0 1.499998 0 1 -0.000007 0 0 0.000007 1 0.000001 0 0 0 1</matrix>
+                        </node>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_Torso_Flap_Front" sid="Bip01_Torso_Flap_Front" name="Bip01_Torso_Flap_Front" type="JOINT">
+                    <matrix>-0.960544 0.278128 0 -0.225721 -0.278128 -0.960544 0 4.044744 0 0 1 -0.000001 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_Torso_Flap_Front_Nub" sid="Bip01_Torso_Flap_Front_Nub" name="Bip01_Torso_Flap_Front_Nub" type="JOINT">
+                      <matrix>1 0 0.000001 0.476941 0 1 0.000001 0.000001 -0.000001 -0.000001 1 -0.000001 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                  <node id="Armature_COCKPIT" sid="COCKPIT" name="COCKPIT" type="JOINT">
+                    <matrix>0 0 1 1.791999 0 1 0 3.950543 -1 0 0 -0.003197 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_COCKPIT_CAM" sid="COCKPIT_CAM" name="COCKPIT_CAM" type="JOINT">
+                    <matrix>0 0 1 1.791998 0 1 0 3.950543 -1 0 0 -0.003199 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_jet1_l" sid="jet1_l" name="jet1_l" type="JOINT">
+                    <matrix>0 -0.707107 0.707107 0.945288 0 -0.707107 -0.707107 -2.591304 1 0 0 1.736680 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_jet2_l" sid="jet2_l" name="jet2_l" type="JOINT">
+                    <matrix>0.000001 -0.707107 0.707107 0.940258 0 -0.707107 -0.707107 -2.592659 1 0 -0.000001 -1.726509 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_target01" sid="target01" name="target01" type="JOINT">
+                    <matrix>0 0 1 1.894881 0 1 0 2.379537 -1 0 0 -0.040712 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_target02" sid="target02" name="target02" type="JOINT">
+                    <matrix>0 0 1 2.246196 0 1 0 -0.816941 -1 0 0 -1.310341 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_target03" sid="target03" name="target03" type="JOINT">
+                    <matrix>0 0 1 2.246196 0 1 0 -0.816941 -1 0 0 2.089013 0 0 0 1</matrix>
+                  </node>
+                </node>
+              </node>
+            </node>
+          </node>
+          <node id="Armature_Bip01_R_Hip" sid="Bip01_R_Hip" name="Bip01_R_Hip" type="JOINT">
+            <matrix>0 -0.999753 0.022217 -0.000001 0 0.022217 0.999753 0 -1 0 0 -1.597737 0 0 0 1</matrix>
+            <node id="Armature_Bip01_R_Thigh" sid="Bip01_R_Thigh" name="Bip01_R_Thigh" type="JOINT">
+              <matrix>0.028975 0.039810 0.998787 1.235477 0.684149 0.727704 -0.048852 0.000004 -0.728767 0.684734 -0.006151 0 0 0 0 1</matrix>
+              <node id="Armature_Bip01_R_Calf" sid="Bip01_R_Calf" name="Bip01_R_Calf" type="JOINT">
+                <matrix>0.223407 -0.974627 0.013842 2.877048 0.974706 0.223469 0.003114 0 -0.006128 0.012796 0.999899 -0.000001 0 0 0 1</matrix>
+                <node id="Armature_Bip01_R_Foot" sid="Bip01_R_Foot" name="Bip01_R_Foot" type="JOINT">
+                  <matrix>0.911349 0.406063 -0.067497 4.646269 -0.410656 0.885572 -0.217082 -0.000001 -0.028376 0.225555 0.973817 0.000001 0 0 0 1</matrix>
+                  <node id="Armature_Bip01_R_Heel" sid="Bip01_R_Heel" name="Bip01_R_Heel" type="JOINT">
+                    <matrix>0.010025 0.083798 -0.996432 0.907531 0.235465 0.968263 0.083798 -0.076320 0.971831 -0.235465 -0.010025 0.009129 0 0 0 1</matrix>
+                  </node>
+                  <node id="Armature_Bip01_R_index1" sid="Bip01_R_index1" name="Bip01_R_index1" type="JOINT">
+                    <matrix>0.194449 -0.979450 0.053551 0.474165 0.851005 0.195595 0.487373 0.649690 -0.487832 -0.049197 0.871550 -1.332382 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_R_index2" sid="Bip01_R_index2" name="Bip01_R_index2" type="JOINT">
+                      <matrix>0.866167 0.499381 0.019316 0.735864 -0.499733 0.865838 0.024327 0.000001 -0.004576 -0.030724 0.999517 -0.000001 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_R_index2_Nub" sid="Bip01_R_index2_Nub" name="Bip01_R_index2_Nub" type="JOINT">
+                        <matrix>0.965494 -0.213057 -0.149756 0.589568 0.196313 0.973289 -0.119038 0 0.171118 0.085532 0.981531 0 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_R_pinky1" sid="Bip01_R_pinky1" name="Bip01_R_pinky1" type="JOINT">
+                    <matrix>0.202582 -0.977352 -0.061177 0.494396 0.978996 0.203595 -0.010732 1.124887 0.022944 -0.057718 0.998069 0.628900 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_R_pinky2" sid="Bip01_R_pinky2" name="Bip01_R_pinky2" type="JOINT">
+                      <matrix>0.869861 0.492720 0.023831 0.729268 -0.493100 0.867139 0.070151 0.000001 0.013900 -0.072773 0.997251 -0.000002 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_R_pinky2_Nub" sid="Bip01_R_pinky2_Nub" name="Bip01_R_pinky2_Nub" type="JOINT">
+                        <matrix>0.998425 0.055542 0.007917 0.592780 -0.055540 0.998456 -0.000475 -0.000001 -0.007931 0.000034 0.999968 -0.000002 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_R_talon1" sid="Bip01_R_talon1" name="Bip01_R_talon1" type="JOINT">
+                    <matrix>0.503968 0.863720 0.002169 0.189058 -0.840610 0.489903 0.231020 -1.011989 0.198473 -0.118250 0.972946 0.243244 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_R_talon2" sid="Bip01_R_talon2" name="Bip01_R_talon2" type="JOINT">
+                      <matrix>0.960720 0.277505 -0.002916 0.383310 -0.277509 0.960722 -0.001002 -0.000001 0.002523 0.001771 0.999995 0 0 0 0 1</matrix>
+                      <node id="Armature_Bip01_R_talon2_Nub" sid="Bip01_R_talon2_Nub" name="Bip01_R_talon2_Nub" type="JOINT">
+                        <matrix>1 0 0 1.175431 0 1 0 0.000001 0 0 1 0 0 0 0 1</matrix>
+                      </node>
+                    </node>
+                  </node>
+                  <node id="Armature_Bip01_R_Toe0" sid="Bip01_R_Toe0" name="Bip01_R_Toe0" type="JOINT">
+                    <matrix>0.809992 -0.586412 0.005776 0.394255 0.567983 0.786912 0.241174 0.597639 -0.145973 -0.192068 0.970465 -0.148870 0 0 0 1</matrix>
+                    <node id="Armature_Bip01_R_Toe0Helper" sid="Bip01_R_Toe0Helper" name="Bip01_R_Toe0Helper" type="JOINT">
+                      <matrix>1 0 0 0.699125 0 1 0 0 0 0 1 0.000002 0 0 0 1</matrix>
+                    </node>
+                    <node id="Armature_Bip01_R_Toe0Nub" sid="Bip01_R_Toe0Nub" name="Bip01_R_Toe0Nub" type="JOINT">
+                      <matrix>-0.000001 0.652217 -0.758032 0.729097 -0.007246 0.758012 0.652200 -0.025786 0.999974 0.005493 0.004725 -0.000186 0 0 0 1</matrix>
+                    </node>
+                  </node>
+                </node>
+                <node id="Armature_target07" sid="target07" name="target07" type="JOINT">
+                  <matrix>0 0.390014 -0.920809 -0.008561 0 0.920809 0.390014 -0.148414 1 0 0 -0.090000 0 0 0 1</matrix>
+                </node>
+              </node>
+            </node>
+          </node>
+          <node id="Armature_Bip01_R_Leg_Flap_Front" sid="Bip01_R_Leg_Flap_Front" name="Bip01_R_Leg_Flap_Front" type="JOINT">
+            <matrix>-0.927132 0.374727 -0.002356 -1.227424 0.374734 0.927114 -0.005828 0.844036 0 -0.006286 -0.999980 -1.431318 0 0 0 1</matrix>
+            <node id="Armature_Bip01_R_Leg_Flap_Front_Nub" sid="Bip01_R_Leg_Flap_Front_Nub" name="Bip01_R_Leg_Flap_Front_Nub" type="JOINT">
+              <matrix>1 0 0 0.446287 0 1 0.000001 0 0 -0.000001 1 0 0 0 0 1</matrix>
+            </node>
+          </node>
+        </node>
+      </node>
+      <node id="catapult.chr" name="catapult.chr" type="NODE">
+        <matrix>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</matrix>
+        <instance_controller url="#Controller">
+          <bind_material>
+            <technique_common>
+              <instance_material target="#centre_torso-material" symbol="centre_torso-material" />
+              <instance_material target="#right_torso-material" symbol="right_torso-material" />
+              <instance_material target="#left_torso-material" symbol="left_torso-material" />
+              <instance_material target="#left_arm-material" symbol="left_arm-material" />
+              <instance_material target="#right_arm-material" symbol="right_arm-material" />
+              <instance_material target="#left_leg-material" symbol="left_leg-material" />
+              <instance_material target="#right_leg-material" symbol="right_leg-material" />
+              <instance_material target="#head-material" symbol="head-material" />
+              <instance_material target="#centre_torso_rear-material" symbol="centre_torso_rear-material" />
+              <instance_material target="#left_torso_rear-material" symbol="left_torso_rear-material" />
+              <instance_material target="#right_torso_rear-material" symbol="right_torso_rear-material" />
+            </technique_common>
+          </bind_material>
+          <skeleton>#Armature</skeleton>
+        </instance_controller>
+      </node>
+    </visual_scene>
+  </library_visual_scenes>
+  <scene>
+    <instance_visual_scene name="Scene" url="#Scene" />
+  </scene>
+</COLLADA>

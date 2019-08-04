@@ -35,16 +35,19 @@ for geo in geometry.iter(schema + "visual_scene"):
 for node in geometry.iter(schema + "node"):
     print(node.attrib["id"])
 
+
 def GetLeftShoulderNode(element):
     for node in element.iter(schema + "node"):
         if node.attrib["name"] == "Bip01_L_Clavicle":
             print(node.attrib["name"])
             return node
 
+
 def GetElementTreeByMechName(name):
     source = "d:\\depot\\mwo\\objects\\mechs\\" + name + "\\body\\" + name + ".dae"
     elementTree = ET.parse(source)
     return elementTree
+
 
 def GetChildNodeByName(element, name):
     for node in element.iter(schema + "node"):
@@ -52,7 +55,8 @@ def GetChildNodeByName(element, name):
             print("Found " + node.attrib["name"])
             return node
     raise Exception("Unable to find bone " + name)
-    
+
+
 def GetAllMechNames():
     mech_dir = "d:\\depot\\mwo\\objects\\mechs"
     mech_list = next(os.walk(mech_dir))[1]
@@ -61,9 +65,11 @@ def GetAllMechNames():
     mech_list.remove("generic")
     return mech_list
 
+
 def GetAllChildBones(element):
     bones = element.findall("node")
     return bones
+
 
 def CountBonesBetweenShoulderAndHand(mech):
     mech_tree = GetElementTreeByMechName(mech)
@@ -72,13 +78,12 @@ def CountBonesBetweenShoulderAndHand(mech):
     count = find_hand_bone(shoulder_bone, depth)
     return count
 
+
 def find_hand_bone(bone, depth):
-    
+
     return depth
 
+
 def GetParentMap(tree):
-    parent_map = {c:p for p in tree.iter() for c in p}
+    parent_map = {c: p for p in tree.iter() for c in p}
     return parent_map
-
-        
-

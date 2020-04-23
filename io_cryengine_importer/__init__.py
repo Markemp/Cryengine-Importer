@@ -55,10 +55,6 @@ from bpy_extras.io_utils import (
         )
 
 from . import constants, cc_collections, Cryengine_Importer
-# from constants import *
-# from cc_collections import *
-# from Cryengine_Importer import *
-
 
 bl_info = {
     "name": 'Cryengine Importer', 

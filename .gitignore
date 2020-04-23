@@ -8,3 +8,6 @@
 /.vscode
 /HBS Rigs.zip
 /HBS Rigs/
+/io_cryengine_importer/CryXmlB/__pycache__/
+/io_cryengine_importer/CryXmlB/adder-common.xml
+/io_cryengine_importer/CryXmlB/asteroid_hangar_landingpad_medium.xmla

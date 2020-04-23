@@ -10,6 +10,7 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
         material_extension = ".dds"
     elif use_tif == True:
         material_extension = ".tif"
+    # TODO:  Replace this with CryXmlB
     mats = ET.parse(matfile)
     for mat in mats.iter("Material"):
         if "Name" in mat.attrib:

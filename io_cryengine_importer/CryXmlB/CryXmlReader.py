@@ -58,6 +58,35 @@ class CryXmlSerializer:
 
             content_offset = self.read_int32(f)
             content_length = self.read_int32(f)
+            # Node Table section
+            node_table = []
+            f.seek(node_table_offset)
+            node_id = 0
+            while f.tell() < node_table_offset + node_table_count * node_table_size:
+                position = f.tell()
+                node_id = node_id + 1
+                node_name_offset = self.read_int32(f)
+                item_type = self.read_int32(f)
+                attribute_count = self.read_int16(f)
+                child_count = self.read_int16(f)
+                parent_node_id = self.read_int32(f)
+                first_attribute_index = self.read_int32(f)
+                first_child_index = self.read_int32(f)
+                reserved = self.read_int32(f)
+                node = CryXmlNode(node_id, node_name_offset, item_type, attribute_count, child_count, parent_node_id, first_attribute_index, first_child_index, reserved)
+                node_table.append(node)
+
+            # Reference Table section
+            attribute_table = []
+            f.seek(reference_table_offset)
+            while f.tell() < reference_table_offset + reference_table_count * reference_table_size:
+                position = f.tell()
+                name_offset = self.read_int32(f)
+                value_offset = self.read_int32(f)
+                attribute_node = CryXmlReference(name_offset, value_offset)
+                attribute_table.append(attribute_node)
+            
+            # Order Table section
             f.close
     
     def read_c_string(self, binary_reader):
@@ -73,7 +102,7 @@ class CryXmlSerializer:
         return val
     
     def read_int16(self, binary_reader):
-        val = struct.unpack('<i', binary_reader.read(2))[0]
+        val = struct.unpack('<h', binary_reader.read(2))[0]
         return val
 
     

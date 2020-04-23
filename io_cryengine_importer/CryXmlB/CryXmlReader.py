@@ -1,19 +1,33 @@
 import os, os.path
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
 
+@dataclass
 class CryXmlNode:
-    pass
+    node_id: int
+    node_name_offset: int
+    item_type: int
+    attribute_count: int
+    child_count: int
+    parent_node_id: int
+    first_attribute_index: int
+    first_child_index: int
+    reserved: int
 
+@dataclass
 class CryXmlReference:
-    pass
+    name_offset: int
+    value_offset: int
 
+@dataclass
 class CryXmlValue:
-    pass
+    offset: int
+    value: str
 
 class CryXmlSerializer:
-    def ReadFile(self, file, write_log):
-        with open(file) as f:
-            c = f.read(1)
+    def read_file(self, file):
+        with open(file, "rb") as f:
+            c = f.peek(1)
             if not c:
                 print("End of file")
                 return
@@ -23,9 +37,9 @@ class CryXmlSerializer:
                 return xmlFile
             elif c != 'C':
                 raise "Not a Cryengine Binary XML File."
-            else:
-                pass
-            
+            #header = f.
+
+
     def DeserializeFile(self, file):
         pass
 

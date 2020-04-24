@@ -1,6 +1,6 @@
 # Cryengine-Importer
 
-**Note:  Blender 2.80 is being released in the very near future, and has a number of compatibility breaking updates.  This project is being updated to support these new features, as a 2.0 release.  If you would like to continue to use the old versions of Blender with this tool, please use the 1.1 version.  The latest release will only be supported for Blender 2.80 and newer.**
+**Note:  Blender 2.80 has been released, and has a number of compatibility breaking updates.  This project is being updated to support these new features, as a 2.0 release.  If you would like to continue to use the old versions of Blender with this tool, please use the 1.1 version.  The latest release will only be supported for Blender 2.80 and newer.**
 
 Cryengine Importer is a Blender Add-on tool that allows you to import Cryengine game assets converted to the Collada format using the Cryengine Converter program.
 

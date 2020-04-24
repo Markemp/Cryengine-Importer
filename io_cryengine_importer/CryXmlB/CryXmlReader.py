@@ -150,6 +150,6 @@ class CryXmlSerializer:
     
 
 
-cry = CryXmlSerializer()
+#cry = CryXmlSerializer()
 #cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\adder-common.xml")
-cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\asteroid_hangar_landingpad_medium.xmla")
+#cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\asteroid_hangar_landingpad_medium.xmla")

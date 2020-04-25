@@ -38,6 +38,8 @@ import mathutils
 from math import radians
 
 from . import constants, cc_collections, bones, widgets, materials, utilities
+from .CryXmlB.CryXmlReader import CryXmlSerializer
+
 
 def strip_slash(line_split):
     if line_split[-1][-1] == 92:  # '\' char
@@ -329,7 +331,8 @@ def import_geometry(daefile, basedir):
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
-    geometry = ET.parse(cdffile)
+    cry_xml = CryXmlSerializer()
+    geometry = cry_xml.read_file(cdffile)
     for geo in geometry.iter("Attachment"):
         if not geo.attrib["AName"] == "cockpit":
             print("Importing " + geo.attrib["AName"])
@@ -512,10 +515,10 @@ def import_light(object):
     return obj
 
 def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    print("Import Asset.  Folder: " + path)
+    print("Import Asset.  File: " + path)
     basedir = get_base_dir(path)
     set_viewport_shading()
-    cc_collections.set_up_collections()
+    cc_collections.set_up_asset_collections()
     if os.path.isdir(path):
         os.chdir(path)
     elif os.path.isfile(path):
@@ -523,7 +526,10 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
         path = os.path.dirname(path)
     for file in os.listdir(path):
         if file.endswith(".mtl"):
+            print("*** Creating materials from " + file)
             constants.materials.update(materials.create_materials(file, basedir, use_dds, use_tif))
+            print("*** Finished creating materials from " + file)
+
     for material in constants.materials.keys():
         print("   Material: " + material)
     for file in os.listdir(path):
@@ -531,7 +537,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
             objects = import_geometry(file, basedir)
     objects = bpy.data.objects
     for obj in objects:
-        if not obj.name == "Lamp" and not obj.name == "Camera" and not obj.name == "Cube":
+        if not obj.name == "Light" and not obj.name == "Camera" and not obj.name == "Cube":
             print("   Assigning materials for " + obj.name)
             for obj_mat in obj.material_slots:
                 print("   Material slot matname is " + obj_mat.name)
@@ -596,7 +602,8 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)
     if os.path.isfile(path):
-        prefab = ET.parse(path)
+        cry_xml = CryXmlSerializer()
+        prefab = cry_xml.read_file(path)
     else:
         return {'FINISHED'}  # Couldn't parse the prefab xml.
     # Parse all the Brush objects

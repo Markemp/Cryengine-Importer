@@ -110,7 +110,6 @@ class CryXmlSerializer:
 
             xml_map = {}
             for node in node_table:
-                print(node)
                 element = Element(data_map[node.node_name_offset])
                 
                 for i in range(0, node.attribute_count):
@@ -127,9 +126,9 @@ class CryXmlSerializer:
                     xml_map[node.parent_node_id].extend([element])
                 else:
                     xml_doc = element
-
-            ET.dump(xml_doc)
+            #ET.dump(xml_doc)
             f.close
+            return xml_doc
     
     def read_c_string(self, binary_reader):
         chars = []
@@ -149,7 +148,10 @@ class CryXmlSerializer:
 
     
 
-
-#cry = CryXmlSerializer()
+cry = CryXmlSerializer()
 #cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\adder-common.xml")
 #cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\asteroid_hangar_landingpad_medium.xmla")
+#cry.read_file("D:\\Depot\SC\\Data\\Objects\\Spaceships\\Ships\\AEGS\\Avenger\\aegs_avenger_exterior.mtl")
+#cry.read_file("D:\\Depot\SC\\Data\\Objects\\Animals\\Fish\\CleanerFish_prop_01.mtl")
+cry.read_file("D:\\Depot\MWO\\Objects\\Purchasable\\cockpit_hanging\\50calnecklace\\50calnecklace_a.mtl")
+

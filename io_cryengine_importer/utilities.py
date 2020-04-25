@@ -1,3 +1,5 @@
+import os
+
 import bpy
 import mathutils
 
@@ -45,6 +47,15 @@ def get_transform_matrix(rotation, location):
 
 def set_mode(new_mode):
     bpy.ops.object.mode_set(mode=new_mode)
+
+def get_relative_filename(texture, material_extension):
+    print("** get_relative_filename: ")
+    print(texture)
+    tex = os.path.splitext(texture.attrib["File"])[0] + material_extension
+    slashes = tex.count("/")
+    for i in range(slashes):
+        tex = "../" + tex
+
 
 #=======================================================================
 # Error handling

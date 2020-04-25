@@ -53,6 +53,8 @@ from bpy_extras.io_utils import (
         axis_conversion,
         )
 from math import radians
+
+from io_cryengine_importer.CryXmlB.CryXmlReader import CryXmlSerializer
 from . import collections
 
 #bl_info = {
@@ -342,7 +344,8 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
         material_extension = ".dds"
     elif use_tif == True:
         material_extension = ".tif"
-    mats = ET.parse(matfile)
+    cry_xml = CryXmlSerializer()
+    mats = cry_xml.read_file(matfile)
     for mat in mats.iter("Material"):
         if "Name" in mat.attrib:
             # An actual material.  Create the material, set to nodes, clear and rebuild using the info from the material XML file.
@@ -803,7 +806,8 @@ def import_geometry(daefile, basedir):
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
-    geometry = ET.parse(cdffile)
+    cry_xml = CryXmlSerializer()
+    geometry = cry_xml.read_file(cdffile)
     for geo in geometry.iter("Attachment"):
         if not geo.attrib["AName"] == "cockpit":
             print("Importing " + geo.attrib["AName"])
@@ -1071,7 +1075,8 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)
     if os.path.isfile(path):
-        prefab = ET.parse(path)
+        cry_xml = CryXmlSerializer()
+        prefab = cry_xml.read_file(path)
     else:
         return {'FINISHED'}  # Couldn't parse the prefab xml.
     # Parse all the Brush objects

@@ -2,6 +2,7 @@ import os
 
 import bpy
 import mathutils
+from . import constants
 
 def get_scaling_factor(o):
     local_bbox_center = 0.125 * sum((mathutils.Vector(b) for b in o.bound_box), mathutils.Vector())
@@ -48,14 +49,11 @@ def get_transform_matrix(rotation, location):
 def set_mode(new_mode):
     bpy.ops.object.mode_set(mode=new_mode)
 
-def get_relative_filename(texture, material_extension):
-    print("** get_relative_filename: ")
-    print(texture)
-    tex = os.path.splitext(texture.attrib["File"])[0] + material_extension
-    slashes = tex.count("/")
-    for i in range(slashes):
-        tex = "../" + tex
-
+def get_filename(texture, material_extension):
+    # Don't do relative filenames!  It doesn't work until the .blend file is saved, and even then it doesn't work!
+    texturefile = os.path.normpath(os.path.join(constants.basedir, os.path.splitext(texture)[0] + material_extension))
+    tex = texturefile.replace("/", "\\\\")
+    return tex
 
 #=======================================================================
 # Error handling

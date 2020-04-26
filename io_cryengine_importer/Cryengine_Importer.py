@@ -22,20 +22,11 @@
 # Cryengine Importer 1.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
-import array
-import glob
-import math
 import os, os.path
-import time
-import types
-import xml.etree as etree
-import xml.etree.ElementTree as ET
 import bpy
-import bmesh
 import bpy.types
 import bpy.utils
 import mathutils
-from math import radians
 
 from . import constants, cc_collections, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
@@ -516,7 +507,7 @@ def import_light(object):
 
 def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     print("Import Asset.  File: " + path)
-    basedir = get_base_dir(path)
+    constants.basedir = get_base_dir(path)
     set_viewport_shading()
     cc_collections.set_up_asset_collections()
     if os.path.isdir(path):
@@ -527,14 +518,14 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
     for file in os.listdir(path):
         if file.endswith(".mtl"):
             print("*** Creating materials from " + file)
-            constants.materials.update(materials.create_materials(file, basedir, use_dds, use_tif))
+            constants.materials.update(materials.create_materials(file, constants.basedir, use_dds, use_tif))
             print("*** Finished creating materials from " + file)
 
     for material in constants.materials.keys():
         print("   Material: " + material)
     for file in os.listdir(path):
         if file.endswith(".dae"):
-            objects = import_geometry(file, basedir)
+            objects = import_geometry(file, constants.basedir)
     objects = bpy.data.objects
     for obj in objects:
         if not obj.name == "Light" and not obj.name == "Camera" and not obj.name == "Cube":
@@ -563,7 +554,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
     print(path)
     cdffile = path      # The input file
     # Split up path into the variables we want.
-    basedir = get_base_dir(path)
+    constants.basedir = get_base_dir(path)
     bodydir = get_body_dir(path)
     mechdir = os.path.dirname(path)
     mech = get_mech(path)
@@ -580,10 +571,10 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
               os.path.join(bodydir, mech + ".dae"))
         return False
     # Create the materials.
-    constants.materials = materials.create_materials(matfile, basedir, use_dds, use_tif)
-    constants.cockpit_materials = materials.create_materials(cockpit_matfile, basedir, use_dds, use_tif)
+    constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
+    constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
-    import_mech_geometry(cdffile, basedir, bodydir, mech)
+    import_mech_geometry(cdffile, constants.basedir, bodydir, mech)
     # Set the layers for existing objects
     add_objects_to_collections()
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.

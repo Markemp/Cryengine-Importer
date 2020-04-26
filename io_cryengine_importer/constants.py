@@ -7,6 +7,8 @@ EMPTIES_LAYER = "Empties"
 WEAPONS_LAYER = "Weapons Layer"
 DAMAGED_PARTS_LAYER = "Damaged Parts"
 
+basedir = ""
+
 # store keymaps here to access after registration
 addon_keymaps = []
 

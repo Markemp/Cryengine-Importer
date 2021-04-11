@@ -182,6 +182,7 @@ def create_IKs(mech):
     # POSE MODE CHANGES
     # Set up IK Constraints
     bpy.ops.object.mode_set(mode='POSE')
+    
     # Add copy rotation constraint to pitch
     crc = armature.pose.bones["Bip01_Pitch"].constraints.new('COPY_ROTATION')
     crc.target = armature
@@ -189,6 +190,7 @@ def create_IKs(mech):
     crc.target_space = 'LOCAL'
     crc.owner_space = 'LOCAL'
     crc.use_offset = True
+    
     # Add copy rotation constraint to Feet
     crcFootL = armature.pose.bones["Bip01_L_Foot"].constraints.new('COPY_ROTATION')
     crcFootL.target = armature
@@ -202,7 +204,7 @@ def create_IKs(mech):
     crcFootR.target_space = 'LOCAL_WITH_PARENT'
     crcFootR.owner_space = 'LOCAL_WITH_PARENT'
     crcFootR.use_offset = True
-
+    
     if mech not in constants.shoulder_only_mechs:
         # Add child of constraint to hand IKs
         coc = armature.pose.bones["Hand_IK.R"].constraints.new('CHILD_OF')
@@ -217,13 +219,14 @@ def create_IKs(mech):
         context_copy = bpy.context.copy()
         context_copy["constraint"] = pbone.constraints["Child Of"]
         bpy.context.active_object.data.bones.active = pbone.bone
-        bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
+        #bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')  # broken
         pbone = bpy.context.active_object.pose.bones["Hand_IK.L"]
+        
         context_copy = bpy.context.copy()
         context_copy["constraint"] = pbone.constraints["Child Of"]
         bpy.context.active_object.data.bones.active = pbone.bone
-        bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
-
+        #bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
+        
         bpose = bpy.context.object.pose
         bpose.bones[copy_bone_right].constraints.new(type='IK')
         bpose.bones[copy_bone_right].constraints['IK'].target = armature
@@ -331,11 +334,12 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             aname    = geo.attrib["AName"]
             rotation = utilities.convert_to_rotation(geo.attrib["Rotation"])
             location = utilities.convert_to_location(geo.attrib["Position"])
-            bonename = geo.attrib["BoneName"].replace(' ','_')
+            bonename = process_bonename(geo, aname)
+            print("*** *** Bonename: " + bonename)
             binding  = os.path.join(basedir, os.path.splitext(geo.attrib["Binding"])[0] + ".dae")
             flags    = geo.attrib["Flags"]
             # Materials depend on the part type.  For most, <mech>_body.  Weapons is <mech>_variant.  Window/cockpit is 
-            # <mech>_window.  Also need to figure out how to deal with _generic materials after the import.
+            # <mech>_window.
             materialname = mechname + "_body"
             if any(weapon in aname for weapon in constants.weapons):
                 materialname = mechname + "_variant"
@@ -360,7 +364,6 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                     armature.select_set(True)
                     bpy.context.view_layer.objects.active = armature
                     bpy.context.view_layer.objects.active = obj
-                    print("    Name: " + obj.name)
                     # If this is a parent node, rotate/translate it. Otherwise skip it.
                     if i == 0:
                         matrix = utilities.get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
@@ -377,21 +380,17 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
                     for i in range(nverts):
                         vg.add([i], 1.0, 'REPLACE')
                     if len(bpy.context.object.material_slots) == 0:
-                        # no materials
                         bpy.context.object.data.materials.append(bpy.data.materials[materialname])               # If there is no material, add a dummy mat.
-                    else:
-                        # Material corrections.  If material slot 0 contains "generic", it's a generic material, unless the key doesn't exist.  Otherwise stays variant.
-                        if "generic" in obj.material_slots[0].name:
-                            if  mechname + "_generic" in bpy.data.materials.keys():
-                                materialname = mechname + "_generic"
-                            else:
-                                materialname = "generic"            # For some reason it's just generic, not <mech>_generic
-                        else:
-                            materialname = mechname + "_variant"
-                        if "_prop" in obj.name:
-                            materialname = mechname + "_body"
-                        bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
+                    if "_prop" in obj.name:
+                        materialname = mechname + "_body"
+                    bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
                     obj.select_set(False)
+
+def process_bonename(geo, aname):
+    if aname in constants.bad_bonename_map:
+        return constants.bad_bonename_map[aname]
+    else:
+        return geo.attrib["BoneName"].replace(' ','_')
 
 def link_geometry(objectname, libraryfile, itemgroupname):
     # Link the object from the library file and translate/rotate.
@@ -588,7 +587,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
     # features). Group is group of objects. Entity = light.
     set_viewport_shading()
-    cc_collections.set_up_collections()
+    cc_collections.set_up_asset_collections()
     basedir = get_base_dir(path)
     #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)

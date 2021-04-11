@@ -29,18 +29,16 @@ Tutorial video:  pending
 
 ## Installation
 
-* Download the Cryengine Importer package from [Heffay Presents](https://www.heffaypresents.com/GitHub) or from the Release tab on GitHub.
+* Download the Cryengine Importer package from [Heffay Presents](https://www.heffaypresents.com/GitHub) or from the [Release tab](https://github.com/Markemp/Cryengine-Importer/releases/latest) on GitHub.
 * Extract the zip file.  It contains 2 files:
     * Cryengine_Importer.py (the Blender Add-on file)
     * MWO_Camo_v3.blend (the Material Node Layout for mech camo patterns)
-* In Blender, go to File -> User Preferences, then click on the "Install Add-on from File..." button on the bottom.
-* Locate the Cryengine_Importer.py file you extracted and import.
-* Back on the Add-ons tab, click on the Import-Export Category, then find the Import-Export: Cryengine Importer entry and enable it.
+* In Blender, go to Edit -> Preferences, then click on the "Install" button on the bottom.
+* Locate the Cryengine_Importer.py file you extracted and select the "Install Add-on" button.
+* Back on the Add-ons tab, click on the Community tab, find "Import-Export: Cryengine Importer" entry and enable it.
 
 ## Usage
 
 Watch the tutorial videos!  There are important caveats that you need to consider as you import assets into your scene.  If you don't pay attention to what you are doing, there is a good chance that you may overwrite some of the work you've done.
 
-Thank you for using this tool, and please use the Issues tab at GitHub to report any issues that you may have with the Importer.  Thanks!
-
-
+Thank you for using this tool, and please use the [Issues tab](https://github.com/Markemp/Cryengine-Importer/issues) at GitHub to report any issues that you may have with the Importer.  Thanks!

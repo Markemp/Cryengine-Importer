@@ -30,7 +30,7 @@ def set_bone_layers(armature):
             bone.layers[0] = False
     bpy.ops.object.mode_set(mode=original_context)
     print("set_bone_layers:  End setting layers.")
-    
+
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':
         raise utilities.MetarigError('obj_to_bone(): does not work while in edit mode')
@@ -69,7 +69,7 @@ def copy_bone(armature, bone_name, assign_name=''):
     #if bone_name not in obj.data.bones:
     if bone_name not in armature.data.edit_bones:
         raise utilities.MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
-
+    
     if armature == bpy.context.active_object and bpy.context.mode == 'EDIT_ARMATURE':
         if assign_name == '':
             assign_name = bone_name
@@ -78,7 +78,7 @@ def copy_bone(armature, bone_name, assign_name=''):
         edit_bone_2 = armature.data.edit_bones.new(assign_name)
         bone_name_1 = bone_name
         bone_name_2 = edit_bone_2.name
-
+        
         edit_bone_2.parent = edit_bone_1.parent
         edit_bone_2.use_connect = edit_bone_1.use_connect
 
@@ -126,7 +126,7 @@ def copy_bone(armature, bone_name, assign_name=''):
                 pose_bone_2[key] = pose_bone_1[key]
                 for key in prop1.keys():
                     prop2[key] = prop1[key]
-
+        
         bpy.ops.object.mode_set(mode='EDIT')
         print("copy_bone:  End copy")
         return bone_name_2

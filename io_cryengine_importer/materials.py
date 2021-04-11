@@ -26,7 +26,6 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
     # Find if it has submaterial element
     print(mats)
     for material_xml in mats.iter("Material"):
-        print("Iterating through materials")
         if "Shader" in material_xml.attrib:
             if "Name" in material_xml.attrib:
                 mat_name = material_xml.attrib["Name"]
@@ -43,6 +42,11 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                 create_nodraw_shader_material(material_xml, material, file_extension)
             elif shader == "MechCockpit":
                 create_mechcockpit_shader_material(material_xml, material, file_extension)
+            elif shader == "Mech":
+                create_mechcockpit_shader_material(material_xml, material, file_extension)
+            elif shader == "Illum":
+                create_illum_shader_material(material_xml, material, file_extension)
+
             else:
                 tree_nodes = material.node_tree
                 links = tree_nodes.links
@@ -111,7 +115,7 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                                 links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[19])
     return materials
 
-def create_nodraw_shader_material(material_xml, material, material_extension):
+def create_nodraw_shader_material(material_xml, material, file_extension):
     print("Nodraw shader")
     tree_nodes = material.node_tree
     links = tree_nodes.links
@@ -122,7 +126,7 @@ def create_nodraw_shader_material(material_xml, material, material_extension):
     output_node = create_output_node(tree_nodes)
     links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
     for texture in material_xml.iter("Texture"):
-        texture_node = create_image_texture_node(tree_nodes, texture, material_extension)
+        texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
         links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
     pass
 
@@ -152,6 +156,80 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[5])
         if map == "Bumpmap":
+            print("Adding Bump Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = -300, 0
+                texture_node.image.colorspace_settings.name = "Non-Color"
+                normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
+                normal_map_node.location = 50, 0
+                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs[19])
+                links.new(texture_node.outputs[0], normal_map_node.inputs[1])
+    pass
+
+def create_illum_shader_material(material_xml, material, file_extension):
+    print("Illum shader")
+    tree_nodes = material.node_tree
+    links = tree_nodes.links
+    for n in tree_nodes.nodes:
+        tree_nodes.nodes.remove(n)
+    # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
+    shaderPrincipledBSDF = create_principle_bsdf_root_node(material_xml, tree_nodes)
+    output_node = create_output_node(tree_nodes)
+    links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
+    for texture in material_xml.iter("Texture"):
+        map = texture.attrib["Map"]
+        if map == "Diffuse" or map == "TexSlot1":
+            print("Adding Diffuse Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = 0, 600
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
+        if map == "Specular" or map == "TexSlot4":
+            print("Adding Specular Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = 0, 300
+                texture_node.image.colorspace_settings.name = "Non-Color"
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[5])
+        if map == "Bumpmap" or map == "TexSlot2":
+            print("Adding Bump Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = -300, 0
+                texture_node.image.colorspace_settings.name = "Non-Color"
+                normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
+                normal_map_node.location = 50, 0
+                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs[19])
+                links.new(texture_node.outputs[0], normal_map_node.inputs[1])
+    pass
+
+def create_mech_shader_material(material_xml, material, file_extension):
+    print("Mech shader")
+    tree_nodes = material.node_tree
+    links = tree_nodes.links
+    for n in tree_nodes.nodes:
+        tree_nodes.nodes.remove(n)
+    # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
+    shaderPrincipledBSDF = create_principle_bsdf_root_node(material_xml, tree_nodes)
+    output_node = create_output_node(tree_nodes)
+    links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
+    for texture in material_xml.iter("Texture"):
+        map = texture.attrib["Map"]
+        if map == "Diffuse" or map == "TexSlot1":
+            print("Adding Diffuse Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = 0, 600
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
+        if map == "Specular" or map == "TexSlot4":
+            print("Adding Specular Map")
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = 0, 300
+                texture_node.image.colorspace_settings.name = "Non-Color"
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[5])
+        if map == "Bumpmap" or map == "TexSlot2":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
@@ -221,9 +299,6 @@ def create_glass_material(mat, tree_nodes, shaderPrincipledBSDF, material_extens
                 converterNormalMap.location = 100,0
                 links.new(shaderNormalImg.outputs[0], converterNormalMap.inputs[1])
                 links.new(converterNormalMap.outputs[0], shaderPrincipledBSDF.inputs[19])
-
-def create_illum_material(mat):
-    pass
 
 def create_principle_bsdf_root_node(material_xml, tree_nodes):
     shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')

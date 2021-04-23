@@ -17,52 +17,29 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
-#
 
-# Cryengine Importer 1.1 (Blender Python module)
+# Cryengine Importer 2.0 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
-import collections
-import array
-import glob
-import math
-from math import radians
-import os, os.path
-import time
-import types
-import xml.etree as etree
-import xml.etree.ElementTree as ET
 import bpy
 import bpy.types
 import bpy.utils
-import bmesh
-import mathutils
-from bpy_extras.image_utils import load_image
-from bpy_extras.wm_utils import progress_report
 from bpy.props import (
         BoolProperty,
-        FloatProperty,
         StringProperty,
         EnumProperty,
         )
-from bpy_extras.io_utils import (
-        ImportHelper,
-        ExportHelper,
-        orientation_helper,
-        path_reference_mode,
-        axis_conversion,
-        unpack_list,
-        )
+from bpy_extras.io_utils import ImportHelper
 
-from . import constants, cc_collections, Cryengine_Importer
+from . import Cryengine_Importer
 
 bl_info = {
     "name": 'Cryengine Importer', 
     "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (2, 0, 3),
-    "blender": (2, 80, 0),
+    "version": (2, 0, 5),
+    "blender": (2, 90, 0),
     "location": 'File > Import-Export',
     "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
     "wiki_url": 'https://github.com/markemp/Cryengine-Importer',
@@ -106,6 +83,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
+
     # From ImportHelper.  Filter filenames.
     #path_mode = path_reference_mode
     show_hidden = True
@@ -114,6 +92,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
     use_filter_folder = True
     display_type = 'THUMBNAIL'
     title = "Directory to Import"
+    
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = True
@@ -130,6 +109,7 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         fdir = self.properties.filepath
         keywords["path"] = fdir
         return Cryengine_Importer.import_asset(context, **keywords)
+    
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)
@@ -148,7 +128,6 @@ class MechImporter(bpy.types.Operator, ImportHelper):
     bl_label = "Import Mech"
     bl_options = {'PRESET', 'UNDO'}
     filename_ext = ".cdf"
-    #path_mode = path_reference_mode
     check_extension = True
     auto_save_file: BoolProperty(
         name = "Save File",
@@ -158,6 +137,10 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         default="*.cdf",
         options={'HIDDEN'}
         ,)
+    add_control_bones: BoolProperty(
+        name = "Add Control Bones",
+        description = "Add IK bones to make creating animations easier",
+        default = True)
     texture_type: EnumProperty(
         name="Texture Type",
         description = "Identify the type of texture file imported into the Texture nodes.",
@@ -172,6 +155,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
+    
     def execute(self, context):
         if self.texture_type == 'OFF':
             self.use_tif = True
@@ -189,8 +173,10 @@ class MechImporter(bpy.types.Operator, ImportHelper):
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
         fdir = self.properties.filepath
         keywords["path"] = fdir
+        self.add_control_bones
         Cryengine_Importer.import_mech(context, **keywords)
         return { 'FINISHED'}
+
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)
@@ -200,6 +186,8 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row.prop(self, "texture_type", expand = True)
         row = layout.row(align=True)
         row.prop(self, "auto_save_file")
+        row = layout.row(align=True)
+        row.prop(self, "add_control_bones")
 
 #@orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):
@@ -270,9 +258,6 @@ def menu_func_import(self, context):
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab (NYI)")
 
-# -----------------------------------------------------------------------------
-#                                                                      Register
-
 classes = (
      MechImporter,
      CryengineImporter,
@@ -295,9 +280,5 @@ def unregister():
     for cls in reversed(classes):
         unregister_class(cls)
 
-# register, unregister = bpy.utils.register_classes_factory(classes)
-
-# This allows you to run the script directly from blenders text editor
-# to test the addon without having to install it.
 if __name__ == "__main__":
     register()

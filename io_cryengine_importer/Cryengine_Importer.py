@@ -548,7 +548,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
         generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
     return {'FINISHED'}
 
-def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
     print("Import Mech")
     print(path)
     cdffile = path      # The input file
@@ -576,9 +576,11 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, au
     import_mech_geometry(cdffile, constants.basedir, bodydir, mech)
     # Set the layers for existing objects
     add_objects_to_collections()
-    # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     
-    create_IKs(mech)
+    # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
+    if add_control_bones == True:
+        create_IKs(mech)
+
     if auto_save_file == True:
         save_file(path)
     return {'FINISHED'}

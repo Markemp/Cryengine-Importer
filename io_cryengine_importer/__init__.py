@@ -85,7 +85,6 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         default = False)
 
     # From ImportHelper.  Filter filenames.
-    #path_mode = path_reference_mode
     show_hidden = True
     check_extension = True
     filename_ext = ".dae"

@@ -7,7 +7,7 @@ Cryengine Importer is a Blender Add-on tool that allows you to import Cryengine 
 There are 3 different components to this tool:
 * Cryengine Asset Importer
 * Mech Importer
-* Cryengine Prefab Importer.
+* Cryengine Prefab Importer. (NYI)
 
 ### Cryengine Asset Importer
 
@@ -30,11 +30,8 @@ Tutorial video:  pending
 ## Installation
 
 * Download the Cryengine Importer package from [Heffay Presents](https://www.heffaypresents.com/GitHub) or from the [Release tab](https://github.com/Markemp/Cryengine-Importer/releases/latest) on GitHub.
-* Extract the zip file.  It contains 2 files:
-    * Cryengine_Importer.py (the Blender Add-on file)
-    * MWO_Camo_v3.blend (the Material Node Layout for mech camo patterns)
 * In Blender, go to Edit -> Preferences, then click on the "Install" button on the bottom.
-* Locate the Cryengine_Importer.py file you extracted and select the "Install Add-on" button.
+* Locate the io_cryengine_importer.zip file you downloaded and select the "Install Add-on" button.
 * Back on the Add-ons tab, click on the Community tab, find "Import-Export: Cryengine Importer" entry and enable it.
 
 ## Usage

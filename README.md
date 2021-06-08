@@ -13,7 +13,7 @@ There are 3 different components to this tool:
 
 This tool will allow you to convert a directory of assets that have been converted with the Cryengine Converter tool into a Blender file.  This allows for the bulk conversion of Cryengine game assets into a library that can be used separately, or with the Cryengine Prefab Importer to create scenes for your machinima.  The importer creates custom node layout groups in the Cycles engine to allow for realistic rendering.
 
-** NOTE **:  This will only import a single directory of assets at a time, and is not recursive.  You can only import directories that are under the `Object` or `Prefab` game directories, or you will get an error `RecursionError: maximum recursion depth exceeded while calling a Python object`.  The single directory limit is to prevent having thousands of game objects opened at the same time in Blender, which as you can imagine is not good for Blender.
+**NOTE:**  This will only import a single directory of assets at a time, and is not recursive.  You can only import directories that are under the `Object` or `Prefab` game directories, or you will get an error `RecursionError: maximum recursion depth exceeded while calling a Python object`.  The single directory limit is to prevent having thousands of game objects opened at the same time in Blender, which as you can imagine is not good for Blender.
 
 Tutorial video:  pending
 
@@ -31,10 +31,10 @@ Tutorial video:  pending
 
 ## Installation
 
-* Download the Cryengine Importer package from [Heffay Presents](https://www.heffaypresents.com/GitHub) or from the [Release tab](https://github.com/Markemp/Cryengine-Importer/releases/latest) on GitHub.
-* In Blender, go to Edit -> Preferences, then click on the "Install" button on the bottom.
-* Locate the io_cryengine_importer.zip file you downloaded and select the "Install Add-on" button.
-* Back on the Add-ons tab, click on the Community tab, find "Import-Export: Cryengine Importer" entry and enable it.
+* Download the Cryengine Importer zip file (`io_cryengine_importer.zip`) from [Heffay Presents](https://www.heffaypresents.com/GitHub) or from the [Release tab](https://github.com/Markemp/Cryengine-Importer/releases/latest) on GitHub.
+* In Blender, go to `Edit` -> `Preferences`, then click on the `Install` button on the bottom.
+* Locate the file you downloaded and select the `Install Add-on` button.
+* Back on the Add-ons tab, click on the Community tab, find `Import-Export: Cryengine Importer` entry and enable it.
 
 ## Usage
 

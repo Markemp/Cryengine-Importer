@@ -250,6 +250,7 @@ def create_image_texture_node(tree_nodes, texture, file_extension):
         return texture_node
     else:
         print("Unable to find texture file.")
+        # TODO:  Update this to use os.path.join
         texture_image = bpy.data.images.load(constants.basedir + "\\textures\\default_mat_warning" + file_extension)
         texture_node = tree_nodes.nodes.new('ShaderNodeTexImage')
         texture_node.image = texture_image

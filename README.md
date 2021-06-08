@@ -13,6 +13,8 @@ There are 3 different components to this tool:
 
 This tool will allow you to convert a directory of assets that have been converted with the Cryengine Converter tool into a Blender file.  This allows for the bulk conversion of Cryengine game assets into a library that can be used separately, or with the Cryengine Prefab Importer to create scenes for your machinima.  The importer creates custom node layout groups in the Cycles engine to allow for realistic rendering.
 
+** NOTE **:  This will only import a single directory of assets at a time, and is not recursive.  You can only import directories that are under the `Object` or `Prefab` game directories, or you will get an error `RecursionError: maximum recursion depth exceeded while calling a Python object`.  The single directory limit is to prevent having thousands of game objects opened at the same time in Blender, which as you can imagine is not good for Blender.
+
 Tutorial video:  pending
 
 ### Mech Importer
@@ -21,7 +23,7 @@ This tool allows you to import MechWarrior Online mechs into Blender, along with
 
 Tutorial video:  pending
 
-### Cryengine Prefab Importer (NEW!)
+### Cryengine Prefab Importer (Not Yet Implemented)
 
 This tool was created to help import Cryengine Prefabs (located in the /Prefabs directory) into Blender.  It grabs the prefab XML file and locates the relevant asset converted with Asset Importer, and places it at the appropriate location in the scene with custom made Cycles materials.  It takes advantage of Blender's linked assets, so that if you need to update a particular asset in the scene, you can change it in the source .blend file and it will automatically be applied to any Prefab or scene that references it.
 

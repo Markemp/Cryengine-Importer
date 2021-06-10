@@ -2,7 +2,6 @@
  $blenderaddondir = "$env:APPDATA\Blender Foundation\Blender\$blenderversion\scripts\addons"
  $sourcedir = "$env:HOME\source\repos\Cryengine Importer"
 
- 
  write-host $blenderaddondir
  Write-Host $sourcedir
 
@@ -16,7 +15,6 @@
     Write-Host "Removing existing io_cryengine_importer.zip file." -ForegroundColor Green
     Remove-Item "$sourcedir\io_cryengine_importer.zip"
  }
-
 
  Compress-Archive "$sourcedir\io_cryengine_importer" -DestinationPath "$sourcedir\io_cryengine_importer.zip"
  Write-Host "Created new io_cryengine_importer.zip file to $sourcedir." -ForegroundColor Green

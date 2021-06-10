@@ -16,20 +16,20 @@ def get_collection_object(collection_name):
         return bpy.data.collections[collection_name]
 
 def set_up_collections():
-    create_collection(constants.WGT_LAYER)
-    hide_collection(constants.WGT_LAYER)
-    create_collection(constants.CTRL_LAYER)
-    create_collection(constants.GEO_LAYER)
-    create_collection(constants.EMPTIES_LAYER)
-    create_collection(constants.WEAPONS_LAYER)
-    create_collection(constants.DAMAGED_PARTS_LAYER)
+    create_collection(constants.WIDGETS_COLLECTION)
+    hide_collection(constants.WIDGETS_COLLECTION)
+    create_collection(constants.CONTROL_BONES_COLLECTION)
+    create_collection(constants.DEFORM_BONES_COLLECTION)
+    create_collection(constants.EMPTIES_COLLECTION)
+    create_collection(constants.WEAPONS_COLLECTION)
+    create_collection(constants.DAMAGED_PARTS_COLLECTION)
 
 def set_up_asset_collections():
-    create_collection(constants.WGT_LAYER)
-    hide_collection(constants.WGT_LAYER)
-    create_collection(constants.CTRL_LAYER)
-    create_collection(constants.GEO_LAYER)
-    create_collection(constants.EMPTIES_LAYER)
+    create_collection(constants.WIDGETS_COLLECTION)
+    hide_collection(constants.WIDGETS_COLLECTION)
+    create_collection(constants.CONTROL_BONES_COLLECTION)
+    create_collection(constants.DEFORM_BONES_COLLECTION)
+    create_collection(constants.EMPTIES_COLLECTION)
 
 def hide_collection(collection_name):
     collection = get_collection_object(collection_name)

@@ -4,8 +4,8 @@ from . import constants, cc_collections, bones
 def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:
         bone_transform_name = bone_name
-    print("Creating Widget " + constants.WGT_PREFIX + armature.name + '_' + bone_name)
-    obj_name = constants.WGT_PREFIX + armature.name + '_' + bone_name
+    print("Creating Widget " + constants.WIDGET_PREFIX + armature.name + '_' + bone_name)
+    obj_name = constants.WIDGET_PREFIX + armature.name + '_' + bone_name
     scene = bpy.context.scene
     # Check if it already exists in the scene
     if obj_name in scene.objects:
@@ -27,7 +27,7 @@ def create_widget(armature, bone_name, bone_transform_name=None):
         wgts_group_name = 'WGTS_' + armature.name
         if wgts_group_name in bpy.data.objects.keys():
             obj.parent = bpy.data.objects[wgts_group_name]
-        cc_collections.link_object_to_collection(obj, constants.WGT_LAYER)
+        cc_collections.link_object_to_collection(obj, constants.WIDGETS_COLLECTION)
         return obj
 
 def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):

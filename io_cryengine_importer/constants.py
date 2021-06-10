@@ -1,11 +1,11 @@
-WGT_PREFIX = 'WGT-'  # Prefix for widget objects
+WIDGET_PREFIX = 'WGT-'  # Prefix for widget objects
 ROOT_NAME = 'Bip01'  # Name of the root bone.
-WGT_LAYER = 'Widgets Layer'
-CTRL_LAYER = "Control Bones Layer"
-GEO_LAYER = "Deform Bones Layer"
-EMPTIES_LAYER = "Empties"
-WEAPONS_LAYER = "Weapons Layer"
-DAMAGED_PARTS_LAYER = "Damaged Parts"
+WIDGETS_COLLECTION = 'Widgets'
+CONTROL_BONES_COLLECTION = "Control Bones"
+DEFORM_BONES_COLLECTION = "Deform Bones"
+EMPTIES_COLLECTION = "Empties"
+WEAPONS_COLLECTION = "Weapons"
+DAMAGED_PARTS_COLLECTION = "Damaged Parts"
 
 basedir = ""
 

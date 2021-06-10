@@ -144,16 +144,3 @@ class CryXmlSerializer:
     def read_int16(self, binary_reader):
         val = struct.unpack('<h', binary_reader.read(2))[0]
         return val
-
-    
-
-#cry = CryXmlSerializer()
-#cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\adder-common.xml")
-#cry.read_file("C:\\Users\Geoff\Source\Repos\Cryengine Importer\io_cryengine_importer\CryXmlB\\asteroid_hangar_landingpad_medium.xmla")
-#cry.read_file("D:\\Depot\SC\\Data\\Objects\\Spaceships\\Ships\\AEGS\\Avenger\\aegs_avenger_exterior.mtl")
-#cry.read_file("D:\\Depot\SC\\Data\\Objects\\Animals\\Fish\\CleanerFish_prop_01.mtl")
-#cry.read_file("D:\\Depot\MWO\\Objects\\Mechs\\Adder\\Body\\adder_body.mtl")
-#mats = cry.read_file("D:\\Depot\MWO\\Objects\\Purchasable\\cockpit_hanging\\50calnecklace\\50calnecklace_a.mtl")
-
-
-

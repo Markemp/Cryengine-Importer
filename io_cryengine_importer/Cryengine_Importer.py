@@ -293,24 +293,24 @@ def set_custom_shapes(armature, mech):
         widgets.create_cube_widget(armature, "Hand_IK.L", 1.25)
         widgets.create_sphere_widget(armature, "Elbow_IK.R")
         widgets.create_sphere_widget(armature, "Elbow_IK.L")
-        armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hand_IK.R"]
-        armature.pose.bones['Hand_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hand_IK.L"]
-        armature.pose.bones['Elbow_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Elbow_IK.R"]
-        armature.pose.bones['Elbow_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Elbow_IK.L"]
+        armature.pose.bones['Hand_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Hand_IK.R"]
+        armature.pose.bones['Hand_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Hand_IK.L"]
+        armature.pose.bones['Elbow_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Elbow_IK.R"]
+        armature.pose.bones['Elbow_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Elbow_IK.L"]
     else:
         widgets.create_cube_widget(armature, "Shoulder_IK.L", 1.0)
         widgets.create_cube_widget(armature, "Shoulder_IK.R", 1.0)
-        armature.pose.bones['Shoulder_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "ShoulderIK.L"]
-        armature.pose.bones['Shoulder_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "ShoulderIK.R"]
-    bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
-    armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Root"]
-    armature.pose.bones["Foot_IK.R"].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Foot_IK.R"]
-    armature.pose.bones["Foot_IK.L"].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Foot_IK.L"]
-    armature.pose.bones['Knee_IK.R'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Knee_IK.R"]
-    armature.pose.bones['Knee_IK.L'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Knee_IK.L"]
-    armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pitch"]
-    armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
-    armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WGT_PREFIX + armature.name + "_" + "Hip_Root"]
+        armature.pose.bones['Shoulder_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "ShoulderIK.L"]
+        armature.pose.bones['Shoulder_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "ShoulderIK.R"]
+    bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
+    armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Root"]
+    armature.pose.bones["Foot_IK.R"].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Foot_IK.R"]
+    armature.pose.bones["Foot_IK.L"].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Foot_IK.L"]
+    armature.pose.bones['Knee_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Knee_IK.R"]
+    armature.pose.bones['Knee_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Knee_IK.L"]
+    armature.pose.bones['Bip01_Pitch'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Bip01_Pitch"]
+    armature.pose.bones['Bip01_Pelvis'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Bip01_Pelvis"]
+    armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Hip_Root"]
     print("End setting up widgets")
 
 def import_geometry(daefile, basedir):
@@ -464,18 +464,18 @@ def add_objects_to_collections():
                or obj.name.endswith('_case')
                or obj.name.startswith('animation')]
     for empty in empties:
-        cc_collections.link_object_to_collection(empty, constants.EMPTIES_LAYER)
+        cc_collections.link_object_to_collection(empty, constants.EMPTIES_COLLECTION)
     # Set weapons and special geometry to Weapons Collection
     #names = bpy.data.objects.keys()
     for weapon in bpy.data.objects:
         if any(x in weapon.name for x in constants.weapons):
-            cc_collections.link_object_to_collection(weapon, constants.WEAPONS_LAYER)
+            cc_collections.link_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
     move_damaged_parts_to_collection()
 
 def move_damaged_parts_to_collection():
     for obj in bpy.data.objects:
         if obj.name.endswith('_damaged') or obj.name.endswith('_damged'):
-            cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_LAYER)
+            cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
 
 def import_light(object):
     # For a Prefab light, create a new light object, position/rotate it and return the object.

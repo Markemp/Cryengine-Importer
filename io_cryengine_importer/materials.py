@@ -4,6 +4,8 @@ from . import utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 from . import constants
 
+default_texture_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets\\default_mat_warning.png")
+
 def fix_submaterials(mats_raw):
     submats = mats_raw.findall("SubMaterials")
     if submats:
@@ -243,19 +245,10 @@ def create_mech_shader_material(material_xml, material, file_extension):
 
 def create_image_texture_node(tree_nodes, texture, file_extension):
     texturefile = utilities.get_filename(texture.attrib["File"], file_extension)
-    if os.path.isfile(texturefile):
-        texture_image = bpy.data.images.load(texturefile, check_existing=True)
-        texture_node = tree_nodes.nodes.new('ShaderNodeTexImage')
-        texture_node.image = texture_image
-        return texture_node
-    else:
-        print("Unable to find texture file.")
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        texture_image = os.path.join(dir_path, ".\\assets\\default_mat_warning.png")
-        texture_image = bpy.data.images.load(texture_image)
-        texture_node = tree_nodes.nodes.new('ShaderNodeTexImage')
-        texture_node.image = texture_image
-        return texture_node
+    texture_image = bpy.data.images.load(texturefile, check_existing=True) if os.path.isfile(texturefile) else bpy.data.images.load(default_texture_file)
+    texture_node = tree_nodes.nodes.new('ShaderNodeTexImage')
+    texture_node.image = texture_image
+    return texture_node
 
 def create_output_node(tree_nodes):
     shout = tree_nodes.nodes.new('ShaderNodeOutputMaterial')

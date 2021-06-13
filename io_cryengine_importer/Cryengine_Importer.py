@@ -477,6 +477,22 @@ def move_damaged_parts_to_collection():
         if obj.name.endswith('_damaged') or obj.name.endswith('_damged'):
             cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
 
+def show_all_prefab_folders(prefab_xml):
+    print("NOTE:  Asset importer needs to create .blend files for the following directories:")
+    all_dirs = []
+    for prefab in prefab_xml.iter("Object"):
+        if prefab.attrib["Type"] == "Brush":
+            file = "/".join(prefab.attrib["Prefab"].split("/")[0:-1])
+            all_dirs.append(file)
+        elif prefab.attrib["Type"] == "Entity":
+            properties = prefab[0]
+            file = "/".join(properties.attrib["objModel"].split("/")[0:-1])
+            all_dirs.append(file)
+        elif prefab.attrib["Type"] == "GeomEntity":
+            file = "/".join(prefab.attrib["Geometry"].split("/")[0:-1])
+    for dir in (set(all_dirs)):
+        print(dir)
+
 def import_light(object):
     # For a Prefab light, create a new light object, position/rotate it and return the object.
     # object is the xml object with all the needed attributes.
@@ -586,45 +602,65 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     return {'FINISHED'}
 
 def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    # Path is the xml file to the prefab.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
+    # Path is the prefab xml file.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
     # features). Group is group of objects. Entity = light.
     set_viewport_shading()
-    cc_collections.set_up_asset_collections()
     basedir = get_base_dir(path)
-    #basedir = os.path.dirname(path)  # Prefabs found at root, under prefab directory.
     print("Basedir: " + basedir)
+
     if os.path.isfile(path):
         cry_xml = CryXmlSerializer()
-        prefab = cry_xml.read_file(path)
+        prefabs_xml = cry_xml.read_file(path)
     else:
         return {'FINISHED'}  # Couldn't parse the prefab xml.
-    # Parse all the Brush objects
-    for object in prefab.iter("Object"):
-        if object.attrib["Type"] == "Brush":
-            # We have an object to import.  Try to find the object in the asset library.
-            objectname = object.attrib["Name"]
-            libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
-            libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-            itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
-            obj = link_geometry(objectname, libraryfile, itemgroupname)
-            if not obj == None:
-                location = utilities.convert_to_location(object.attrib["Pos"])
-                rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-                matrix = utilities.get_transform_matrix(rotation, location)
-                obj.rotation_mode = 'QUATERNION'
-                obj.matrix_world = matrix
-        if object.attrib["Type"] == "GeomEntity":
-            objectname = object.attrib["Name"]
-            libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Geometry"]), os.path.basename(os.path.dirname(object.attrib["Geometry"])) + ".blend")
-            libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-            itemgroupname = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
-            obj = link_geometry(objectname, libraryfile, itemgroupname)
-            if not obj == None:
-                location = utilities.convert_to_location(object.attrib["Pos"])
-                rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-                matrix = utilities.get_transform_matrix(rotation, location)
-                obj.rotation_mode = 'QUATERNION'
-                obj.matrix_world = matrix
-        if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":
-            obj = import_light(object)
+
+    # Set up root collection
+    root_name = prefabs_xml.getroot().attrib["Name"]
+    root_collection = cc_collections.create_collection(root_name)
+    cc_collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
+
+    show_all_prefab_folders(prefabs_xml)
+
+    # Go through the prefabs and add each object to the appropriate collection
+    for prefab in prefabs_xml.iter("Prefab"):
+        col = cc_collections.create_collection(prefab.attrib["Name"])
+        parent_col = cc_collections.get_collection_object(prefab.attrib["Library"])
+        parent_col.children.link(col)
+
+        for object in prefab.iter("Object"):
+            if object.attrib["Type"] == "Brush":
+                # We have an object to import.  Try to find the object in the asset library.
+                objectname = object.attrib["Name"]
+                libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
+                libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
+                itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
+                obj = link_geometry(objectname, libraryfile, itemgroupname)
+                if not obj == None:
+                    location = utilities.convert_to_location(object.attrib["Pos"])
+                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                    matrix = utilities.get_transform_matrix(rotation, location)
+                    obj.rotation_mode = 'QUATERNION'
+                    obj.matrix_world = matrix
+                else:
+                    obj = bpy.data.objects.new(objectname, None)
+                    bpy.context.scene.objects.link(obj)
+                    location = utilities.convert_to_location(object.attrib["Pos"])
+                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                    matrix = utilities.get_transform_matrix(rotation, location)
+                    obj.rotation_mode = 'QUATERNION'
+                    obj.matrix_world = matrix
+            if object.attrib["Type"] == "GeomEntity":
+                objectname = object.attrib["Name"]
+                libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Geometry"]), os.path.basename(os.path.dirname(object.attrib["Geometry"])) + ".blend")
+                libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
+                itemgroupname = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
+                obj = link_geometry(objectname, libraryfile, itemgroupname)
+                if not obj == None:
+                    location = utilities.convert_to_location(object.attrib["Pos"])
+                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                    matrix = utilities.get_transform_matrix(rotation, location)
+                    obj.rotation_mode = 'QUATERNION'
+                    obj.matrix_world = matrix
+            if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":
+                obj = import_light(object)
     return {'FINISHED'}

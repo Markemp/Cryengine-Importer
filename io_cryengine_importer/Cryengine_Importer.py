@@ -392,26 +392,33 @@ def process_bonename(geo, aname):
     else:
         return geo.attrib["BoneName"].replace(' ','_')
 
-def link_geometry(objectname, libraryfile, itemgroupname):
+def link_geometry(objectname, libraryfile, collection):
     # Link the object from the library file and translate/rotate.
-    scene = bpy.context.scene
     if os.path.isfile(libraryfile):
-        with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
-            data_dest.objects = data_src.objects
-        for obj in data_dest.objects:
-            if obj.name == itemgroupname:
-                ob = bpy.data.objects.new(obj.name, None)
+        with bpy.data.libraries.load(libraryfile, link=True) as (data_from, data_to):
+            data_to.objects = [o for o in data_from.objects if o == objectname]
+            # data_to.objects = data_from.objects
+        print(data_from.objects)
+        print(data_to.objects)
+        # data_to.materials = data_from.materials
+        for obj in data_to.objects:
+            if obj is not None:
+                # ob = bpy.data.objects.new(obj.name, None)
                 # ob.dupli_group = obj
                 # ob.dupli_type = 'GROUP'
-                ob.name = objectname
-                scene.collection.objects.link(ob)
-                print("Imported object: " + ob.name)
-                return ob
+                # ob.name = objectname
+                collection.objects.link(obj)
+                cc_collections.link_object_to_collection(obj, collection)
+                print("Imported object: " + obj.name)
+                return obj
+            else:
+                print("Couldn't find object " + obj.name)
+                return None
     elif os.path.isfile(libraryfile.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
         libraryfile = libraryfile.replace("industrial", "frontend//mechlab_a")
-        with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
-            data_dest.groups = data_src.groups
-        for obj in data_dest.groups:
+        with bpy.data.libraries.load(libraryfile, link=True) as (data_from, data_to):
+            data_to.groups = data_from.groups
+        for obj in data_to.groups:
             if obj.name == itemgroupname:
                 ob = bpy.data.objects.new(obj.name, None)
                 ob.dupli_group = obj
@@ -622,9 +629,10 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
 
     # Go through the prefabs and add each object to the appropriate collection
     for prefab in prefabs_xml.iter("Prefab"):
-        col = cc_collections.create_collection(prefab.attrib["Name"])
+        collection_name = prefab.attrib["Name"]
+        collection = cc_collections.create_collection(collection_name)
         parent_col = cc_collections.get_collection_object(prefab.attrib["Library"])
-        parent_col.children.link(col)
+        parent_col.children.link(collection)
 
         for object in prefab.iter("Object"):
             if object.attrib["Type"] == "Brush":
@@ -632,12 +640,12 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
                 objectname = object.attrib["Name"]
                 libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
                 libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-                itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
+                collection_name = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
                 print()
                 print("objectname: " + objectname)
                 print("libaryfile: " + libraryfile)
-                print("itemgroupname: " + itemgroupname)
-                obj = link_geometry(objectname, libraryfile, itemgroupname)
+                print("collection_name: " + collection_name)
+                obj = link_geometry(objectname, libraryfile, collection)
                 if not obj == None:
                     if "Pos" in object.attrib:
                         location = utilities.convert_to_location(object.attrib["Pos"])

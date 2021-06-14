@@ -394,16 +394,15 @@ def process_bonename(geo, aname):
 
 def link_geometry(objectname, libraryfile, itemgroupname):
     # Link the object from the library file and translate/rotate.
-    # print("Linking " + itemgroupname + " from " + libraryfile)
     scene = bpy.context.scene
     if os.path.isfile(libraryfile):
         with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
-            data_dest.groups = data_src.groups
-        for group in data_dest.groups:
-            if group.name == itemgroupname:
-                ob = bpy.data.objects.new(group.name, None)
-                ob.dupli_group = group
-                ob.dupli_type = 'GROUP'
+            data_dest.objects = data_src.objects
+        for obj in data_dest.objects:
+            if obj.name == itemgroupname:
+                ob = bpy.data.objects.new(obj.name, None)
+                # ob.dupli_group = obj
+                # ob.dupli_type = 'GROUP'
                 ob.name = objectname
                 scene.collection.objects.link(ob)
                 print("Imported object: " + ob.name)
@@ -412,10 +411,10 @@ def link_geometry(objectname, libraryfile, itemgroupname):
         libraryfile = libraryfile.replace("industrial", "frontend//mechlab_a")
         with bpy.data.libraries.load(libraryfile, link=True) as (data_src, data_dest):
             data_dest.groups = data_src.groups
-        for group in data_dest.groups:
-            if group.name == itemgroupname:
-                ob = bpy.data.objects.new(group.name, None)
-                ob.dupli_group = group
+        for obj in data_dest.groups:
+            if obj.name == itemgroupname:
+                ob = bpy.data.objects.new(obj.name, None)
+                ob.dupli_group = obj
                 ob.dupli_type = 'GROUP'
                 ob.name = objectname
                 #scene.objects.link(ob)
@@ -634,10 +633,20 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
                 libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
                 libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
                 itemgroupname = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
+                print()
+                print("objectname: " + objectname)
+                print("libaryfile: " + libraryfile)
+                print("itemgroupname: " + itemgroupname)
                 obj = link_geometry(objectname, libraryfile, itemgroupname)
                 if not obj == None:
-                    location = utilities.convert_to_location(object.attrib["Pos"])
-                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                    if "Pos" in object.attrib:
+                        location = utilities.convert_to_location(object.attrib["Pos"])
+                    else:
+                        location = utilities.convert_to_location("0.0,0.0,0.0")
+                    if "Rotate" in object.attrib:
+                        rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+                    else:
+                        rotation = utilities.convert_to_rotation("1,0,0,0")
                     matrix = utilities.get_transform_matrix(rotation, location)
                     obj.rotation_mode = 'QUATERNION'
                     obj.matrix_world = matrix

@@ -10,7 +10,9 @@ def add_collection_to_parent(parent_collection, child_collection):
 
 def link_object_to_collection(object, collection_name):
     collection = bpy.data.collections[collection_name]
-    collection.children.objects.link(object)
+    if object.name in collection.objects:
+        return
+    collection.objects.link(object)
 
 def get_collection_object(collection_name):
     if collection_name in bpy.data.collections.keys():

@@ -27,6 +27,7 @@ import bpy
 import bpy.types
 import bpy.utils
 import mathutils
+import difflib
 
 from . import constants, cc_collections, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
@@ -56,7 +57,7 @@ def get_body_dir(filepath):
 def get_mech(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
-def create_object_groups():
+def create_collections():
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
         if (obj.name != 'Camera' and obj.name != 'Light' and obj.name != 'Cube'):
@@ -392,44 +393,52 @@ def process_bonename(geo, aname):
     else:
         return geo.attrib["BoneName"].replace(' ','_')
 
-def link_geometry(objectname, libraryfile, collection):
+def link_geometry(object_name, cgf_name, library_file, collection):
     # Link the object from the library file and translate/rotate.
-    if os.path.isfile(libraryfile):
-        with bpy.data.libraries.load(libraryfile, link=True) as (data_from, data_to):
-            data_to.objects = [o for o in data_from.objects if o == objectname]
-            # data_to.objects = data_from.objects
-        print(data_from.objects)
-        print(data_to.objects)
-        # data_to.materials = data_from.materials
+    if os.path.isfile(library_file):
+        with bpy.data.libraries.load(library_file, link=True) as (data_from, data_to):
+            closest_matches = difflib.get_close_matches(cgf_name, data_from.objects)
+            if len(closest_matches) != 0:
+                print("Closest match name: " + closest_matches[0])
+                # objs = [o for o in data_from.objects if o == closest_matches[0]]
+                # objs[0].name = object_name
+                data_to.objects = [o for o in data_from.objects if o == closest_matches[0]]
+            else:
+                print("Unable to find matching object in assets blend file.  Skipping...")
+                return
         for obj in data_to.objects:
+            print("Length of objects: " + str(len(data_to.objects)))
             if obj is not None:
                 # ob = bpy.data.objects.new(obj.name, None)
                 # ob.dupli_group = obj
                 # ob.dupli_type = 'GROUP'
                 # ob.name = objectname
-                collection.objects.link(obj)
-                cc_collections.link_object_to_collection(obj, collection)
+                obj.name = object_name
+                cc_collections.link_object_to_collection(obj, collection.name)
                 print("Imported object: " + obj.name)
                 return obj
             else:
                 print("Couldn't find object " + obj.name)
                 return None
-    elif os.path.isfile(libraryfile.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
-        libraryfile = libraryfile.replace("industrial", "frontend//mechlab_a")
-        with bpy.data.libraries.load(libraryfile, link=True) as (data_from, data_to):
+    elif os.path.isfile(library_file.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
+        library_file = library_file.replace("industrial", "frontend//mechlab_a")
+        with bpy.data.libraries.load(library_file, link=True) as (data_from, data_to):
             data_to.groups = data_from.groups
         for obj in data_to.groups:
-            if obj.name == itemgroupname:
-                ob = bpy.data.objects.new(obj.name, None)
-                ob.dupli_group = obj
-                ob.dupli_type = 'GROUP'
-                ob.name = objectname
+            if obj is not None:
+                # ob = bpy.data.objects.new(obj.name, None)
+                # ob.dupli_group = obj
+                # ob.dupli_type = 'GROUP'
+                # ob.name = object_name
                 #scene.objects.link(ob)
-                scene.collection.objects.link(ob)
-                print("Imported object: " + ob.name)
-                return ob
+                cc_collections.link_object_to_collection(obj, collection.name)
+                print("Imported object: " + obj.name)
+                return obj
+            else:
+                print("Couldn't find object " + obj.name)
+                return None
     else:
-        print("Unable to find library file " + libraryfile)
+        print("Unable to find library file " + library_file)
         return None
 
 def save_file(file):
@@ -496,6 +505,7 @@ def show_all_prefab_folders(prefab_xml):
             all_dirs.append(file)
         elif prefab.attrib["Type"] == "GeomEntity":
             file = "/".join(prefab.attrib["Geometry"].split("/")[0:-1])
+            all_dirs.append(file)
     for dir in (set(all_dirs)):
         print(dir)
 
@@ -561,7 +571,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
                 #    mats.material = materials[mats.name[:-4]]
                 #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
                 #    mats.material = materials[mats.name]
-    create_object_groups()
+    create_collections()
     # Save the file in the directory being read, given the directory name.  Then
     # the user can create the thumbnails into the given blend file.
     if auto_save_file == True:
@@ -629,23 +639,24 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
 
     # Go through the prefabs and add each object to the appropriate collection
     for prefab in prefabs_xml.iter("Prefab"):
-        collection_name = prefab.attrib["Name"]
-        collection = cc_collections.create_collection(collection_name)
+        cgf_name = prefab.attrib["Name"]
+        collection = cc_collections.create_collection(cgf_name)
         parent_col = cc_collections.get_collection_object(prefab.attrib["Library"])
         parent_col.children.link(collection)
 
         for object in prefab.iter("Object"):
             if object.attrib["Type"] == "Brush":
                 # We have an object to import.  Try to find the object in the asset library.
-                objectname = object.attrib["Name"]
-                libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Prefab"]), os.path.basename(os.path.dirname(object.attrib["Prefab"])) + ".blend")
+                object_name = object.attrib["Name"]
+                prefab = object.attrib["Prefab"]
+                libraryfile = os.path.join(basedir, os.path.dirname(prefab), os.path.basename(os.path.dirname(prefab)) + ".blend")
                 libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-                collection_name = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
+                cgf_name = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
                 print()
-                print("objectname: " + objectname)
+                print("object_name: " + object_name)
+                print("cgf_name: " + cgf_name)
                 print("libaryfile: " + libraryfile)
-                print("collection_name: " + collection_name)
-                obj = link_geometry(objectname, libraryfile, collection)
+                obj = link_geometry(object_name, cgf_name, libraryfile, collection)
                 if not obj == None:
                     if "Pos" in object.attrib:
                         location = utilities.convert_to_location(object.attrib["Pos"])
@@ -659,7 +670,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
                     obj.rotation_mode = 'QUATERNION'
                     obj.matrix_world = matrix
                 else:
-                    obj = bpy.data.objects.new(objectname, None)
+                    obj = bpy.data.objects.new(object_name, None)
                     bpy.context.scene.objects.link(obj)
                     location = utilities.convert_to_location(object.attrib["Pos"])
                     rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
@@ -667,11 +678,15 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
                     obj.rotation_mode = 'QUATERNION'
                     obj.matrix_world = matrix
             if object.attrib["Type"] == "GeomEntity":
-                objectname = object.attrib["Name"]
+                object_name = object.attrib["Name"]
+                cgf_name = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
                 libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Geometry"]), os.path.basename(os.path.dirname(object.attrib["Geometry"])) + ".blend")
                 libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-                itemgroupname = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
-                obj = link_geometry(objectname, libraryfile, itemgroupname)
+                print()
+                print("objectname: " + object_name)
+                print("cgf_name: " + cgf_name)
+                print("libaryfile: " + libraryfile)
+                obj = link_geometry(object_name, cgf_name, libraryfile, collection)
                 if not obj == None:
                     location = utilities.convert_to_location(object.attrib["Pos"])
                     rotation = utilities.convert_to_rotation(object.attrib["Rotate"])

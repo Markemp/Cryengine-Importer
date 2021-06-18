@@ -415,6 +415,11 @@ def link_geometry(object_name, cgf_name, library_file, collection):
                 # ob.name = objectname
                 obj.name = object_name
                 cc_collections.link_object_to_collection(obj, collection.name)
+                proxy = bpy.data.objects.new(obj.name + "_proxy", None)
+                obj.users_collection[0].objects.link(proxy)
+                proxy.empty_display_type = 'PLAIN_AXES'
+                proxy.location = obj.location
+                obj.parent = proxy
                 print("Imported object: " + obj.name)
                 return obj
             else:

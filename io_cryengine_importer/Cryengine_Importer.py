@@ -27,7 +27,6 @@ import bpy
 import bpy.types
 import bpy.utils
 import mathutils
-import difflib
 
 from . import constants, cc_collections, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
@@ -58,6 +57,7 @@ def get_mech(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 def create_collections():
+    # TODO: Refactor to use cc_collections
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
         if (obj.name != 'Camera' and obj.name != 'Light' and obj.name != 'Cube'):
@@ -320,7 +320,6 @@ def import_geometry(daefile, basedir):
         return bpy.context.selected_objects[:]      # Return the objects added.
     except:
         # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
-        #continue
         print("Error importing Collada file: " + daefile + ", basedir: " + basedir)
     
 def import_mech_geometry(cdffile, basedir, bodydir, mechname):
@@ -421,6 +420,19 @@ def get_root(object):
         return get_root(object.parent)
     else:
         return object
+
+def get_all_child_objects(object, include_root=True):
+    result = []
+    def recurse(obj):
+        result.append(obj)
+        if len(obj.children) != 0:
+            for o in obj.children:
+                recurse(o)
+    if include_root:
+        result.append(object)
+    for child in object.children:
+        recurse(child)
+    return result
 
 def save_file(file):
     # Save the Blender file as the name of the directory it is in.
@@ -638,8 +650,8 @@ def import_element(basedir, prefab_element, collection):
             dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
             bpy.ops.wm.collada_import(filepath=dae_file)
             added_obj = get_root(bpy.context.object)
-            print("added object root is " + added_obj.name)
-            cc_collections.link_object_to_collection(added_obj, collection.name)
+            for obj in get_all_child_objects(added_obj):
+                cc_collections.move_object_to_collection(obj, collection.name)
             set_object_location(object, added_obj)
         elif object_type == "Entity":
             properties = object[0]
@@ -648,19 +660,23 @@ def import_element(basedir, prefab_element, collection):
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
-                print("added object root is " + added_obj.name)
-                cc_collections.link_object_to_collection(added_obj, collection.name)
+                for obj in get_all_child_objects(added_obj):
+                    cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
             elif "object_Model" in properties.attrib:
                 cgf_file = properties.attrib["object_Model"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
-                print("added object root is " + added_obj.name)
-                cc_collections.link_object_to_collection(added_obj, collection.name)
+                for obj in get_all_child_objects(added_obj):
+                    cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
             else:
                 add_empty(object)
+                added_obj = get_root(bpy.context.object)
+                for obj in get_all_child_objects(added_obj):
+                    cc_collections.move_object_to_collection(obj, collection.name)
+                set_object_location(object, added_obj)
         elif object_type == "GeomEntity":
             if "Geometry" in properties.attrib:
                 cgf_file = object.attrib["Geometry"]
@@ -668,10 +684,15 @@ def import_element(basedir, prefab_element, collection):
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
                 print("added object root is " + added_obj.name)
-                cc_collections.link_object_to_collection(added_obj, collection.name)
+                for obj in get_all_child_objects(added_obj):
+                    cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
             else:
                 add_empty(object)
+                added_obj = get_root(bpy.context.object)
+                for obj in get_all_child_objects(added_obj):
+                    cc_collections.move_object_to_collection(obj, collection.name)
+                set_object_location(object, added_obj)
         elif object_type == "Group":
             for obj in object:
                 import_element(basedir, obj, collection)

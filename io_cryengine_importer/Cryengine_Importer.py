@@ -397,54 +397,30 @@ def link_geometry(object_name, cgf_name, library_file, collection):
     # Link the object from the library file and translate/rotate.
     if os.path.isfile(library_file):
         with bpy.data.libraries.load(library_file, link=True) as (data_from, data_to):
-            closest_matches = difflib.get_close_matches(cgf_name, data_from.objects)
-            if len(closest_matches) != 0:
-                print("Closest match name: " + closest_matches[0])
-                # objs = [o for o in data_from.objects if o == closest_matches[0]]
-                # objs[0].name = object_name
-                data_to.objects = [o for o in data_from.objects if o == closest_matches[0]]
-            else:
-                print("Unable to find matching object in assets blend file.  Skipping...")
-                return
+            data_to.objects = [o for o in data_from.objects if o == cgf_name]
         for obj in data_to.objects:
-            print("Length of objects: " + str(len(data_to.objects)))
             if obj is not None:
-                # ob = bpy.data.objects.new(obj.name, None)
-                # ob.dupli_group = obj
-                # ob.dupli_type = 'GROUP'
-                # ob.name = objectname
-                obj.name = object_name
+                print("Obj.name: " + obj.name + ", object_name: " + object_name)
                 cc_collections.link_object_to_collection(obj, collection.name)
-                proxy = bpy.data.objects.new(obj.name + "_proxy", None)
+                proxy = bpy.data.objects.new(object_name + "_proxy", None)
                 obj.users_collection[0].objects.link(proxy)
-                proxy.empty_display_type = 'PLAIN_AXES'
+                proxy.empty_display_type = 'SPHERE'
                 proxy.location = obj.location
                 obj.parent = proxy
                 print("Imported object: " + obj.name)
-                return obj
-            else:
-                print("Couldn't find object " + obj.name)
-                return None
-    elif os.path.isfile(library_file.replace("industrial", "frontend//mechlab_a")):  # MWO Mechlab hack
-        library_file = library_file.replace("industrial", "frontend//mechlab_a")
-        with bpy.data.libraries.load(library_file, link=True) as (data_from, data_to):
-            data_to.groups = data_from.groups
-        for obj in data_to.groups:
-            if obj is not None:
-                # ob = bpy.data.objects.new(obj.name, None)
-                # ob.dupli_group = obj
-                # ob.dupli_type = 'GROUP'
-                # ob.name = object_name
-                #scene.objects.link(ob)
-                cc_collections.link_object_to_collection(obj, collection.name)
-                print("Imported object: " + obj.name)
-                return obj
+                return proxy
             else:
                 print("Couldn't find object " + obj.name)
                 return None
     else:
         print("Unable to find library file " + library_file)
         return None
+
+def get_root(object):
+    if object.parent != None:
+        return get_root(object.parent)
+    else:
+        return object
 
 def save_file(file):
     # Save the Blender file as the name of the directory it is in.
@@ -623,8 +599,6 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     return {'FINISHED'}
 
 def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    # Path is the prefab xml file.  If attrib "Type" is Brush or GeomEntity, object (GeomEntity has additional
-    # features). Group is group of objects. Entity = light.
     set_viewport_shading()
     basedir = get_base_dir(path)
     print("Basedir: " + basedir)
@@ -640,64 +614,80 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
     root_collection = cc_collections.create_collection(root_name)
     cc_collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
 
-    show_all_prefab_folders(prefabs_xml)
-
     # Go through the prefabs and add each object to the appropriate collection
-    for prefab in prefabs_xml.iter("Prefab"):
-        cgf_name = prefab.attrib["Name"]
-        collection = cc_collections.create_collection(cgf_name)
-        parent_col = cc_collections.get_collection_object(prefab.attrib["Library"])
+    for prefab_element in prefabs_xml.iter("Prefab"):
+        collection = cc_collections.create_collection(prefab_element.attrib["Name"])
+        print("\n*** Creating collection " + prefab_element.attrib["Name"])
+        parent_col = cc_collections.get_collection_object(prefab_element.attrib["Library"])
         parent_col.children.link(collection)
 
-        for object in prefab.iter("Object"):
-            if object.attrib["Type"] == "Brush":
-                # We have an object to import.  Try to find the object in the asset library.
-                object_name = object.attrib["Name"]
-                prefab = object.attrib["Prefab"]
-                libraryfile = os.path.join(basedir, os.path.dirname(prefab), os.path.basename(os.path.dirname(prefab)) + ".blend")
-                libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-                cgf_name = os.path.splitext(os.path.basename(object.attrib["Prefab"]))[0]
-                print()
-                print("object_name: " + object_name)
-                print("cgf_name: " + cgf_name)
-                print("libaryfile: " + libraryfile)
-                obj = link_geometry(object_name, cgf_name, libraryfile, collection)
-                if not obj == None:
-                    if "Pos" in object.attrib:
-                        location = utilities.convert_to_location(object.attrib["Pos"])
-                    else:
-                        location = utilities.convert_to_location("0.0,0.0,0.0")
-                    if "Rotate" in object.attrib:
-                        rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-                    else:
-                        rotation = utilities.convert_to_rotation("1,0,0,0")
-                    matrix = utilities.get_transform_matrix(rotation, location)
-                    obj.rotation_mode = 'QUATERNION'
-                    obj.matrix_world = matrix
-                else:
-                    obj = bpy.data.objects.new(object_name, None)
-                    bpy.context.scene.objects.link(obj)
-                    location = utilities.convert_to_location(object.attrib["Pos"])
-                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-                    matrix = utilities.get_transform_matrix(rotation, location)
-                    obj.rotation_mode = 'QUATERNION'
-                    obj.matrix_world = matrix
-            if object.attrib["Type"] == "GeomEntity":
-                object_name = object.attrib["Name"]
-                cgf_name = os.path.splitext(os.path.basename(object.attrib["Geometry"]))[0]
-                libraryfile = os.path.join(basedir, os.path.dirname(object.attrib["Geometry"]), os.path.basename(os.path.dirname(object.attrib["Geometry"])) + ".blend")
-                libraryfile = libraryfile.replace("\\","\\\\").replace("/", "\\\\")
-                print()
-                print("objectname: " + object_name)
-                print("cgf_name: " + cgf_name)
-                print("libaryfile: " + libraryfile)
-                obj = link_geometry(object_name, cgf_name, libraryfile, collection)
-                if not obj == None:
-                    location = utilities.convert_to_location(object.attrib["Pos"])
-                    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-                    matrix = utilities.get_transform_matrix(rotation, location)
-                    obj.rotation_mode = 'QUATERNION'
-                    obj.matrix_world = matrix
-            if object.attrib["Type"] == "Entity" and object.attrib["Layer"] == "Lighting":
-                obj = import_light(object)
+        import_element(basedir, prefab_element, collection)
     return {'FINISHED'}
+
+def add_empty(object):
+    print("Adding empty " + object.attrib["Name"])
+    new_object = bpy.data.objects.new(object.attrib["Name"], None)
+    new_object.empty_display_type = 'SPHERE'
+    set_object_location(object, new_object)
+
+def import_element(basedir, prefab_element, collection):
+    for object in prefab_element.iter("Object"):
+        object_type = object.attrib["Type"]            
+        if object_type == "Brush":
+            cgf_file = object.attrib["Prefab"]
+            dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
+            bpy.ops.wm.collada_import(filepath=dae_file)
+            added_obj = get_root(bpy.context.object)
+            print("added object root is " + added_obj.name)
+            cc_collections.link_object_to_collection(added_obj, collection.name)
+            set_object_location(object, added_obj)
+        elif object_type == "Entity":
+            properties = object[0]
+            if "objModel" in properties.attrib:
+                cgf_file = properties.attrib["objModel"]
+                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.collada_import(filepath=dae_file)
+                added_obj = get_root(bpy.context.object)
+                print("added object root is " + added_obj.name)
+                cc_collections.link_object_to_collection(added_obj, collection.name)
+                set_object_location(object, added_obj)
+            elif "object_Model" in properties.attrib:
+                cgf_file = properties.attrib["object_Model"]
+                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.collada_import(filepath=dae_file)
+                added_obj = get_root(bpy.context.object)
+                print("added object root is " + added_obj.name)
+                cc_collections.link_object_to_collection(added_obj, collection.name)
+                set_object_location(object, added_obj)
+            else:
+                add_empty(object)
+        elif object_type == "GeomEntity":
+            if "Geometry" in properties.attrib:
+                cgf_file = object.attrib["Geometry"]
+                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.collada_import(filepath=dae_file)
+                added_obj = get_root(bpy.context.object)
+                print("added object root is " + added_obj.name)
+                cc_collections.link_object_to_collection(added_obj, collection.name)
+                set_object_location(object, added_obj)
+            else:
+                add_empty(object)
+        elif object_type == "Group":
+            for obj in object:
+                import_element(basedir, obj, collection)
+
+def set_object_location(object, added_obj):
+    if not added_obj == None:
+        if "Pos" in object.attrib:
+            location = utilities.convert_to_location(object.attrib["Pos"])
+        else:
+            location = utilities.convert_to_location("0.0,0.0,0.0")
+        if "Rotate" in object.attrib:
+            rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+        else:
+            rotation = utilities.convert_to_rotation("1,0,0,0")
+        matrix = utilities.get_transform_matrix(rotation, location)
+        added_obj.rotation_mode = 'QUATERNION'
+        added_obj.matrix_world = matrix
+    else:
+        print("Unable to find Brush entity " + added_obj.name)

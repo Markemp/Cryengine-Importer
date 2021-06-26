@@ -644,7 +644,8 @@ def add_empty(object):
 
 def import_element(basedir, prefab_element, collection):
     for object in prefab_element.iter("Object"):
-        object_type = object.attrib["Type"]            
+        object_type = object.attrib["Type"]
+        print("Processing Object type " + object_type)            
         if object_type == "Brush":
             cgf_file = object.attrib["Prefab"]
             dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
@@ -678,12 +679,11 @@ def import_element(basedir, prefab_element, collection):
                     cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
         elif object_type == "GeomEntity":
-            if "Geometry" in properties.attrib:
+            if "Geometry" in object.attrib:
                 cgf_file = object.attrib["Geometry"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
-                print("added object root is " + added_obj.name)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
@@ -694,8 +694,10 @@ def import_element(basedir, prefab_element, collection):
                     cc_collections.move_object_to_collection(obj, collection.name)
                 set_object_location(object, added_obj)
         elif object_type == "Group":
-            for obj in object:
-                import_element(basedir, obj, collection)
+            print("Group type object.  Passing.")
+            pass
+            # for obj in object:
+            #     import_element(basedir, obj, collection)
 
 def set_object_location(object, added_obj):
     if not added_obj == None:

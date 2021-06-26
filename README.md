@@ -7,7 +7,7 @@ Cryengine Importer is a Blender Add-on tool that allows you to import Cryengine 
 There are 3 different components to this tool:
 * Cryengine Asset Importer
 * Mech Importer
-* Cryengine Prefab Importer. (NYI)
+* Cryengine Prefab Importer.
 
 ### Cryengine Asset Importer
 

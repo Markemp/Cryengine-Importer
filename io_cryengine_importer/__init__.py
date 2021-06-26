@@ -255,7 +255,7 @@ def menu_func_import(self, context):
     self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
 
 def menu_func_prefab_import(self, context):
-    self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab (NYI)")
+    self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab")
 
 classes = (
      MechImporter,

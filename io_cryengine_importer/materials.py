@@ -39,7 +39,6 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
             material = bpy.data.materials.new(mat_name)
             materials[mat_name] = material
             material.use_nodes = True
-            material.blend_method = "CLIP"
             shader = material_xml.attrib["Shader"]
             if shader == "Nodraw":
                 create_nodraw_shader_material(material_xml, material, file_extension)
@@ -151,7 +150,6 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 600
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
-                links.new(texture_node.outputs[1], shaderPrincipledBSDF.inputs[1])
         if map == "Specular":
             print("Adding Specular Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -173,6 +171,7 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
 
 def create_illum_shader_material(material_xml, material, file_extension):
     print("Illum shader")
+    material.blend_method = "CLIP"
     tree_nodes = material.node_tree
     links = tree_nodes.links
     for n in tree_nodes.nodes:
@@ -227,7 +226,6 @@ def create_mech_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 600
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
-                links.new(texture_node.outputs[1], shaderPrincipledBSDF.inputs[18])
         if map == "Specular" or map == "TexSlot4":
             print("Adding Specular Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)

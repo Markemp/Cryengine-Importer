@@ -332,8 +332,8 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             print("Importing " + geo.attrib["AName"])
             # Get all the attribs
             aname    = geo.attrib["AName"]
-            rotation = utilities.convert_to_rotation(geo.attrib["Rotation"])
-            location = utilities.convert_to_location(geo.attrib["Position"])
+            rotation = utilities.convert_to_quaternion(geo.attrib["Rotation"])
+            location = utilities.convert_to_vector(geo.attrib["Position"])
             bonename = process_bonename(geo, aname)
             print("*** *** Bonename: " + bonename)
             binding  = os.path.join(basedir, os.path.splitext(geo.attrib["Binding"])[0] + ".dae")
@@ -521,8 +521,8 @@ def import_light(object):
             bpy.data.lights[objname].cycles.cast_shadow = True
     if not color == None:
         bpy.data.lights[objname].color = utilities.convert_to_rgb(color.attrib["clrDiffuse"])
-    location = utilities.convert_to_location(object.attrib["Pos"])
-    rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
+    location = utilities.convert_to_vector(object.attrib["Pos"])
+    rotation = utilities.convert_to_quaternion(object.attrib["Rotate"])
     matrix = utilities.get_transform_matrix(rotation, location)
     # obj = bpy.data.objects["objectname"]
     obj.rotation_mode = 'QUATERNION'
@@ -642,75 +642,90 @@ def add_empty(object):
     new_object.empty_display_type = 'SPHERE'
     set_object_location(object, new_object)
 
-def import_element(basedir, prefab_element, collection):
-    for object in prefab_element.iter("Object"):
-        object_type = object.attrib["Type"]
+def import_element(basedir, prefab_element, collection, matrix = mathutils.Matrix()):
+    for obj_element in prefab_element.iter("Object"):
+        object_type = obj_element.attrib["Type"]
         print("Processing Object type " + object_type)            
         if object_type == "Brush":
-            cgf_file = object.attrib["Prefab"]
+            cgf_file = obj_element.attrib["Prefab"]
             dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
             bpy.ops.wm.collada_import(filepath=dae_file)
             added_obj = get_root(bpy.context.object)
+            set_object_location(obj_element, added_obj)
             for obj in get_all_child_objects(added_obj):
                 cc_collections.move_object_to_collection(obj, collection.name)
-            set_object_location(object, added_obj)
         elif object_type == "Entity":
-            properties = object[0]
+            properties = obj_element[0]
             if "objModel" in properties.attrib:
                 cgf_file = properties.attrib["objModel"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-                set_object_location(object, added_obj)
             elif "object_Model" in properties.attrib:
                 cgf_file = properties.attrib["object_Model"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-                set_object_location(object, added_obj)
             else:
-                add_empty(object)
+                add_empty(obj_element)
                 added_obj = get_root(bpy.context.object)
+                set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-                set_object_location(object, added_obj)
         elif object_type == "GeomEntity":
-            if "Geometry" in object.attrib:
-                cgf_file = object.attrib["Geometry"]
+            if "Geometry" in obj_element.attrib:
+                cgf_file = obj_element.attrib["Geometry"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-                set_object_location(object, added_obj)
             else:
-                add_empty(object)
+                add_empty(obj_element)
                 added_obj = get_root(bpy.context.object)
+                set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-                set_object_location(object, added_obj)
         elif object_type == "Group":
-            print("Group type object.  Passing.")
+            print("Group type object.")
+            group_empty = 
+            # for obj in obj_element.iter("Objects"):
+            #     mat = utilities.get_transform_matrix(utilities.convert_to_rotation(obj.attrib["Rotate"]), utilities.convert_to_location(obj.attrib["Pos"]))
+
+            #     import_element(basedir, obj, collection, matrix)
             pass
             # for obj in object:
             #     import_element(basedir, obj, collection)
+        
 
 def set_object_location(object, added_obj):
     if not added_obj == None:
-        if "Pos" in object.attrib:
-            location = utilities.convert_to_location(object.attrib["Pos"])
-        else:
-            location = utilities.convert_to_location("0.0,0.0,0.0")
-        if "Rotate" in object.attrib:
-            rotation = utilities.convert_to_rotation(object.attrib["Rotate"])
-        else:
-            rotation = utilities.convert_to_rotation("1,0,0,0")
-        matrix = utilities.get_transform_matrix(rotation, location)
         added_obj.rotation_mode = 'QUATERNION'
-        added_obj.matrix_world = matrix
+        if "Pos" in object.attrib:
+            location = utilities.convert_to_vector(object.attrib["Pos"])
+        else:
+            location = utilities.convert_to_vector("0.0, 0.0, 0.0")
+        if "Rotate" in object.attrib:
+            rotation = utilities.convert_to_quaternion(object.attrib["Rotate"])
+        else:
+            rotation = utilities.convert_to_quaternion("1, 0, 0, 0")
+        if "Scale" in object.attrib:
+            scale = utilities.convert_to_vector(object.attrib["Scale"])
+        else:
+            scale = utilities.convert_to_vector("1, 1, 1")
+        added_obj.rotation_quaternion = rotation
+        added_obj.location = location
+        added_obj.scale = scale
+        # matrix = utilities.get_transform_matrix(rotation, location)
+        added_obj.rotation_mode = 'QUATERNION'
+        added_obj.rotation_mode = 'QUATERNION'  # Ensure previous command is run on context object.
+        # added_obj.matrix_world = matrix
     else:
         print("Unable to find Brush entity " + added_obj.name)

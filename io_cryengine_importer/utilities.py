@@ -1,5 +1,4 @@
 import os
-
 import bpy
 import mathutils
 from . import constants
@@ -9,7 +8,7 @@ def get_scaling_factor(o):
     global_bbox_center = o.matrix_world @ local_bbox_center
     return global_bbox_center[2]/7.4
 
-def convert_to_rotation(rotation):
+def convert_to_quaternion(rotation):
     tmp = rotation.split(',')
     w = float(tmp[0])
     x = float(tmp[1])
@@ -17,7 +16,7 @@ def convert_to_rotation(rotation):
     z = float(tmp[3])
     return mathutils.Quaternion((w,x,y,z))
 
-def convert_to_location(location):
+def convert_to_vector(location):
     tmp = location.split(',')
     x = float(tmp[0])
     y = float(tmp[1])
@@ -39,10 +38,10 @@ def convert_to_rgb(color):
     b = float(temp[2])
     return (r,g,b)
 
-def get_transform_matrix(rotation, location):
+def get_transform_matrix(rotation, location, scale = mathutils.Vector((1.0,1.0,1.0))):
     mat_location = mathutils.Matrix.Translation(location)
     mat_rotation = mathutils.Matrix.Rotation(rotation.angle, 4, rotation.axis)
-    mat_scale = mathutils.Matrix.Scale(1, 4, (0.0, 0.0, 1.0))  # Identity matrix
+    mat_scale = mathutils.Matrix.Scale(1, 4, (1.0, 1.0, 1.0))  # Identity matrix
     mat_out = mat_location @ mat_rotation @ mat_scale
     return mat_out
 

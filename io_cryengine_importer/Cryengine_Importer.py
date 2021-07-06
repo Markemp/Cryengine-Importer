@@ -31,6 +31,7 @@ import mathutils
 from . import constants, cc_collections, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
+object_dictionary = {}
 
 def strip_slash(line_split):
     if line_split[-1][-1] == 92:  # '\' char
@@ -641,6 +642,7 @@ def add_empty(object):
     new_object = bpy.data.objects.new(object.attrib["Name"], None)
     new_object.empty_display_type = 'SPHERE'
     set_object_location(object, new_object)
+    return new_object
 
 def import_element(basedir, prefab_element, collection, matrix = mathutils.Matrix()):
     for obj_element in prefab_element.iter("Object"):
@@ -651,6 +653,9 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
             dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
             bpy.ops.wm.collada_import(filepath=dae_file)
             added_obj = get_root(bpy.context.object)
+            object_dictionary[obj_element.attrib["Id"]] = added_obj
+            if "Parent" in obj_element.attrib:
+                added_obj.parent = object_dictionary[obj_element.attrib["Parent"]]
             set_object_location(obj_element, added_obj)
             for obj in get_all_child_objects(added_obj):
                 cc_collections.move_object_to_collection(obj, collection.name)
@@ -661,6 +666,7 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
@@ -669,41 +675,41 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
-            else:
-                add_empty(obj_element)
-                added_obj = get_root(bpy.context.object)
-                set_object_location(obj_element, added_obj)
-                for obj in get_all_child_objects(added_obj):
-                    cc_collections.move_object_to_collection(obj, collection.name)
+            else:  # Light or particle (TODO: Could also be gamemode object which has multiple geometry assets)
+                light_data = bpy.data.lights.new(name=obj_element.attrib["Name"], type='POINT')
+                light_object = bpy.data.objects.new(name=obj_element.attrib["Name"], object_data=light_data)
+                object_dictionary[obj_element.attrib["Id"]] = light_object
+                cc_collections.move_object_to_collection(light_object, collection.name)
+                set_object_location(obj_element, light_object)
         elif object_type == "GeomEntity":
             if "Geometry" in obj_element.attrib:
                 cgf_file = obj_element.attrib["Geometry"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
                 bpy.ops.wm.collada_import(filepath=dae_file)
                 added_obj = get_root(bpy.context.object)
+                object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
                     cc_collections.move_object_to_collection(obj, collection.name)
             else:
                 add_empty(obj_element)
                 added_obj = get_root(bpy.context.object)
+                object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
-                for obj in get_all_child_objects(added_obj):
-                    cc_collections.move_object_to_collection(obj, collection.name)
+                cc_collections.move_object_to_collection(added_obj, collection.name)
         elif object_type == "Group":
             print("Group type object.")
-            group_empty = 
-            # for obj in obj_element.iter("Objects"):
-            #     mat = utilities.get_transform_matrix(utilities.convert_to_rotation(obj.attrib["Rotate"]), utilities.convert_to_location(obj.attrib["Pos"]))
-
-            #     import_element(basedir, obj, collection, matrix)
-            pass
-            # for obj in object:
-            #     import_element(basedir, obj, collection)
-        
+            group_container = add_empty(obj_element)
+            set_object_location(obj_element, group_container)
+            cc_collections.move_object_to_collection(group_container, collection.name)
+            object_dictionary[obj_element.attrib["Id"]] = group_container
+            objects = obj_element[0]
+            for obj in objects.iter("Object"):
+                import_element(basedir, obj, collection)
 
 def set_object_location(object, added_obj):
     if not added_obj == None:
@@ -723,9 +729,8 @@ def set_object_location(object, added_obj):
         added_obj.rotation_quaternion = rotation
         added_obj.location = location
         added_obj.scale = scale
-        # matrix = utilities.get_transform_matrix(rotation, location)
         added_obj.rotation_mode = 'QUATERNION'
-        added_obj.rotation_mode = 'QUATERNION'  # Ensure previous command is run on context object.
-        # added_obj.matrix_world = matrix
+        dg = bpy.context.evaluated_depsgraph_get() 
+        dg.update()
     else:
         print("Unable to find Brush entity " + added_obj.name)

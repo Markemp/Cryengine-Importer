@@ -79,22 +79,23 @@ def create_IKs(mech):
     bones.flip_bone(armature, hip_root_bone)
     # Parent Pelvis to hip_root
     amt.edit_bones['Bip01_Pelvis'].parent = amt.edit_bones[hip_root_bone]
-    amt.edit_bones['Bip01_Pitch'].use_inherit_rotation = False
+    amt.edit_bones['Bip01_Pitch'].use_inherit_rotation = True
     # Make root bone sit on floor, turn off deform.
-    rootbone = amt.edit_bones['Bip01']
-    rootbone.tail.y = rootbone.tail.z
-    rootbone.tail.z = 0.0
-    rootbone.use_deform = False
-    rootbone.use_connect = False
+    root_bone = amt.edit_bones['Bip01']
+    root_bone.tail.y = root_bone.tail.z
+    root_bone.tail.z = 0.0
+    root_bone.use_deform = False
+    root_bone.use_connect = False
     
     # Determine knee IK offset.  Behind for chickenwalkers, forward for regular.  Edit mode required.
     offset = 4
     if amt.edit_bones['Bip01_R_Calf'].head.y < amt.edit_bones['Bip01_R_Calf'].tail.y:
         offset = -4
 
-    print("Offset is " + str(offset))
-    ### Create IK bones
-    print("Creating IK Bones")
+    print("Offset is " + str(offset) + ": " + "chickenwalker" if offset < 0 else "regular knee")
+    
+    ### Create IK and control bones
+    print("Creating IK and control Bones")
     # Right foot
     rightFootIKName = bones.copy_bone(armature, "Bip01_R_Foot", "Foot_IK.R")
     amt.edit_bones[rightFootIKName].use_connect = False
@@ -103,7 +104,7 @@ def create_IKs(mech):
 
     # Right knee
     rightKneeIKName = bones.new_bone(armature, "Knee_IK.R")
-    amt.edit_bones[rightKneeIKName].head = amt.edit_bones["Bip01_R_Calf"].head + mathutils.Vector((0,offset,0))
+    amt.edit_bones[rightKneeIKName].head = amt.edit_bones["Bip01_R_Calf"].head + mathutils.Vector((0, offset, 0))
     amt.edit_bones[rightKneeIKName].tail = amt.edit_bones[rightKneeIKName].head + mathutils.Vector((0, offset/4, 0))
     amt.edit_bones[rightKneeIKName].use_deform = False
     amt.edit_bones[rightKneeIKName].parent = amt.edit_bones["Bip01"]
@@ -124,18 +125,18 @@ def create_IKs(mech):
     # Upper body control bones and IKs
     if mech in constants.shoulder_only_mechs:
         print("Shoulder only mech: " + mech)
-        rightArmControl = bones.copy_bone(armature, "Bip01_R_UpperArm", "Shoulder_IK.R")
-        amt.edit_bones[rightArmControl].head = amt.edit_bones["Bip01_R_UpperArm"].tail
-        amt.edit_bones[rightArmControl].tail = amt.edit_bones[rightArmControl].head + mathutils.Vector((0, 1, 0))
-        amt.edit_bones[rightArmControl].use_deform = False
-        amt.edit_bones[rightArmControl].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[rightArmControl].use_inherit_rotation = False
-        leftArmControl = bones.copy_bone(armature, "Bip01_L_UpperArm", "Shoulder_IK.L")
-        amt.edit_bones[leftArmControl].head = amt.edit_bones["Bip01_L_UpperArm"].tail
-        amt.edit_bones[leftArmControl].tail = amt.edit_bones[rightArmControl].head + mathutils.Vector((0, 1, 0))
-        amt.edit_bones[leftArmControl].use_deform = False
-        amt.edit_bones[leftArmControl].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[leftArmControl].use_inherit_rotation = False
+        right_arm_control = bones.copy_bone_simple(armature, "Bip01_R_UpperArm", "Shoulder.R")
+        amt.edit_bones[right_arm_control].head = amt.edit_bones["Bip01_R_UpperArm"].tail
+        amt.edit_bones[right_arm_control].tail = amt.edit_bones[right_arm_control].head + mathutils.Vector((0, 1, 0))
+        amt.edit_bones[right_arm_control].use_deform = False
+        amt.edit_bones[right_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[right_arm_control].use_inherit_rotation = False
+        left_arm_control = bones.copy_bone_simple(armature, "Bip01_L_UpperArm", "Shoulder.L")
+        amt.edit_bones[left_arm_control].head = amt.edit_bones["Bip01_L_UpperArm"].tail
+        amt.edit_bones[left_arm_control].tail = amt.edit_bones[left_arm_control].head + mathutils.Vector((0, 1, 0))
+        amt.edit_bones[left_arm_control].use_deform = False
+        amt.edit_bones[left_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[left_arm_control].use_inherit_rotation = False
     else:
         print("Armed mech: " + mech)
         # Right Hand
@@ -143,40 +144,41 @@ def create_IKs(mech):
         copy_bone_right = "Bip01_R_Hand"
         if "Bip01_R_Hand" not in amt.edit_bones:
             copy_bone_right = "Bip01_R_elbow"
-        rightHandIKName = bones.copy_bone(armature, copy_bone_right, "Hand_IK.R")
-        amt.edit_bones[rightHandIKName].head = amt.edit_bones[copy_bone_right].head
-        amt.edit_bones[rightHandIKName].tail = amt.edit_bones[rightHandIKName].head + mathutils.Vector((0, 1, 0))
-        amt.edit_bones[rightHandIKName].use_deform = False
-        amt.edit_bones[rightHandIKName].parent = amt.edit_bones["Bip01_Pitch"]
+        right_hand_IK_name = bones.copy_bone(armature, copy_bone_right, "Hand_IK.R")
+        amt.edit_bones[right_hand_IK_name].head = amt.edit_bones[copy_bone_right].head
+        amt.edit_bones[right_hand_IK_name].tail = amt.edit_bones[right_hand_IK_name].head + mathutils.Vector((0, 1, 0))
+        amt.edit_bones[right_hand_IK_name].use_deform = False
+        amt.edit_bones[right_hand_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
         amt.edit_bones[copy_bone_right].use_inherit_rotation = False
 
         # Right Elbow
-        rightElbowIKName = bones.new_bone(armature, "Elbow_IK.R")
-        amt.edit_bones[rightElbowIKName].head = amt.edit_bones["Bip01_R_Forearm"].head + mathutils.Vector((0, -4, 0))
-        amt.edit_bones[rightElbowIKName].tail = amt.edit_bones[rightElbowIKName].head + mathutils.Vector((0, -1, 0))
-        amt.edit_bones[rightElbowIKName].use_deform = False
-        amt.edit_bones[rightElbowIKName].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[rightElbowIKName].use_inherit_rotation = False
+        right_elbow_IK_name = bones.new_bone(armature, "Elbow_IK.R")
+        amt.edit_bones[right_elbow_IK_name].head = amt.edit_bones["Bip01_R_Forearm"].head + mathutils.Vector((0, -4, 0))
+        amt.edit_bones[right_elbow_IK_name].tail = amt.edit_bones[right_elbow_IK_name].head + mathutils.Vector((0, -1, 0))
+        amt.edit_bones[right_elbow_IK_name].use_deform = False
+        amt.edit_bones[right_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[right_elbow_IK_name].use_inherit_rotation = False
 
         # Left Hand
         copy_bone_left = "Bip01_L_Hand"
         if "Bip01_L_Hand" not in amt.edit_bones:
             copy_bone_left = "Bip01_L_elbow"
-        leftHandIKName = bones.copy_bone(armature, copy_bone_left, "Hand_IK.L")
-        amt.edit_bones[leftHandIKName].head = amt.edit_bones[copy_bone_left].head
-        amt.edit_bones[leftHandIKName].tail = amt.edit_bones[leftHandIKName].head + mathutils.Vector((0, 1, 0))
-        amt.edit_bones[leftHandIKName].use_deform = False
-        amt.edit_bones[leftHandIKName].parent = amt.edit_bones["Bip01_Pitch"]
+        left_hand_IK_name = bones.copy_bone(armature, copy_bone_left, "Hand_IK.L")
+        amt.edit_bones[left_hand_IK_name].head = amt.edit_bones[copy_bone_left].head
+        amt.edit_bones[left_hand_IK_name].tail = amt.edit_bones[left_hand_IK_name].head + mathutils.Vector((0, 1, 0))
+        amt.edit_bones[left_hand_IK_name].use_deform = False
+        amt.edit_bones[left_hand_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
         amt.edit_bones[copy_bone_left].use_inherit_rotation = False
 
         # Left Elbow
-        leftElbowIKName = bones.new_bone(armature, "Elbow_IK.L")
-        amt.edit_bones[leftElbowIKName].head = amt.edit_bones["Bip01_L_Forearm"].head + mathutils.Vector((0, -4, 0))
-        amt.edit_bones[leftElbowIKName].tail = amt.edit_bones[leftElbowIKName].head + mathutils.Vector((0, -1, 0))
-        amt.edit_bones[leftElbowIKName].use_deform = False
-        amt.edit_bones[leftElbowIKName].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[leftElbowIKName].use_inherit_rotation = False
-        print("End creating IK Bones")
+        left_elbow_IK_name = bones.new_bone(armature, "Elbow_IK.L")
+        amt.edit_bones[left_elbow_IK_name].head = amt.edit_bones["Bip01_L_Forearm"].head + mathutils.Vector((0, -4, 0))
+        amt.edit_bones[left_elbow_IK_name].tail = amt.edit_bones[left_elbow_IK_name].head + mathutils.Vector((0, -1, 0))
+        amt.edit_bones[left_elbow_IK_name].use_deform = False
+        amt.edit_bones[left_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[left_elbow_IK_name].use_inherit_rotation = False
+    
+    print("End creating IK Bones")
     
     # Set custom shapes
     set_custom_shapes(armature, mech)
@@ -194,21 +196,23 @@ def create_IKs(mech):
     crc.use_offset = True
     
     # Add copy rotation constraint to Feet
-    crcFootL = armature.pose.bones["Bip01_L_Foot"].constraints.new('COPY_ROTATION')
-    crcFootL.target = armature
-    crcFootL.subtarget = "Foot_IK.L"
-    crcFootL.target_space = 'LOCAL_WITH_PARENT'
-    crcFootL.owner_space = 'LOCAL_WITH_PARENT'
-    crcFootL.use_offset = True
-    crcFootR = armature.pose.bones["Bip01_R_Foot"].constraints.new('COPY_ROTATION')
-    crcFootR.target = armature
-    crcFootR.subtarget = "Foot_IK.R"
-    crcFootR.target_space = 'LOCAL_WITH_PARENT'
-    crcFootR.owner_space = 'LOCAL_WITH_PARENT'
-    crcFootR.use_offset = True
+    crc_foot_left = armature.pose.bones["Bip01_L_Foot"].constraints.new('COPY_ROTATION')
+    crc_foot_left.target = armature
+    crc_foot_left.subtarget = "Foot_IK.L"
+    crc_foot_left.target_space = 'LOCAL_WITH_PARENT'
+    crc_foot_left.owner_space = 'LOCAL_WITH_PARENT'
+    crc_foot_left.use_offset = True
+    crc_foot_right = armature.pose.bones["Bip01_R_Foot"].constraints.new('COPY_ROTATION')
+    crc_foot_right.target = armature
+    crc_foot_right.subtarget = "Foot_IK.R"
+    crc_foot_right.target_space = 'LOCAL_WITH_PARENT'
+    crc_foot_right.owner_space = 'LOCAL_WITH_PARENT'
+    crc_foot_right.use_offset = True
     
+    bpose = bpy.context.object.pose
+
+    # Add constraint to arm IKs
     if mech not in constants.shoulder_only_mechs:
-        # Add child of constraint to hand IKs
         coc = armature.pose.bones["Hand_IK.R"].constraints.new('CHILD_OF')
         coc.target = armature
         coc.subtarget = "Bip01_Pitch"
@@ -217,43 +221,68 @@ def create_IKs(mech):
         coc.subtarget = "Bip01_Pitch"
         armature.pose.bones["Hand_IK.R"].constraints["Child Of"].influence = 0.0
         armature.pose.bones["Hand_IK.L"].constraints["Child Of"].influence = 0.0
+
         pbone = bpy.context.active_object.pose.bones["Hand_IK.R"]
         context_copy = bpy.context.copy()
         context_copy["constraint"] = pbone.constraints["Child Of"]
         bpy.context.active_object.data.bones.active = pbone.bone
-        #bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')  # broken
+
         pbone = bpy.context.active_object.pose.bones["Hand_IK.L"]
-        
         context_copy = bpy.context.copy()
         context_copy["constraint"] = pbone.constraints["Child Of"]
         bpy.context.active_object.data.bones.active = pbone.bone
-        #bpy.ops.constraint.childof_set_inverse(context_copy, constraint="Child Of", owner='BONE')
         
-        bpose = bpy.context.object.pose
         bpose.bones[copy_bone_right].constraints.new(type='IK')
         bpose.bones[copy_bone_right].constraints['IK'].target = armature
         bpose.bones[copy_bone_right].constraints['IK'].subtarget = 'Hand_IK.R'
-        if "Bip01_R_elbow" in bpose.bones.keys() or "Bip01_R_Elbow" in bpose.bones.keys():
-            bpose.bones[copy_bone_right].constraints['IK'].chain_count = 4
-        else:
-            bpose.bones[copy_bone_right].constraints['IK'].chain_count = 3
+        bpose.bones[copy_bone_right].constraints['IK'].chain_count = get_chain_count(armature)
+
         bpose.bones[copy_bone_left].constraints.new(type='IK')
         bpose.bones[copy_bone_left].constraints['IK'].target = armature
         bpose.bones[copy_bone_left].constraints['IK'].subtarget = 'Hand_IK.L'
-        if "Bip01_L_elbow" in bpose.bones.keys() or "Bip01_L_Elbow" in bpose.bones.keys():
-            bpose.bones[copy_bone_left].constraints['IK'].chain_count = 4
-        else:
-            bpose.bones[copy_bone_left].constraints['IK'].chain_count = 3
+        bpose.bones[copy_bone_left].constraints['IK'].chain_count = get_chain_count(armature)
+
         bpose.bones['Bip01_R_UpperArm'].constraints.new(type='IK')
         bpose.bones['Bip01_R_UpperArm'].constraints['IK'].target = armature
         bpose.bones['Bip01_R_UpperArm'].constraints['IK'].subtarget = 'Elbow_IK.R'
         bpose.bones['Bip01_R_UpperArm'].constraints['IK'].chain_count = 1
+        
         bpose.bones['Bip01_L_UpperArm'].constraints.new(type='IK')
         bpose.bones['Bip01_L_UpperArm'].constraints['IK'].target = armature
         bpose.bones['Bip01_L_UpperArm'].constraints['IK'].subtarget = 'Elbow_IK.L'
         bpose.bones['Bip01_L_UpperArm'].constraints['IK'].chain_count = 1
     else:
-        pass
+        coc = armature.pose.bones["Shoulder.R"].constraints.new('CHILD_OF')
+        coc.target = armature
+        coc.subtarget = "Bip01_Pitch"
+        coc = armature.pose.bones["Shoulder.L"].constraints.new('CHILD_OF')
+        coc.target = armature
+        coc.subtarget = "Bip01_Pitch"
+        armature.pose.bones["Shoulder.R"].constraints["Child Of"].influence = 0.0
+        armature.pose.bones["Shoulder.L"].constraints["Child Of"].influence = 0.0
+
+        pbone = bpy.context.active_object.pose.bones["Shoulder.R"]
+        context_copy = bpy.context.copy()
+        context_copy["constraint"] = pbone.constraints["Child Of"]
+        bpy.context.active_object.data.bones.active = pbone.bone
+
+        pbone = bpy.context.active_object.pose.bones["Shoulder.L"]
+        context_copy = bpy.context.copy()
+        context_copy["constraint"] = pbone.constraints["Child Of"]
+        bpy.context.active_object.data.bones.active = pbone.bone
+        # Add copy rotation constraint to UpperArm
+        crc_foot_left = armature.pose.bones["Bip01_L_UpperArm"].constraints.new('COPY_ROTATION')
+        crc_foot_left.target = armature
+        crc_foot_left.subtarget = "Shoulder.L"
+        crc_foot_left.target_space = 'LOCAL_WITH_PARENT'
+        crc_foot_left.owner_space = 'LOCAL_WITH_PARENT'
+        crc_foot_left.use_offset = True
+        crc_foot_right = armature.pose.bones["Bip01_R_UpperArm"].constraints.new('COPY_ROTATION')
+        crc_foot_right.target = armature
+        crc_foot_right.subtarget = "Shoulder.R"
+        crc_foot_right.target_space = 'LOCAL_WITH_PARENT'
+        crc_foot_right.owner_space = 'LOCAL_WITH_PARENT'
+        crc_foot_right.use_offset = True
 
     amt.bones['Bip01_L_Foot'].use_inherit_rotation = False
     amt.bones['Bip01_R_Foot'].use_inherit_rotation = False
@@ -278,6 +307,17 @@ def create_IKs(mech):
     # Move bones to proper layers
     bones.set_bone_layers(armature)
 
+def get_chain_count(armature):
+    count = 1
+    current_bone = bpy.context.active_object.pose.bones["Bip01_L_Hand"]
+    while current_bone.name.lower() != "bip01_l_upperarm":
+        count += 1
+        current_bone = current_bone.parent
+        if count > 6:       # Unable to find the upperarm bone.  Return 0
+            print("Unable to find upper arm bone to set chain length.  Setting to 1.")
+            return 1
+    return count
+
 def set_custom_shapes(armature, mech):
     # Set custom shapes
     print("Setting up widgets")
@@ -300,10 +340,10 @@ def set_custom_shapes(armature, mech):
         armature.pose.bones['Elbow_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Elbow_IK.R"]
         armature.pose.bones['Elbow_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Elbow_IK.L"]
     else:
-        widgets.create_cube_widget(armature, "Shoulder_IK.L", 1.0)
-        widgets.create_cube_widget(armature, "Shoulder_IK.R", 1.0)
-        armature.pose.bones['Shoulder_IK.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "ShoulderIK.L"]
-        armature.pose.bones['Shoulder_IK.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "ShoulderIK.R"]
+        widgets.create_cube_widget(armature, "Shoulder.L", 1.0)
+        widgets.create_cube_widget(armature, "Shoulder.R", 1.0)
+        armature.pose.bones['Shoulder.L'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Shoulder.L"]
+        armature.pose.bones['Shoulder.R'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Shoulder.R"]
     bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Root"].rotation_euler = (0,0,0)
     armature.pose.bones['Bip01'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Root"]
     armature.pose.bones["Foot_IK.R"].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Foot_IK.R"]
@@ -315,19 +355,19 @@ def set_custom_shapes(armature, mech):
     armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Hip_Root"]
     print("End setting up widgets")
 
-def import_geometry(daefile, basedir):
+def import_geometry(dae_file, basedir):
     try:
-        bpy.ops.wm.collada_import(filepath=daefile,find_chains=True,auto_connect=True)
+        bpy.ops.wm.collada_import(filepath=dae_file,find_chains=True,auto_connect=True)
         return bpy.context.selected_objects[:]      # Return the objects added.
     except:
-        # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
-        print("Error importing Collada file: " + daefile + ", basedir: " + basedir)
+        # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
+        print("Error importing Collada file: " + dae_file + ", basedir: " + basedir)
     
-def import_mech_geometry(cdffile, basedir, bodydir, mechname):
+def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
     armature = bpy.data.objects['Armature']
     print("Importing mech geometry...")
     cry_xml = CryXmlSerializer()
-    geometry = cry_xml.read_file(cdffile)
+    geometry = cry_xml.read_file(cdf_file)
     for geo in geometry.iter("Attachment"):
         if not geo.attrib["AName"] == "cockpit":
             print("Importing " + geo.attrib["AName"])
@@ -356,7 +396,7 @@ def import_mech_geometry(cdffile, basedir, bodydir, mechname):
             try:
                 bpy.ops.wm.collada_import(filepath=binding,find_chains=True,auto_connect=True)
             except:
-                # Unable to open the file.  Probably not found (like Urbie lights, under purchasables).
+                # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
                 continue
             obj_objects = bpy.context.selected_objects[:]
             i = 0
@@ -577,7 +617,7 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
     print("Import Mech")
     print(path)
-    cdffile = path      # The input file
+    cdf_file = path      # The input file
     # Split up path into the variables we want.
     constants.basedir = get_base_dir(path)
     bodydir = get_body_dir(path)
@@ -599,7 +639,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
     constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
-    import_mech_geometry(cdffile, constants.basedir, bodydir, mech)
+    import_mech_geometry(cdf_file, constants.basedir, bodydir, mech)
     # Set the layers for existing objects
     add_objects_to_collections()
     

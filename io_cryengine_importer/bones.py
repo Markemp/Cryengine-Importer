@@ -128,7 +128,6 @@ def copy_bone(armature, bone_name, assign_name=''):
                     prop2[key] = prop1[key]
         
         bpy.ops.object.mode_set(mode='EDIT')
-        print("copy_bone:  End copy")
         return bone_name_2
     else:
         raise utilities.MetarigError("Cannot copy bones outside of edit mode")
@@ -148,12 +147,10 @@ def copy_bone_simple(armature, bone_name, assign_name=''):
         # Copy the edit bone
         edit_bone_1 = armature.data.edit_bones[bone_name]
         edit_bone_2 = armature.data.edit_bones.new(assign_name)
-        bone_name_1 = bone_name
         bone_name_2 = edit_bone_2.name
 
         # Copy edit bone attributes
         edit_bone_2.layers = list(edit_bone_1.layers)
-
         edit_bone_2.head = Vector(edit_bone_1.head)
         edit_bone_2.tail = Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll

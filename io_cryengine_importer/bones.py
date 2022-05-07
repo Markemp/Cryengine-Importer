@@ -2,7 +2,7 @@ import bpy
 import math
 import mathutils
 from mathutils import Vector, Matrix, Color
-from rna_prop_ui import rna_idprop_ui_prop_get
+import rna_prop_ui
 from . import constants, cc_collections, utilities
 
 def import_armature(rig):
@@ -121,8 +121,8 @@ def copy_bone(armature, bone_name, assign_name=''):
             if key != "_RNA_UI" \
             and key != "rigify_parameters" \
             and key != "rigify_type":
-                prop1 = rna_idprop_ui_prop_get(pose_bone_1, key, create=False)
-                prop2 = rna_idprop_ui_prop_get(pose_bone_2, key, create=True)
+                prop1 = rna_prop_ui.rna_idprop_ui_prop_get(pose_bone_1, key, create=False)
+                prop2 = rna_prop_ui.rna_idprop_ui_prop_get(pose_bone_2, key, create=True)
                 pose_bone_2[key] = pose_bone_1[key]
                 for key in prop1.keys():
                     prop2[key] = prop1[key]

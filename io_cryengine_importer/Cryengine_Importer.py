@@ -125,14 +125,14 @@ def create_IKs(mech):
     # Upper body control bones and IKs
     if mech in constants.shoulder_only_mechs:
         print("Shoulder only mech: " + mech)
-        right_arm_control = bones.copy_bone_simple(armature, "Bip01_R_UpperArm", "Shoulder.R")
-        amt.edit_bones[right_arm_control].head = amt.edit_bones["Bip01_R_UpperArm"].tail
+        right_arm_control = bones.copy_bone_simple(armature, "Bip01_R_Clavicle", "Shoulder.R")
+        amt.edit_bones[right_arm_control].head = amt.edit_bones["Bip01_R_Clavicle"].tail
         amt.edit_bones[right_arm_control].tail = amt.edit_bones[right_arm_control].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[right_arm_control].use_deform = False
         amt.edit_bones[right_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
         amt.edit_bones[right_arm_control].use_inherit_rotation = False
-        left_arm_control = bones.copy_bone_simple(armature, "Bip01_L_UpperArm", "Shoulder.L")
-        amt.edit_bones[left_arm_control].head = amt.edit_bones["Bip01_L_UpperArm"].tail
+        left_arm_control = bones.copy_bone_simple(armature, "Bip01_L_Clavicle", "Shoulder.L")
+        amt.edit_bones[left_arm_control].head = amt.edit_bones["Bip01_L_Clavicle"].tail
         amt.edit_bones[left_arm_control].tail = amt.edit_bones[left_arm_control].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[left_arm_control].use_deform = False
         amt.edit_bones[left_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
@@ -304,6 +304,9 @@ def create_IKs(mech):
     bpose.bones["Bip01_L_Thigh"].constraints['IK'].subtarget = 'Knee_IK.L'
     bpose.bones["Bip01_L_Thigh"].constraints['IK'].chain_count = 1
     
+    for bone in ['Foot_IK.R', 'Foot_IK.L', 'Bip01_Pelvis', 'Bip01_Pitch']:
+        bpose.bones[bone].use_custom_shape_bone_size = False
+
     # Move bones to proper layers
     bones.set_bone_layers(armature)
 

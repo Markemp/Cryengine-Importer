@@ -38,7 +38,7 @@ bl_info = {
     "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (2, 1, 0),
+    "version": (2, 1, 1),
     "blender": (3, 0, 0),
     "location": 'File > Import-Export',
     "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',

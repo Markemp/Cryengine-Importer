@@ -129,54 +129,58 @@ def create_IKs(mech):
         amt.edit_bones[right_arm_control].head = amt.edit_bones["Bip01_R_Clavicle"].tail
         amt.edit_bones[right_arm_control].tail = amt.edit_bones[right_arm_control].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[right_arm_control].use_deform = False
-        amt.edit_bones[right_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[right_arm_control].use_connect = False
         amt.edit_bones[right_arm_control].use_inherit_rotation = False
+        amt.edit_bones[right_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
         left_arm_control = bones.copy_bone_simple(armature, "Bip01_L_Clavicle", "Shoulder.L")
         amt.edit_bones[left_arm_control].head = amt.edit_bones["Bip01_L_Clavicle"].tail
         amt.edit_bones[left_arm_control].tail = amt.edit_bones[left_arm_control].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[left_arm_control].use_deform = False
-        amt.edit_bones[left_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[left_arm_control].use_connect = False
         amt.edit_bones[left_arm_control].use_inherit_rotation = False
+        amt.edit_bones[left_arm_control].parent = amt.edit_bones["Bip01_Pitch"]
     else:
         print("Armed mech: " + mech)
         # Right Hand
         # Check if the Hand bone exists.  If so, copy.  If not, copy the Forearm bone and move
-        copy_bone_right = "Bip01_R_Hand"
-        if "Bip01_R_Hand" not in amt.edit_bones:
-            copy_bone_right = "Bip01_R_elbow"
+        copy_bone_right = bones.get_last_bone_from(armature, "Bip01_R_Forearm")
         right_hand_IK_name = bones.copy_bone(armature, copy_bone_right, "Hand_IK.R")
         amt.edit_bones[right_hand_IK_name].head = amt.edit_bones[copy_bone_right].head
         amt.edit_bones[right_hand_IK_name].tail = amt.edit_bones[right_hand_IK_name].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[right_hand_IK_name].use_deform = False
+        amt.edit_bones[right_hand_IK_name].use_connect = False
+        amt.edit_bones[right_hand_IK_name].use_inherit_rotation = False
         amt.edit_bones[right_hand_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[copy_bone_right].use_inherit_rotation = False
+        
 
         # Right Elbow
         right_elbow_IK_name = bones.new_bone(armature, "Elbow_IK.R")
         amt.edit_bones[right_elbow_IK_name].head = amt.edit_bones["Bip01_R_Forearm"].head + mathutils.Vector((0, -4, 0))
         amt.edit_bones[right_elbow_IK_name].tail = amt.edit_bones[right_elbow_IK_name].head + mathutils.Vector((0, -1, 0))
         amt.edit_bones[right_elbow_IK_name].use_deform = False
-        amt.edit_bones[right_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[right_elbow_IK_name].use_connect = False
         amt.edit_bones[right_elbow_IK_name].use_inherit_rotation = False
+        amt.edit_bones[right_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
 
         # Left Hand
-        copy_bone_left = "Bip01_L_Hand"
-        if "Bip01_L_Hand" not in amt.edit_bones:
-            copy_bone_left = "Bip01_L_elbow"
+        copy_bone_left = bones.get_last_bone_from(armature, "Bip01_L_Forearm")
         left_hand_IK_name = bones.copy_bone(armature, copy_bone_left, "Hand_IK.L")
         amt.edit_bones[left_hand_IK_name].head = amt.edit_bones[copy_bone_left].head
         amt.edit_bones[left_hand_IK_name].tail = amt.edit_bones[left_hand_IK_name].head + mathutils.Vector((0, 1, 0))
         amt.edit_bones[left_hand_IK_name].use_deform = False
+        amt.edit_bones[left_hand_IK_name].use_connect = False
+        amt.edit_bones[left_hand_IK_name].use_inherit_rotation = False
         amt.edit_bones[left_hand_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
-        amt.edit_bones[copy_bone_left].use_inherit_rotation = False
 
         # Left Elbow
         left_elbow_IK_name = bones.new_bone(armature, "Elbow_IK.L")
         amt.edit_bones[left_elbow_IK_name].head = amt.edit_bones["Bip01_L_Forearm"].head + mathutils.Vector((0, -4, 0))
         amt.edit_bones[left_elbow_IK_name].tail = amt.edit_bones[left_elbow_IK_name].head + mathutils.Vector((0, -1, 0))
         amt.edit_bones[left_elbow_IK_name].use_deform = False
-        amt.edit_bones[left_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
+        amt.edit_bones[left_elbow_IK_name].use_connect = False
         amt.edit_bones[left_elbow_IK_name].use_inherit_rotation = False
+        amt.edit_bones[left_elbow_IK_name].parent = amt.edit_bones["Bip01_Pitch"]
+        
     
     print("End creating IK Bones")
     
@@ -235,12 +239,12 @@ def create_IKs(mech):
         bpose.bones[copy_bone_right].constraints.new(type='IK')
         bpose.bones[copy_bone_right].constraints['IK'].target = armature
         bpose.bones[copy_bone_right].constraints['IK'].subtarget = 'Hand_IK.R'
-        bpose.bones[copy_bone_right].constraints['IK'].chain_count = get_chain_count(armature)
+        bpose.bones[copy_bone_right].constraints['IK'].chain_count = get_chain_count(armature.pose.bones['Bip01_R_UpperArm'])
 
         bpose.bones[copy_bone_left].constraints.new(type='IK')
         bpose.bones[copy_bone_left].constraints['IK'].target = armature
         bpose.bones[copy_bone_left].constraints['IK'].subtarget = 'Hand_IK.L'
-        bpose.bones[copy_bone_left].constraints['IK'].chain_count = get_chain_count(armature)
+        bpose.bones[copy_bone_left].constraints['IK'].chain_count = get_chain_count(armature.pose.bones['Bip01_L_UpperArm'])
 
         bpose.bones['Bip01_R_UpperArm'].constraints.new(type='IK')
         bpose.bones['Bip01_R_UpperArm'].constraints['IK'].target = armature
@@ -310,16 +314,19 @@ def create_IKs(mech):
     # Move bones to proper layers
     bones.set_bone_layers(armature)
 
-def get_chain_count(armature):
+def get_chain_count(bone):
     count = 1
-    current_bone = bpy.context.active_object.pose.bones["Bip01_L_Hand"]
-    while current_bone.name.lower() != "bip01_l_upperarm":
+    while len(bone.children) != 0:
+        found_last_bone = True
+        for child in bone.children:
+            if len(child.children) != 0:
+                bone = child
+                found_last_bone = False
+        if found_last_bone:
+            count += 1
+            print("*** Chain count: " + str(count))
+            return count
         count += 1
-        current_bone = current_bone.parent
-        if count > 6:       # Unable to find the upperarm bone.  Return 0
-            print("Unable to find upper arm bone to set chain length.  Setting to 1.")
-            return 1
-    return count
 
 def set_custom_shapes(armature, mech):
     # Set custom shapes

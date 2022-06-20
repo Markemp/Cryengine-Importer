@@ -26,5 +26,12 @@ cockpit_materials = {}
 shoulder_only_mechs = ["catapult", "cicada", "locust", "jenner", "flea", "urbanmech", "stalker", "jagermech", "jagermechiic",
     "rifleman", "riflemaniic", "raven", "jenneriic", "blackjack", "firefly"]
 
-bad_bonename_map = { "mad_left_leg_toe0": "Bip01_L_toe0", "mad_left_leg_toe1": "Bip01_L_toe1", "mad_right_leg_toe0": "Bip01_R_toe0", "mad_right_leg_toe1": "Bip01_R_toe1",
-    "as7_left_arm_elbow": "Bip01_L_elbow", "as7_right_arm_elbow": "Bip01_R_elbow" }
+# Fixes mappings when the bone names don't have standard capitalization.
+bad_bonename_map = { "mad_left_leg_toe0": "Bip01_L_toe0", 
+    "mad_left_leg_toe1": "Bip01_L_toe1", 
+    "mad_right_leg_toe0": "Bip01_R_toe0", 
+    "mad_right_leg_toe1": "Bip01_R_toe1",
+    "as7_left_arm_elbow": "Bip01_L_elbow", 
+    "as7_right_arm_elbow": "Bip01_R_elbow", 
+    "drg_left_leg_knee": "Bip01_L_knee", 
+    "drg_right_leg_knee": "Bip01_R_knee" }

@@ -642,8 +642,9 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     # Try to import the armature.  If we can't find it, then return error.
     result = bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
     if result == False:    
-        print("Error importing armature at: " + 
-              os.path.join(bodydir, mech + ".dae"))
+        message = "\nError importing armature at: " +  os.path.join(bodydir, mech + ".dae") + "\nDid you forget to convert all the Cryengine files in the body subdirectory?"
+        severity = 'ERROR'
+        bpy.ops.wm.display_message('INVOKE_DEFAULT', message=message, severity=severity)
         return False
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)

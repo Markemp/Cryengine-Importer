@@ -247,6 +247,17 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
 # -----------------------------------------------------------------------------
 #                                                                          Menu
 
+class MessageOperator(bpy.types.Operator):
+    """ Display message in log from application """
+    bl_idname = "wm.display_message"
+    bl_label = "Message"
+    
+    message: bpy.props.StringProperty(name="message", default="")
+    severity: bpy.props.StringProperty(name="severity", default="INFO")
+
+    def execute(self, context):
+        self.report({self.severity}, self.message)
+        return {'FINISHED'}
 
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
@@ -260,7 +271,8 @@ def menu_func_prefab_import(self, context):
 classes = (
      MechImporter,
      CryengineImporter,
-     PrefabImporter
+     PrefabImporter,
+     MessageOperator
  )
 
 def register():

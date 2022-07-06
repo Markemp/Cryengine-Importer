@@ -7,7 +7,7 @@ from . import constants, cc_collections, utilities
 
 def import_armature(rig):
     try:
-        bpy.ops.wm.collada_import(filepath=rig, find_chains=True,auto_connect=True)
+        bpy.ops.wm.collada_import(filepath=rig, find_chains=True, auto_connect=True)
         armature = bpy.data.objects['Armature']
         bpy.context.view_layer.objects.active = armature
         bpy.ops.object.mode_set(mode='EDIT')

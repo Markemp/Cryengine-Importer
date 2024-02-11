@@ -158,9 +158,10 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
         if map == "Bumpmap":
-            print("Adding Bump Map")
+            print("Adding MechCockpit Bumpmap")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
+                print("Bump map node created")
                 texture_node.location = -300, 0
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
@@ -190,14 +191,14 @@ def create_illum_shader_material(material_xml, material, file_extension):
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[0])
                 links.new(texture_node.outputs[1], shaderPrincipledBSDF.inputs[18])
         if map == "Specular" or map == "TexSlot4":
-            print("Adding Specular Map")
+            print("Adding Illum Specular Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
         if map == "Bumpmap" or map == "TexSlot2":
-            print("Adding Bump Map")
+            print("Adding Illum Bumpmap")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
                 texture_node.location = -300, 0
@@ -234,7 +235,7 @@ def create_mech_shader_material(material_xml, material, file_extension):
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
         if map == "Bumpmap" or map == "TexSlot2":
-            print("Adding Bump Map")
+            print("Adding Mech Bumpmap")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
                 texture_node.location = -300, 0
@@ -250,6 +251,8 @@ def create_image_texture_node(tree_nodes, texture, file_extension):
     texture_image = bpy.data.images.load(texturefile, check_existing=True) if os.path.isfile(texturefile) else bpy.data.images.load(default_texture_file)
     texture_node = tree_nodes.nodes.new('ShaderNodeTexImage')
     texture_node.image = texture_image
+    texture_node.name = texture_image.name
+    print("Texture node: " + texture_node.name)
     return texture_node
 
 def create_output_node(tree_nodes):

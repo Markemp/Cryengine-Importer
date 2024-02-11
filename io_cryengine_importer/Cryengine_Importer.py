@@ -665,7 +665,6 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
 def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     set_viewport_shading()
     basedir = get_base_dir(path)
-    print("Basedir: " + basedir)
 
     if os.path.isfile(path):
         cry_xml = CryXmlSerializer()

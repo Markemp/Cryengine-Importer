@@ -311,8 +311,9 @@ def create_IKs(mech):
     for bone in ['Foot_IK.R', 'Foot_IK.L', 'Bip01_Pelvis', 'Bip01_Pitch']:
         bpose.bones[bone].use_custom_shape_bone_size = False
 
-    # Move bones to proper layers
-    bones.set_bone_layers(armature)
+    # Move bones to proper collections
+    bones.set_bone_collections(armature)
+    # bones.set_bone_layers(armature)
 
 def get_chain_count(bone):
     count = 1
@@ -640,12 +641,8 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     set_viewport_shading()
     cc_collections.set_up_collections()
     # Try to import the armature.  If we can't find it, then return error.
-    result = bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
-    if result == False:    
-        message = "\nError importing armature at: " +  os.path.join(bodydir, mech + ".dae") + "\nDid you forget to convert all the Cryengine files in the body subdirectory?"
-        severity = 'ERROR'
-        bpy.ops.wm.display_message('INVOKE_DEFAULT', message=message, severity=severity)
-        return False
+    bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
+
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
     constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)

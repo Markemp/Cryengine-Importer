@@ -1,4 +1,4 @@
-﻿ $blenderversion = "3.1"
+﻿ $blenderversion = "4.0"
  $blenderaddondir = "$env:APPDATA\Blender Foundation\Blender\$blenderversion\scripts\addons"
  $sourcedir = "$env:HOME\source\repos\Cryengine Importer"
 

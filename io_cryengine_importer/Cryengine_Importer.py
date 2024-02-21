@@ -54,17 +54,17 @@ def get_base_dir(filepath):
 def get_body_dir(filepath):
     return os.path.join(os.path.dirname(filepath), 'body')
 
-def get_mech(filepath):
+def get_mech_name(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 def create_collections():
-    # TODO: Refactor to use cc_collections
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
         if (obj.name != 'Camera' and obj.name != 'Light' and obj.name != 'Cube'):
             print ('   Creating collection for ' + obj.name)
             bpy.data.collections.new(obj.name)
-            bpy.data.collections[obj.name].objects.link(obj)
+            cc_collections.move_object_to_collection(obj, obj.name)
+            #bpy.data.collections[obj.name].objects.link(obj)
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs(mech):
@@ -410,6 +410,7 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                 # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
                 continue
             obj_objects = bpy.context.selected_objects[:]
+            cc_collections.move_object_to_collection(obj_objects[0], constants.MECH_COLLECTION) # Move root object to Mech Collection
             i = 0
             for obj in obj_objects:
                 if not obj.type == 'EMPTY':
@@ -432,7 +433,7 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                     for i in range(nverts):
                         vg.add([i], 1.0, 'REPLACE')
                     if len(bpy.context.object.material_slots) == 0:
-                        bpy.context.object.data.materials.append(bpy.data.materials[materialname])               # If there is no material, add a dummy mat.
+                        bpy.context.object.data.materials.append(bpy.data.materials[materialname])  # If there is no material, add a dummy mat.
                     if "_prop" in obj.name:
                         materialname = mechname + "_body"
                     bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
@@ -517,6 +518,8 @@ def set_viewport_shading():
                     space.shading.type = 'MATERIAL'
 
 def add_objects_to_collections():
+    armature = bpy.data.objects['Armature']
+    cc_collections.move_object_to_collection(armature, constants.MECH_COLLECTION)
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
                or 'physics_proxy' in obj.name 
@@ -524,18 +527,17 @@ def add_objects_to_collections():
                or obj.name.endswith('_case')
                or obj.name.startswith('animation')]
     for empty in empties:
-        cc_collections.link_object_to_collection(empty, constants.EMPTIES_COLLECTION)
+        cc_collections.move_object_to_collection(empty, constants.EMPTIES_COLLECTION)
     # Set weapons and special geometry to Weapons Collection
-    #names = bpy.data.objects.keys()
     for weapon in bpy.data.objects:
         if any(x in weapon.name for x in constants.weapons):
-            cc_collections.link_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
+            cc_collections.move_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
     move_damaged_parts_to_collection()
 
 def move_damaged_parts_to_collection():
     for obj in bpy.data.objects:
         if obj.name.endswith('_damaged') or obj.name.endswith('_damged'):
-            cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
+            cc_collections.move_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
 
 def show_all_prefab_folders(prefab_xml):
     print("NOTE:  Asset importer needs to create .blend files for the following directories:")
@@ -633,7 +635,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     constants.basedir = get_base_dir(path)
     bodydir = get_body_dir(path)
     mechdir = os.path.dirname(path)
-    mech = get_mech(path)
+    mech = get_mech_name(path)
     matfile = os.path.join(bodydir, mech + "_body.mtl")
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
@@ -641,7 +643,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     set_viewport_shading()
     cc_collections.set_up_collections()
     # Try to import the armature.  If we can't find it, then return error.
-    bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
+    bones.import_armature(os.path.join(bodydir, mech + ".dae"), mech)
 
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
@@ -654,6 +656,11 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     if add_control_bones == True:
         create_IKs(mech)
+
+    # set to Object mode
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    materials.remove_unlinked_materials()
 
     if auto_save_file == True:
         save_file(path)

@@ -5,29 +5,24 @@ from mathutils import Vector, Matrix, Color
 import rna_prop_ui
 from . import constants, cc_collections, utilities
 
-def import_armature(rig):
+def import_armature(rig, mech_name):
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True, auto_connect=True)
         armature = bpy.data.objects['Armature']
+        mech_triangle_geometry = bpy.data.objects[mech_name]
+        cc_collections.move_object_to_collection(mech_triangle_geometry, constants.MECH_COLLECTION)
         bpy.context.view_layer.objects.active = armature
         armature.show_in_front = True
         armature.show_axes = False
         bpy.context.object.data.display_type = 'BBONE'
         bpy.context.object.display_type = 'WIRE'
+        scene = bpy.data.scenes[0]
+        scene.collection.children[0].objects.unlink(armature)
+        scene.collection.children[1].objects.link(armature)
     except:
         #File not found
         return False
     return True
-
-# def set_bone_layers(armature):
-#     print("set_bone_layers:  Setting layers for armature.")
-#     original_context = bpy.context.mode
-#     bpy.ops.object.mode_set(mode='POSE')
-#     for bone in armature.data.bones:
-#         if bone.name not in constants.control_bones:
-#             bone.layers[1] = True
-#             bone.layers[0] = False
-#     bpy.ops.object.mode_set(mode=original_context)
 
 def set_bone_collections(armature):
     print("set_bone_collections: Setting bone collections for armature.")
@@ -43,6 +38,7 @@ def set_bone_collections(armature):
     deform_collection = armature.data.collections.get(constants.DEFORM_BONES_COLLECTION)
     if deform_collection is None:
         deform_collection = armature.data.collections.new(name=constants.DEFORM_BONES_COLLECTION)
+    deform_collection.is_visible = False
 
     # Assign bones to the appropriate bone group
     for bone in armature.pose.bones:

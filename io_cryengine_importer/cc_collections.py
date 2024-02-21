@@ -35,19 +35,17 @@ def get_collection_object(collection_name):
         return bpy.data.collections[collection_name]
 
 def set_up_collections():
-    create_collection(constants.WIDGETS_COLLECTION)
+    mech_collection = create_collection(constants.MECH_COLLECTION, "Scene Collection")
+    create_collection(constants.WIDGETS_COLLECTION, constants.MECH_COLLECTION)
     hide_collection(constants.WIDGETS_COLLECTION)
-    create_collection(constants.CONTROL_BONES_COLLECTION)
-    create_collection(constants.DEFORM_BONES_COLLECTION)
-    create_collection(constants.EMPTIES_COLLECTION)
-    create_collection(constants.WEAPONS_COLLECTION)
-    create_collection(constants.DAMAGED_PARTS_COLLECTION)
+    create_collection(constants.EMPTIES_COLLECTION, constants.MECH_COLLECTION)
+    create_collection(constants.WEAPONS_COLLECTION, constants.MECH_COLLECTION)
+    create_collection(constants.DAMAGED_PARTS_COLLECTION, constants.MECH_COLLECTION)
+    bpy.data.scenes[0].collection.children.link(mech_collection)
 
 def set_up_asset_collections():
     create_collection(constants.WIDGETS_COLLECTION)
     hide_collection(constants.WIDGETS_COLLECTION)
-    create_collection(constants.CONTROL_BONES_COLLECTION)
-    create_collection(constants.DEFORM_BONES_COLLECTION)
     create_collection(constants.EMPTIES_COLLECTION)
 
 def hide_collection(collection_name):

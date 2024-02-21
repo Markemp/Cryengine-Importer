@@ -6,6 +6,7 @@ DEFORM_BONES_COLLECTION = "Deform Bones"
 EMPTIES_COLLECTION = "Empties"
 WEAPONS_COLLECTION = "Weapons"
 DAMAGED_PARTS_COLLECTION = "Damaged Parts"
+MECH_COLLECTION = "Mech"
 
 basedir = ""
 

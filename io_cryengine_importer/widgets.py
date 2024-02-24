@@ -1,5 +1,5 @@
 import bpy
-from . import constants, cc_collections, bones
+from . import collections, constants, bones
 
 def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:
@@ -27,7 +27,7 @@ def create_widget(armature, bone_name, bone_transform_name=None):
         wgts_group_name = 'WGTS_' + armature.name
         if wgts_group_name in bpy.data.objects.keys():
             obj.parent = bpy.data.objects[wgts_group_name]
-        cc_collections.link_object_to_collection(obj, constants.WIDGETS_COLLECTION)
+        collections.link_object_to_collection(obj, constants.WIDGETS_COLLECTION)
         return obj
 
 def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):

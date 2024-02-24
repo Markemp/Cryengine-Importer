@@ -3,14 +3,14 @@ import math
 import mathutils
 from mathutils import Vector, Matrix, Color
 import rna_prop_ui
-from . import constants, cc_collections, utilities
+from . import collections, constants, utilities
 
 def import_armature(rig, mech_name):
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True, auto_connect=True)
         armature = bpy.data.objects['Armature']
         mech_triangle_geometry = bpy.data.objects[mech_name]
-        cc_collections.move_object_to_collection(mech_triangle_geometry, constants.MECH_COLLECTION)
+        collections.move_object_to_collection(mech_triangle_geometry, constants.MECH_COLLECTION)
         bpy.context.view_layer.objects.active = armature
         armature.show_in_front = True
         armature.show_axes = False

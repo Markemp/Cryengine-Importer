@@ -1,3 +1,4 @@
+import os
 import bpy
 from . import constants
 
@@ -34,14 +35,27 @@ def get_collection_object(collection_name):
     if collection_name in bpy.data.collections.keys():
         return bpy.data.collections[collection_name]
 
-def set_up_collections():
+def set_up_collections(file_path):
     mech_collection = create_collection(constants.MECH_COLLECTION, "Scene Collection")
     create_collection(constants.WIDGETS_COLLECTION, constants.MECH_COLLECTION)
     create_collection(constants.EMPTIES_COLLECTION, constants.MECH_COLLECTION)
     create_collection(constants.WEAPONS_COLLECTION, constants.MECH_COLLECTION)
     create_collection(constants.DAMAGED_PARTS_COLLECTION, constants.MECH_COLLECTION)
+    create_collection(constants.VARIANTS_COLLECTION, constants.MECH_COLLECTION)
+    variants = get_variant_names(file_path)
+    for variant in variants:
+        create_collection(variant, constants.VARIANTS_COLLECTION)
     bpy.data.scenes[0].collection.children.link(mech_collection)
 
 def set_up_asset_collections():
     create_collection(constants.WIDGETS_COLLECTION)
     create_collection(constants.EMPTIES_COLLECTION)
+
+def get_variant_names(file_path):
+    mdf_files = []
+    directory = os.path.dirname(file_path)
+    for file in os.listdir(directory):
+        if file.endswith(".mdf"):
+            file_name_without_extension = os.path.splitext(file)[0].upper()
+            mdf_files.append(file_name_without_extension)
+    return mdf_files

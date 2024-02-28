@@ -21,14 +21,16 @@
 # Cryengine Importer 2.0 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
+import os
 import bpy
 import bpy.types
 import bpy.utils
+from bpy.types import PropertyGroup
 from bpy.props import (
         BoolProperty,
         StringProperty,
-        EnumProperty,
-        )
+        CollectionProperty,
+        EnumProperty)
 from bpy_extras.io_utils import ImportHelper
 
 from . import Cryengine_Importer
@@ -38,7 +40,7 @@ bl_info = {
     "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (2, 2, 0),
+    "version": (3, 0, 0),
     "blender": (4, 0, 0),
     "location": 'File > Import-Export',
     "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
@@ -83,6 +85,8 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         name = "Use TIF",
         description = "Use TIF format for image textures",
         default = False)
+    files: CollectionProperty(type=PropertyGroup)
+    directory: StringProperty(maxlen=1024, subtype='DIR_PATH')
 
     # From ImportHelper.  Filter filenames.
     show_hidden = True
@@ -93,6 +97,11 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
     title = "Directory to Import"
     
     def execute(self, context):
+        files = self.files
+        for f in files:
+            print('file: ', f.name)
+        directory = self.directory
+        
         if self.texture_type == 'OFF':
             self.use_tif = True
             self.use_dds = False
@@ -102,12 +111,14 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords(ignore=("texture_type", 
                                             "filter_glob",
                                             "path_mode",
-                                            "filepath"
-                                            ))
-        userpath = self.properties.filepath
+                                            "filepath"))
         fdir = self.properties.filepath
         keywords["path"] = fdir
-        return Cryengine_Importer.import_asset(context, **keywords)
+        for file in files:
+            filepath = os.path.join(directory, file.name)
+            keywords["filepath"] = filepath
+            Cryengine_Importer.import_asset(**keywords)
+        return {'FINISHED'}
     
     def draw(self, context):
         layout = self.layout

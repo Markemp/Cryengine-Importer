@@ -583,27 +583,30 @@ def import_light(object):
     obj.matrix_world = matrix
     return obj
 
-def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    print("Import Asset.  File: " + path)
-    constants.basedir = get_base_dir(path)
+#def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+def import_asset(filepath, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, **kwargs):
+    print("Import Asset.  File: " + filepath)
+    constants.basedir = get_base_dir(filepath)
     set_viewport_shading()
     collections.set_up_asset_collections()
-    if os.path.isdir(path):
-        os.chdir(path)
-    elif os.path.isfile(path):
-        os.chdir(os.path.dirname(path))
-        path = os.path.dirname(path)
-    for file in os.listdir(path):
-        if file.endswith(".mtl"):
-            print("*** Creating materials from " + file)
-            constants.materials.update(materials.create_materials(file, constants.basedir, use_dds, use_tif))
-            print("*** Finished creating materials from " + file)
+    
+    # if os.path.isdir(filepath):
+    #     os.chdir(filepath)
+    # elif os.path.isfile(filepath):
+    #     os.chdir(os.path.dirname(filepath))
+    #     path = os.path.dirname(filepath)
+    # for file in os.listdir(path):
+    #     if file.endswith(".mtl"):
+    #         print("*** Creating materials from " + file)
+    #         constants.materials.update(materials.create_materials(file, constants.basedir, use_dds, use_tif))
+    #         print("*** Finished creating materials from " + file)
 
     for material in constants.materials.keys():
         print("   Material: " + material)
-    for file in os.listdir(path):
-        if file.endswith(".dae"):
-            objects = import_geometry(file, constants.basedir)
+    #for file in os.listdir(path):
+    #   if file.endswith(".dae"):
+    objects = import_geometry(filepath, constants.basedir)
+
     objects = bpy.data.objects
     for obj in objects:
         if not obj.name == "Light" and not obj.name == "Camera" and not obj.name == "Cube":
@@ -614,17 +617,13 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
                 print("      Assigning material " + mat + " to " + obj.name)
                 if mat in constants.materials.keys():
                     obj_mat.material = constants.materials[mat]
-                #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
-                #    mats.material = materials[mats.name[:-4]]
-                #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
-                #    mats.material = materials[mats.name]
     create_collections()
     # Save the file in the directory being read, given the directory name.  Then
     # the user can create the thumbnails into the given blend file.
-    if auto_save_file == True:
-        save_file(path)
-    if auto_save_file == True and auto_generate_preview == True:
-        generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
+    # if auto_save_file == True:
+    #     save_file(path)
+    # if auto_save_file == True and auto_generate_preview == True:
+    #     generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
     return {'FINISHED'}
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):

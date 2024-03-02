@@ -2,7 +2,6 @@ import os, os.path
 import bpy
 from . import utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
-from . import constants
 
 default_texture_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets\\default_mat_warning.png")
 
@@ -19,14 +18,14 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
     # Identify material format
     materials = {}  # All the materials found for the asset
     if use_dds == True:
+        print("Using DDS")
         file_extension = ".dds"
     elif use_tif == True:
+        print("Using TIF")
         file_extension = ".tif"
     cry_xml = CryXmlSerializer()
     mats = cry_xml.read_file(matfile)
-    # mats = fix_submaterials(mats_raw)
     # Find if it has submaterial element
-    print(mats)
     for material_xml in mats.iter("Material"):
         if "Shader" in material_xml.attrib:
             if "Name" in material_xml.attrib:
@@ -56,8 +55,8 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                     tree_nodes.nodes.remove(n)
                 # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
                 shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
+                shaderPrincipledBSDF.inputs[1].default_value = 1.0
                 shaderPrincipledBSDF.location =  200,500
-                #print(mat["Diffuse"])
                 if "Diffuse" in material_xml.keys():
                     diffuseColor = utilities.convert_to_rgba(str(material_xml.attrib["Diffuse"]))
                     shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
@@ -300,6 +299,7 @@ def create_glass_material(mat, tree_nodes, shaderPrincipledBSDF, material_extens
 
 def create_principle_bsdf_root_node(material_xml, tree_nodes):
     shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
+    shaderPrincipledBSDF.inputs[1].default_value = 1.0
     shaderPrincipledBSDF.location = 300, 600
     if "Diffuse" in material_xml.keys():
         diffuseColor = utilities.convert_to_rgba(str(material_xml.attrib["Diffuse"]))

@@ -64,7 +64,6 @@ def create_collections():
             print ('   Creating collection for ' + obj.name)
             bpy.data.collections.new(obj.name)
             collections.move_object_to_collection(obj, obj.name)
-            #bpy.data.collections[obj.name].objects.link(obj)
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs(mech):
@@ -525,7 +524,8 @@ def add_objects_to_collections():
                or 'physics_proxy' in obj.name 
                or obj.name.endswith('_fx') 
                or obj.name.endswith('_case')
-               or obj.name.startswith('animation')]
+               or obj.name.startswith('animation')
+               or obj.name.startswith('.animation')]
     for empty in empties:
         collections.move_object_to_collection(empty, constants.EMPTIES_COLLECTION)
     # Set weapons and special geometry to Weapons Collection
@@ -589,22 +589,9 @@ def import_asset(filepath, use_dds=True, use_tif=False, auto_save_file=True, aut
     constants.basedir = get_base_dir(filepath)
     set_viewport_shading()
     collections.set_up_asset_collections()
-    
-    # if os.path.isdir(filepath):
-    #     os.chdir(filepath)
-    # elif os.path.isfile(filepath):
-    #     os.chdir(os.path.dirname(filepath))
-    #     path = os.path.dirname(filepath)
-    # for file in os.listdir(path):
-    #     if file.endswith(".mtl"):
-    #         print("*** Creating materials from " + file)
-    #         constants.materials.update(materials.create_materials(file, constants.basedir, use_dds, use_tif))
-    #         print("*** Finished creating materials from " + file)
 
     for material in constants.materials.keys():
         print("   Material: " + material)
-    #for file in os.listdir(path):
-    #   if file.endswith(".dae"):
     objects = import_geometry(filepath, constants.basedir)
 
     objects = bpy.data.objects

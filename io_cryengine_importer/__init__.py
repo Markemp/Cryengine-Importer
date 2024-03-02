@@ -34,6 +34,8 @@ from bpy.props import (
 from bpy_extras.io_utils import ImportHelper
 
 from . import Cryengine_Importer
+from . import constants
+from . import materials
 
 bl_info = {
     "name": 'Cryengine Importer', 
@@ -49,7 +51,7 @@ bl_info = {
     }
 
 #@orientation_helper(axis_forward='Y', axis_up='Z')
-class CryengineImporter(bpy.types.Operator, ImportHelper):
+class AssetImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.cryassets"
     bl_label = "Import Cryengine Assets"
     bl_options = {'PRESET', 'UNDO'}
@@ -114,6 +116,18 @@ class CryengineImporter(bpy.types.Operator, ImportHelper):
                                             "filepath"))
         fdir = self.properties.filepath
         keywords["path"] = fdir
+
+        # Create materials from .mtl files in the object's directory
+        if os.path.isdir(directory):
+            os.chdir(directory)
+        elif os.path.isfile(directory):
+            os.chdir(os.path.dirname(directory))
+        for file in os.listdir(directory):
+            if file.endswith(".mtl"):
+                print("*** Creating materials from " + file)
+                constants.materials.update(materials.create_materials(file, constants.basedir, self.use_dds, self.use_tif))
+                print("*** Finished creating materials from " + file)
+
         for file in files:
             filepath = os.path.join(directory, file.name)
             keywords["filepath"] = filepath
@@ -176,8 +190,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords(ignore=("texture_type", 
                                             "filter_glob",
                                             "path_mode",
-                                            "filepath"
-                                            ))
+                                            "filepath"))
         if bpy.data.is_saved and context.preferences.filepaths.use_relative_paths:
             import os
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
@@ -274,14 +287,14 @@ def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
 def menu_func_import(self, context):
-    self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
+    self.layout.operator(AssetImporter.bl_idname, text="Import Cryengine Asset")
 
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab")
 
 classes = (
      MechImporter,
-     CryengineImporter,
+     AssetImporter,
      PrefabImporter,
      MessageOperator
  )

@@ -21,21 +21,16 @@
 # Cryengine Importer 2.0 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
-import os
 import bpy
 import bpy.types
 import bpy.utils
-from bpy.types import PropertyGroup
 from bpy.props import (
         BoolProperty,
         StringProperty,
-        CollectionProperty,
         EnumProperty)
 from bpy_extras.io_utils import ImportHelper
 
 from . import Cryengine_Importer
-from . import constants
-from . import materials
 
 bl_info = {
     "name": 'Cryengine Importer', 
@@ -49,102 +44,6 @@ bl_info = {
     "wiki_url": 'https://github.com/markemp/Cryengine-Importer',
     "support": "COMMUNITY"
     }
-
-#@orientation_helper(axis_forward='Y', axis_up='Z')
-class AssetImporter(bpy.types.Operator, ImportHelper):
-    bl_idname = "import_scene.cryassets"
-    bl_label = "Import Cryengine Assets"
-    bl_options = {'PRESET', 'UNDO'}
-    texture_type: EnumProperty(
-        name="Texture Type",
-        description = "Identify the type of texture file imported into the Texture nodes.",
-        items = (('ON', "DDS", "Reference DDS files for textures."),
-                 ('OFF', "TIF", "Reference TIF files for textures."),
-                 ),
-                )
-    path: StringProperty(
-        name="Import Directory",
-        description="Directory to Import",
-        default="",
-        maxlen=1024,
-        subtype='DIR_PATH')
-    auto_save_file: BoolProperty(
-        name = "Save File",
-        description = "Automatically save file",
-        default = True)
-    auto_generate_preview: BoolProperty(
-        name = "Generate Preview",
-        description = "Auto-generate thumbnails",
-        default = False)
-    filter_glob: StringProperty(
-        default="*.dae",
-        options={'HIDDEN'})
-    use_dds: BoolProperty(
-        name = "Use DDS",
-        description = "Use DDS format for image textures",
-        default = True)
-    use_tif: BoolProperty(
-        name = "Use TIF",
-        description = "Use TIF format for image textures",
-        default = False)
-    files: CollectionProperty(type=PropertyGroup)
-    directory: StringProperty(maxlen=1024, subtype='DIR_PATH')
-
-    # From ImportHelper.  Filter filenames.
-    show_hidden = True
-    check_extension = True
-    filename_ext = ".dae"
-    use_filter_folder = True
-    display_type = 'THUMBNAIL'
-    title = "Directory to Import"
-    
-    def execute(self, context):
-        files = self.files
-        for f in files:
-            print('file: ', f.name)
-        directory = self.directory
-        
-        if self.texture_type == 'OFF':
-            self.use_tif = True
-            self.use_dds = False
-        else:
-            self.use_dds = True
-            self.use_tif = False
-        keywords = self.as_keywords(ignore=("texture_type", 
-                                            "filter_glob",
-                                            "path_mode",
-                                            "filepath"))
-        fdir = self.properties.filepath
-        keywords["path"] = fdir
-
-        # Create materials from .mtl files in the object's directory
-        if os.path.isdir(directory):
-            os.chdir(directory)
-        elif os.path.isfile(directory):
-            os.chdir(os.path.dirname(directory))
-        for file in os.listdir(directory):
-            if file.endswith(".mtl"):
-                print("*** Creating materials from " + file)
-                constants.materials.update(materials.create_materials(file, constants.basedir, self.use_dds, self.use_tif))
-                print("*** Finished creating materials from " + file)
-
-        for file in files:
-            filepath = os.path.join(directory, file.name)
-            keywords["filepath"] = filepath
-            Cryengine_Importer.import_asset(**keywords)
-        return {'FINISHED'}
-    
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row(align = True)
-        box = layout.box()
-        box.label(text="Select texture type")
-        row = box.row()
-        row.prop(self, "texture_type", expand = True)
-        row = layout.row(align=True)
-        row.prop(self, "auto_save_file")
-        row = layout.row(align=True)
-        row.prop(self, "auto_generate_preview")
 
 #@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
@@ -286,15 +185,11 @@ class MessageOperator(bpy.types.Operator):
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
-def menu_func_import(self, context):
-    self.layout.operator(AssetImporter.bl_idname, text="Import Cryengine Asset")
-
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab")
 
 classes = (
      MechImporter,
-     AssetImporter,
      PrefabImporter,
      MessageOperator
  )

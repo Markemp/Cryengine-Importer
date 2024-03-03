@@ -3,31 +3,53 @@ import math
 import mathutils
 from mathutils import Vector, Matrix, Color
 import rna_prop_ui
-from . import constants, cc_collections, utilities
+from . import collections, constants, utilities
 
-def import_armature(rig):
+def import_armature(rig, mech_name):
     try:
         bpy.ops.wm.collada_import(filepath=rig, find_chains=True, auto_connect=True)
         armature = bpy.data.objects['Armature']
+        mech_triangle_geometry = bpy.data.objects[mech_name]
+        collections.move_object_to_collection(mech_triangle_geometry, constants.MECH_COLLECTION)
         bpy.context.view_layer.objects.active = armature
-        bpy.ops.object.mode_set(mode='EDIT')
         armature.show_in_front = True
-        armature.data.show_axes = True
+        armature.show_axes = False
         bpy.context.object.data.display_type = 'BBONE'
         bpy.context.object.display_type = 'WIRE'
+        scene = bpy.data.scenes[0]
+        scene.collection.children[0].objects.unlink(armature)
+        scene.collection.children[1].objects.link(armature)
     except:
         #File not found
         return False
     return True
 
-def set_bone_layers(armature):
-    print("set_bone_layers:  Setting layers for armature.")
+def set_bone_collections(armature):
+    print("set_bone_collections: Setting bone collections for armature.")
+    
     original_context = bpy.context.mode
     bpy.ops.object.mode_set(mode='POSE')
-    for bone in armature.data.bones:
-        if bone.name not in constants.control_bones:
-            bone.layers[1] = True
-            bone.layers[0] = False
+    
+    # Create or get the bone groups for control and deform bones
+    control_collection = armature.data.collections.get(constants.CONTROL_BONES_COLLECTION)
+    if control_collection is None:
+        control_collection = armature.data.collections.new(name=constants.CONTROL_BONES_COLLECTION)
+    
+    deform_collection = armature.data.collections.get(constants.DEFORM_BONES_COLLECTION)
+    if deform_collection is None:
+        deform_collection = armature.data.collections.new(name=constants.DEFORM_BONES_COLLECTION)
+    deform_collection.is_visible = False
+
+    # Assign bones to the appropriate bone group
+    for bone in armature.pose.bones:
+        if bone.name in constants.control_bones:
+            control_collection.assign(bone)
+            bone.color.palette = 'THEME02'
+        else:
+            deform_collection.assign(bone)
+            bone.color.palette = 'THEME09'
+
+    # Restore the original context
     bpy.ops.object.mode_set(mode=original_context)
 
 def obj_to_bone(obj, rig, bone_name):
@@ -62,7 +84,7 @@ def copy_bone(armature, bone_name, assign_name=''):
         Returns the resulting bone's name.
     """
     print("copy_bone:  Copying " + bone_name + " to " + assign_name)
-    
+    bpy.ops.object.mode_set(mode='EDIT')
     if bone_name not in armature.data.edit_bones:
         raise utilities.MetarigError("copy_bone(): bone '%s' not found, cannot copy it" % bone_name)
     
@@ -78,15 +100,12 @@ def copy_bone(armature, bone_name, assign_name=''):
         edit_bone_2.parent = edit_bone_1.parent
         edit_bone_2.use_connect = edit_bone_1.use_connect
 
-        # Copy edit bone attributes
-        edit_bone_2.layers = list(edit_bone_1.layers)
-
         edit_bone_2.head = Vector(edit_bone_1.head)
         edit_bone_2.tail = Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll
 
         edit_bone_2.use_inherit_rotation = edit_bone_1.use_inherit_rotation
-        edit_bone_2.use_inherit_scale = edit_bone_1.use_inherit_scale
+        edit_bone_2.inherit_scale = edit_bone_1.inherit_scale
         edit_bone_2.use_local_location = edit_bone_1.use_local_location
 
         edit_bone_2.use_deform = edit_bone_1.use_deform
@@ -146,7 +165,6 @@ def copy_bone_simple(armature, bone_name, assign_name=''):
         bone_name_2 = edit_bone_2.name
 
         # Copy edit bone attributes
-        edit_bone_2.layers = list(edit_bone_1.layers)
         edit_bone_2.head = Vector(edit_bone_1.head)
         edit_bone_2.tail = Vector(edit_bone_1.tail)
         edit_bone_2.roll = edit_bone_1.roll

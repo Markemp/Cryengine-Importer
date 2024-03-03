@@ -27,8 +27,7 @@ import bpy.utils
 from bpy.props import (
         BoolProperty,
         StringProperty,
-        EnumProperty,
-        )
+        EnumProperty)
 from bpy_extras.io_utils import ImportHelper
 
 from . import Cryengine_Importer
@@ -38,88 +37,13 @@ bl_info = {
     "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (2, 1, 1),
-    "blender": (3, 0, 0),
+    "version": (3, 0, 0),
+    "blender": (4, 0, 0),
     "location": 'File > Import-Export',
     "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
     "wiki_url": 'https://github.com/markemp/Cryengine-Importer',
     "support": "COMMUNITY"
     }
-
-#@orientation_helper(axis_forward='Y', axis_up='Z')
-class CryengineImporter(bpy.types.Operator, ImportHelper):
-    bl_idname = "import_scene.cryassets"
-    bl_label = "Import Cryengine Assets"
-    bl_options = {'PRESET', 'UNDO'}
-    texture_type: EnumProperty(
-        name="Texture Type",
-        description = "Identify the type of texture file imported into the Texture nodes.",
-        items = (('ON', "DDS", "Reference DDS files for textures."),
-                 ('OFF', "TIF", "Reference TIF files for textures."),
-                 ),
-                )
-    path: StringProperty(
-        name="Import Directory",
-        description="Directory to Import",
-        default="",
-        maxlen=1024,
-        subtype='DIR_PATH')
-    auto_save_file: BoolProperty(
-        name = "Save File",
-        description = "Automatically save file",
-        default = True)
-    auto_generate_preview: BoolProperty(
-        name = "Generate Preview",
-        description = "Auto-generate thumbnails",
-        default = False)
-    filter_glob: StringProperty(
-        default="*.dae",
-        options={'HIDDEN'})
-    use_dds: BoolProperty(
-        name = "Use DDS",
-        description = "Use DDS format for image textures",
-        default = True)
-    use_tif: BoolProperty(
-        name = "Use TIF",
-        description = "Use TIF format for image textures",
-        default = False)
-
-    # From ImportHelper.  Filter filenames.
-    show_hidden = True
-    check_extension = True
-    filename_ext = ".dae"
-    use_filter_folder = True
-    display_type = 'THUMBNAIL'
-    title = "Directory to Import"
-    
-    def execute(self, context):
-        if self.texture_type == 'OFF':
-            self.use_tif = True
-            self.use_dds = False
-        else:
-            self.use_dds = True
-            self.use_tif = False
-        keywords = self.as_keywords(ignore=("texture_type", 
-                                            "filter_glob",
-                                            "path_mode",
-                                            "filepath"
-                                            ))
-        userpath = self.properties.filepath
-        fdir = self.properties.filepath
-        keywords["path"] = fdir
-        return Cryengine_Importer.import_asset(context, **keywords)
-    
-    def draw(self, context):
-        layout = self.layout
-        row = layout.row(align = True)
-        box = layout.box()
-        box.label(text="Select texture type")
-        row = box.row()
-        row.prop(self, "texture_type", expand = True)
-        row = layout.row(align=True)
-        row.prop(self, "auto_save_file")
-        row = layout.row(align=True)
-        row.prop(self, "auto_generate_preview")
 
 #@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
@@ -165,8 +89,7 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords(ignore=("texture_type", 
                                             "filter_glob",
                                             "path_mode",
-                                            "filepath"
-                                            ))
+                                            "filepath"))
         if bpy.data.is_saved and context.preferences.filepaths.use_relative_paths:
             import os
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
@@ -262,15 +185,11 @@ class MessageOperator(bpy.types.Operator):
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
-def menu_func_import(self, context):
-    self.layout.operator(CryengineImporter.bl_idname, text="Import Cryengine Asset")
-
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab")
 
 classes = (
      MechImporter,
-     CryengineImporter,
      PrefabImporter,
      MessageOperator
  )
@@ -280,12 +199,10 @@ def register():
     for cls in classes:
         register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_mech_import)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)	   
     bpy.types.TOPBAR_MT_file_import.append(menu_func_prefab_import)
 
 def unregister():
     from bpy.utils import unregister_class
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_prefab_import)
     for cls in reversed(classes):

@@ -2,7 +2,6 @@ import os, os.path
 import bpy
 from . import utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
-from . import constants
 
 default_texture_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets\\default_mat_warning.png")
 
@@ -19,14 +18,14 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
     # Identify material format
     materials = {}  # All the materials found for the asset
     if use_dds == True:
+        print("Using DDS")
         file_extension = ".dds"
     elif use_tif == True:
+        print("Using TIF")
         file_extension = ".tif"
     cry_xml = CryXmlSerializer()
     mats = cry_xml.read_file(matfile)
-    # mats = fix_submaterials(mats_raw)
     # Find if it has submaterial element
-    print(mats)
     for material_xml in mats.iter("Material"):
         if "Shader" in material_xml.attrib:
             if "Name" in material_xml.attrib:
@@ -56,14 +55,14 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                     tree_nodes.nodes.remove(n)
                 # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
                 shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
+                shaderPrincipledBSDF.inputs[1].default_value = 1.0
                 shaderPrincipledBSDF.location =  200,500
-                #print(mat["Diffuse"])
                 if "Diffuse" in material_xml.keys():
                     diffuseColor = utilities.convert_to_rgba(str(material_xml.attrib["Diffuse"]))
                     shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
                 if "Specular" in material_xml.keys():
                     specColor = utilities.convert_to_rgba(str(material_xml.attrib["Specular"]))
-                    shaderPrincipledBSDF.inputs[7].default_value = specColor[0]    # Specular always seems to be one value repeated 3 times.
+                    shaderPrincipledBSDF.inputs[13].default_value = specColor
                 if "IndirectColor" in material_xml.keys():
                     indirectColor = utilities.convert_to_rgba(str(material_xml.attrib["IndirectColor"]))
                     shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
@@ -101,7 +100,7 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                                 #shaderSpecImg.colorspace_settings.name = 'Non-Color'
                                 shaderSpecImg.image=matSpec
                                 shaderSpecImg.location = 0,325
-                                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[7])
+                                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[13])
                         if texture.attrib["Map"] == "Bumpmap":
                             if os.path.isfile(texturefile):
                                 texturefile = utilities.get_filename(texture.attrib["File"], file_extension)
@@ -156,7 +155,7 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
-                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[13])
         if map == "Bumpmap":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -195,7 +194,7 @@ def create_illum_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
-                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[13])
         if map == "Bumpmap" or map == "TexSlot2":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -232,7 +231,7 @@ def create_mech_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
-                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[7])
+                links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs[13])
         if map == "Bumpmap" or map == "TexSlot2":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -283,7 +282,7 @@ def create_glass_material(mat, tree_nodes, shaderPrincipledBSDF, material_extens
                 #shaderSpecImg.colorspace_settings.name = 'Non-Color'
                 shaderSpecImg.image=matSpec
                 shaderSpecImg.location = 0,325
-                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[7])
+                links.new(shaderSpecImg.outputs[0], shaderPrincipledBSDF.inputs[13])
         if texture.attrib['Map'] == 'Bumpmap':
             if os.path.isfile(texturefile):
                 texturefile = utilities.get_filename(texture.attrib["File"], material_extension)
@@ -300,13 +299,14 @@ def create_glass_material(mat, tree_nodes, shaderPrincipledBSDF, material_extens
 
 def create_principle_bsdf_root_node(material_xml, tree_nodes):
     shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
+    shaderPrincipledBSDF.inputs[1].default_value = 1.0
     shaderPrincipledBSDF.location = 300, 600
     if "Diffuse" in material_xml.keys():
         diffuseColor = utilities.convert_to_rgba(str(material_xml.attrib["Diffuse"]))
         shaderPrincipledBSDF.inputs[0].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
     if "Specular" in material_xml.keys():
         specColor = utilities.convert_to_rgba(str(material_xml.attrib["Specular"]))
-        shaderPrincipledBSDF.inputs[7].default_value = specColor[0]  # Specular always seems to be one value repeated 3 times.
+        shaderPrincipledBSDF.inputs[13].default_value = specColor
     if "IndirectColor" in material_xml.keys():
         indirectColor = utilities.convert_to_rgba(str(material_xml.attrib["IndirectColor"]))
         shaderPrincipledBSDF.inputs[3].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
@@ -317,3 +317,8 @@ def create_principle_bsdf_root_node(material_xml, tree_nodes):
         clearcoat = material_xml.attrib["Shininess"]
         shaderPrincipledBSDF.inputs[12].default_value = float(clearcoat) / 255.0
     return shaderPrincipledBSDF
+
+def remove_unlinked_materials():
+    for material in bpy.data.materials:
+        if material.users == 0:
+            bpy.data.materials.remove(material)

@@ -28,7 +28,7 @@ import bpy.types
 import bpy.utils
 import mathutils
 
-from . import constants, cc_collections, bones, widgets, materials, utilities
+from . import collections, constants, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
 object_dictionary = {}
@@ -54,17 +54,16 @@ def get_base_dir(filepath):
 def get_body_dir(filepath):
     return os.path.join(os.path.dirname(filepath), 'body')
 
-def get_mech(filepath):
+def get_mech_name(filepath):
     return os.path.splitext(os.path.basename(filepath))[0]
 
 def create_collections():
-    # TODO: Refactor to use cc_collections
     # Generate group for each object to make linking into scenes easier.
     for obj in bpy.context.selectable_objects:
         if (obj.name != 'Camera' and obj.name != 'Light' and obj.name != 'Cube'):
             print ('   Creating collection for ' + obj.name)
             bpy.data.collections.new(obj.name)
-            bpy.data.collections[obj.name].objects.link(obj)
+            collections.move_object_to_collection(obj, obj.name)
 
 # This subroutine needs to be broken up in smaller parts
 def create_IKs(mech):
@@ -311,8 +310,9 @@ def create_IKs(mech):
     for bone in ['Foot_IK.R', 'Foot_IK.L', 'Bip01_Pelvis', 'Bip01_Pitch']:
         bpose.bones[bone].use_custom_shape_bone_size = False
 
-    # Move bones to proper layers
-    bones.set_bone_layers(armature)
+    # Move bones to proper collections
+    bones.set_bone_collections(armature)
+    # bones.set_bone_layers(armature)
 
 def get_chain_count(bone):
     count = 1
@@ -409,6 +409,7 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                 # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
                 continue
             obj_objects = bpy.context.selected_objects[:]
+            collections.move_object_to_collection(obj_objects[0], constants.MECH_COLLECTION) # Move root object to Mech Collection
             i = 0
             for obj in obj_objects:
                 if not obj.type == 'EMPTY':
@@ -431,7 +432,7 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                     for i in range(nverts):
                         vg.add([i], 1.0, 'REPLACE')
                     if len(bpy.context.object.material_slots) == 0:
-                        bpy.context.object.data.materials.append(bpy.data.materials[materialname])               # If there is no material, add a dummy mat.
+                        bpy.context.object.data.materials.append(bpy.data.materials[materialname])  # If there is no material, add a dummy mat.
                     if "_prop" in obj.name:
                         materialname = mechname + "_body"
                     bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
@@ -451,7 +452,7 @@ def link_geometry(object_name, cgf_name, library_file, collection):
         for obj in data_to.objects:
             if obj is not None:
                 print("Obj.name: " + obj.name + ", object_name: " + object_name)
-                cc_collections.link_object_to_collection(obj, collection.name)
+                collections.link_object_to_collection(obj, collection.name)
                 proxy = bpy.data.objects.new(object_name + "_proxy", None)
                 obj.users_collection[0].objects.link(proxy)
                 proxy.empty_display_type = 'SPHERE'
@@ -516,25 +517,27 @@ def set_viewport_shading():
                     space.shading.type = 'MATERIAL'
 
 def add_objects_to_collections():
+    armature = bpy.data.objects['Armature']
+    collections.move_object_to_collection(armature, constants.MECH_COLLECTION)
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
                or 'physics_proxy' in obj.name 
                or obj.name.endswith('_fx') 
                or obj.name.endswith('_case')
-               or obj.name.startswith('animation')]
+               or obj.name.startswith('animation')
+               or obj.name.startswith('.animation')]
     for empty in empties:
-        cc_collections.link_object_to_collection(empty, constants.EMPTIES_COLLECTION)
+        collections.move_object_to_collection(empty, constants.EMPTIES_COLLECTION)
     # Set weapons and special geometry to Weapons Collection
-    #names = bpy.data.objects.keys()
     for weapon in bpy.data.objects:
         if any(x in weapon.name for x in constants.weapons):
-            cc_collections.link_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
+            collections.move_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
     move_damaged_parts_to_collection()
 
 def move_damaged_parts_to_collection():
     for obj in bpy.data.objects:
         if obj.name.endswith('_damaged') or obj.name.endswith('_damged'):
-            cc_collections.link_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
+            collections.move_object_to_collection(obj, constants.DAMAGED_PARTS_COLLECTION)
 
 def show_all_prefab_folders(prefab_xml):
     print("NOTE:  Asset importer needs to create .blend files for the following directories:")
@@ -580,27 +583,17 @@ def import_light(object):
     obj.matrix_world = matrix
     return obj
 
-def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-    print("Import Asset.  File: " + path)
-    constants.basedir = get_base_dir(path)
+#def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+def import_asset(filepath, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, **kwargs):
+    print("Import Asset.  File: " + filepath)
+    constants.basedir = get_base_dir(filepath)
     set_viewport_shading()
-    cc_collections.set_up_asset_collections()
-    if os.path.isdir(path):
-        os.chdir(path)
-    elif os.path.isfile(path):
-        os.chdir(os.path.dirname(path))
-        path = os.path.dirname(path)
-    for file in os.listdir(path):
-        if file.endswith(".mtl"):
-            print("*** Creating materials from " + file)
-            constants.materials.update(materials.create_materials(file, constants.basedir, use_dds, use_tif))
-            print("*** Finished creating materials from " + file)
+    collections.set_up_asset_collections()
 
     for material in constants.materials.keys():
         print("   Material: " + material)
-    for file in os.listdir(path):
-        if file.endswith(".dae"):
-            objects = import_geometry(file, constants.basedir)
+    objects = import_geometry(filepath, constants.basedir)
+
     objects = bpy.data.objects
     for obj in objects:
         if not obj.name == "Light" and not obj.name == "Camera" and not obj.name == "Cube":
@@ -611,17 +604,13 @@ def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, a
                 print("      Assigning material " + mat + " to " + obj.name)
                 if mat in constants.materials.keys():
                     obj_mat.material = constants.materials[mat]
-                #if mats.name[-3:].isdigit() and mats.name[:-4] == materials[mats.name[:-4]].name:
-                #    mats.material = materials[mats.name[:-4]]
-                #elif not mats.name[-3:].isdigit() and mats.name == materials[mats.name].name:
-                #    mats.material = materials[mats.name]
     create_collections()
     # Save the file in the directory being read, given the directory name.  Then
     # the user can create the thumbnails into the given blend file.
-    if auto_save_file == True:
-        save_file(path)
-    if auto_save_file == True and auto_generate_preview == True:
-        generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
+    # if auto_save_file == True:
+    #     save_file(path)
+    # if auto_save_file == True and auto_generate_preview == True:
+    #     generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
     return {'FINISHED'}
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
@@ -632,20 +621,16 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     constants.basedir = get_base_dir(path)
     bodydir = get_body_dir(path)
     mechdir = os.path.dirname(path)
-    mech = get_mech(path)
+    mech = get_mech_name(path)
     matfile = os.path.join(bodydir, mech + "_body.mtl")
     cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
                                    "_a_cockpit_standard.mtl")
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
-    cc_collections.set_up_collections()
+    collections.set_up_collections(path)
     # Try to import the armature.  If we can't find it, then return error.
-    result = bones.import_armature(os.path.join(bodydir, mech + ".dae"))   # import the armature.
-    if result == False:    
-        message = "\nError importing armature at: " +  os.path.join(bodydir, mech + ".dae") + "\nDid you forget to convert all the Cryengine files in the body subdirectory?"
-        severity = 'ERROR'
-        bpy.ops.wm.display_message('INVOKE_DEFAULT', message=message, severity=severity)
-        return False
+    bones.import_armature(os.path.join(bodydir, mech + ".dae"), mech)
+
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
     constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)
@@ -657,6 +642,11 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     if add_control_bones == True:
         create_IKs(mech)
+
+    # set to Object mode
+    bpy.ops.object.mode_set(mode='OBJECT')
+
+    materials.remove_unlinked_materials()
 
     if auto_save_file == True:
         save_file(path)
@@ -675,14 +665,15 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
 
     # Set up root collection
     root_name = prefabs_xml.getroot().attrib["Name"]
-    root_collection = cc_collections.create_collection(root_name)
-    cc_collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
+    print('Root name: ' + root_name)
+    root_collection = collections.create_collection(root_name)
+    collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
 
     # Go through the prefabs and add each object to the appropriate collection
     for prefab_element in prefabs_xml.iter("Prefab"):
-        collection = cc_collections.create_collection(prefab_element.attrib["Name"])
+        collection = collections.create_collection(prefab_element.attrib["Name"])
         print("\n*** Creating collection " + prefab_element.attrib["Name"])
-        parent_col = cc_collections.get_collection_object(prefab_element.attrib["Library"])
+        parent_col = collections.get_collection_object(prefab_element.attrib["Library"])
         parent_col.children.link(collection)
 
         import_element(basedir, prefab_element, collection)
@@ -709,7 +700,7 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 added_obj.parent = object_dictionary[obj_element.attrib["Parent"]]
             set_object_location(obj_element, added_obj)
             for obj in get_all_child_objects(added_obj):
-                cc_collections.move_object_to_collection(obj, collection.name)
+                collections.move_object_to_collection(obj, collection.name)
         elif object_type == "Entity":
             properties = obj_element[0]
             if "objModel" in properties.attrib:
@@ -720,7 +711,7 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
-                    cc_collections.move_object_to_collection(obj, collection.name)
+                    collections.move_object_to_collection(obj, collection.name)
             elif "object_Model" in properties.attrib:
                 cgf_file = properties.attrib["object_Model"]
                 dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
@@ -729,12 +720,12 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
-                    cc_collections.move_object_to_collection(obj, collection.name)
+                    collections.move_object_to_collection(obj, collection.name)
             else:  # Light or particle (TODO: Could also be gamemode object which has multiple geometry assets)
                 light_data = bpy.data.lights.new(name=obj_element.attrib["Name"], type='POINT')
                 light_object = bpy.data.objects.new(name=obj_element.attrib["Name"], object_data=light_data)
                 object_dictionary[obj_element.attrib["Id"]] = light_object
-                cc_collections.move_object_to_collection(light_object, collection.name)
+                collections.move_object_to_collection(light_object, collection.name)
                 set_object_location(obj_element, light_object)
         elif object_type == "GeomEntity":
             if "Geometry" in obj_element.attrib:
@@ -745,18 +736,18 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
                 for obj in get_all_child_objects(added_obj):
-                    cc_collections.move_object_to_collection(obj, collection.name)
+                    collections.move_object_to_collection(obj, collection.name)
             else:
                 add_empty(obj_element)
                 added_obj = get_root(bpy.context.object)
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
-                cc_collections.move_object_to_collection(added_obj, collection.name)
+                collections.move_object_to_collection(added_obj, collection.name)
         elif object_type == "Group":
             print("Group type object.")
             group_container = add_empty(obj_element)
             set_object_location(obj_element, group_container)
-            cc_collections.move_object_to_collection(group_container, collection.name)
+            collections.move_object_to_collection(group_container, collection.name)
             object_dictionary[obj_element.attrib["Id"]] = group_container
             objects = obj_element[0]
             for obj in objects.iter("Object"):

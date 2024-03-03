@@ -199,12 +199,10 @@ def register():
     for cls in classes:
         register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_mech_import)
-    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)	   
     bpy.types.TOPBAR_MT_file_import.append(menu_func_prefab_import)
 
 def unregister():
     from bpy.utils import unregister_class
-    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_prefab_import)
     for cls in reversed(classes):

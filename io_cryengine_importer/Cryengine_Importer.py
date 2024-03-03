@@ -665,6 +665,7 @@ def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, 
 
     # Set up root collection
     root_name = prefabs_xml.getroot().attrib["Name"]
+    print('Root name: ' + root_name)
     root_collection = collections.create_collection(root_name)
     collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
 

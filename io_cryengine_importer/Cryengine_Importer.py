@@ -19,8 +19,8 @@
 # <pep8 compliant>
 #
 
-# Cryengine Importer 1.1 (Blender Python module)
-# https://www.heffaypresents.com/GitHub
+# Cryengine Importer 3.0 (Blender Python module)
+# https://www.heffaypresents.com/GitHub/Cryengine-Importer
 
 import os, os.path
 import bpy

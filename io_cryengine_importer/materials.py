@@ -117,19 +117,41 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
     return materials
 
 def create_nodraw_shader_material(material_xml, material, file_extension):
-    print("Nodraw shader")
+    print("Nodraw shader - creating transparent material")
+    
+    material.blend_method = 'BLEND'  # Use 'BLEND' for transparency
+    material.shadow_method = 'NONE'  # Don't cast shadows
+    material.use_backface_culling = True  # Optional: cull backfaces
+    
     tree_nodes = material.node_tree
     links = tree_nodes.links
+    
+    # Clear existing nodes
     for n in tree_nodes.nodes:
         tree_nodes.nodes.remove(n)
-    # Every material will have a PrincipledBSDF and Material output.  Add, place, and link.
-    shaderPrincipledBSDF = create_principle_bsdf_root_node(material_xml, tree_nodes)
-    output_node = create_output_node(tree_nodes)
+    
+    # Create a Principled BSDF node
+    shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
+    shaderPrincipledBSDF.location = 300, 600
+    
+    # Set to fully transparent
+    shaderPrincipledBSDF.inputs['Base Color'].default_value = (1.0, 1.0, 1.0, 1.0)
+    shaderPrincipledBSDF.inputs['Alpha'].default_value = 0.0  # Fully transparent
+    shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 1.0  # Fully transmissive
+    
+    output_node = tree_nodes.nodes.new('ShaderNodeOutputMaterial')
+    output_node.location = 500, 600
+    
     links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
+    
+    # Check if there's a texture (though this should rarely happen for nodraw)
     for texture in material_xml.iter("Texture"):
-        texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
-        links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Base Color'])
-    pass
+        if texture.attrib["Map"] == "Diffuse":
+            texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
+            if texture_node:
+                texture_node.location = 0, 600
+                
+    return shaderPrincipledBSDF  # Return the shader node for consistency
 
 def create_mechcockpit_shader_material(material_xml, material, file_extension):
     print("MechCockpit shader")
@@ -141,6 +163,10 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
     shaderPrincipledBSDF = create_principle_bsdf_root_node(material_xml, tree_nodes)
     output_node = create_output_node(tree_nodes)
     links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
+    uses_gloss_from_diffuse_alpha = False
+    if "StringGenMask" in material_xml.keys():
+        if "%GLOSS_DIFFUSEALPHA" in material_xml.attrib["StringGenMask"]:
+            uses_gloss_from_diffuse_alpha = True
     for texture in material_xml.iter("Texture"):
         map = texture.attrib["Map"]
         if map == "Diffuse":
@@ -149,6 +175,33 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 600
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Base Color'])
+                
+                # If using gloss from diffuse alpha, connect the alpha to roughness through an invert node
+                if uses_gloss_from_diffuse_alpha:
+                    # Create invert node (since gloss is inverse of roughness)
+                    invert_node = tree_nodes.nodes.new('ShaderNodeInvert')
+                    invert_node.location = 150, 400
+                    links.new(texture_node.outputs[1], invert_node.inputs[1])
+                    links.new(invert_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
+                    
+                    # Adjust shininess range based on material settings
+                    if "Shininess" in material_xml.keys():
+                        shininess = float(material_xml.attrib["Shininess"])
+                        # For GLOSS_DIFFUSEALPHA the shininess value often acts as a multiplier
+                        # Add a math multiply node
+                        multiply_node = tree_nodes.nodes.new('ShaderNodeMath')
+                        multiply_node.operation = 'MULTIPLY'
+                        multiply_node.location = 280, 400
+                        
+                        # Set the second value based on a 0-1 range for shininess
+                        # For shininess values close to 10 (as in your example), 
+                        # we use a lower factor to prevent over-roughening
+                        normalized_shininess = min(1.0, max(0.0, shininess / 100.0))
+                        multiply_node.inputs[1].default_value = normalized_shininess
+                        
+                        links.new(invert_node.outputs[0], multiply_node.inputs[0])
+                        links.new(multiply_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
+        
         if map == "Specular":
             print("Adding Specular Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -156,23 +209,22 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Specular Tint'])
-                
                 # If the material uses gloss in alpha channel, connect it to Roughness inverted
                 if "StringGenMask" in material_xml.keys() and "%SPECULARPOW_GLOSSALPHA%" in material_xml.attrib["StringGenMask"]:
                     invert_node = tree_nodes.nodes.new('ShaderNodeInvert')
                     invert_node.location = 150, 200
                     links.new(texture_node.outputs[1], invert_node.inputs[1])
                     links.new(invert_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
-        if map == "Bumpmap":
+        if map == "Bumpmap" or map == "TexSlot2":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
-                texture_node.location = -300, 0
+                texture_node.location = -500, 0  # Move further left to make room for nodes
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
                 normal_map_node.location = 50, 0
-                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Coat Normal'])
-                links.new(texture_node.outputs[0], normal_map_node.inputs[1])
+                process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links)
+                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Normal'])
     pass
 
 def create_illum_shader_material(material_xml, material, file_extension):
@@ -186,6 +238,11 @@ def create_illum_shader_material(material_xml, material, file_extension):
     shaderPrincipledBSDF = create_principle_bsdf_root_node(material_xml, tree_nodes)
     output_node = create_output_node(tree_nodes)
     links.new(shaderPrincipledBSDF.outputs[0], output_node.inputs[0])
+
+    uses_gloss_from_diffuse_alpha = False
+    if "StringGenMask" in material_xml.keys():
+        if "%GLOSS_DIFFUSEALPHA" in material_xml.attrib["StringGenMask"]:
+            uses_gloss_from_diffuse_alpha = True
     for texture in material_xml.iter("Texture"):
         map = texture.attrib["Map"]
         if map == "Diffuse" or map == "TexSlot1":
@@ -194,24 +251,58 @@ def create_illum_shader_material(material_xml, material, file_extension):
             if texture_node:
                 texture_node.location = 0, 600
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Base Color'])
-                links.new(texture_node.outputs[1], shaderPrincipledBSDF.inputs['Coat Weight'])
-        if map == "Specular" or map == "TexSlot4":
+                
+                # If using gloss from diffuse alpha, connect the alpha to roughness through an invert node
+                if uses_gloss_from_diffuse_alpha:
+                    # Create invert node (since gloss is inverse of roughness)
+                    invert_node = tree_nodes.nodes.new('ShaderNodeInvert')
+                    invert_node.location = 150, 400
+                    links.new(texture_node.outputs[1], invert_node.inputs[1])
+                    links.new(invert_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
+                    
+                    # Adjust shininess range based on material settings
+                    if "Shininess" in material_xml.keys():
+                        shininess = float(material_xml.attrib["Shininess"])
+                        # For GLOSS_DIFFUSEALPHA the shininess value often acts as a multiplier
+                        # Add a math multiply node
+                        multiply_node = tree_nodes.nodes.new('ShaderNodeMath')
+                        multiply_node.operation = 'MULTIPLY'
+                        multiply_node.location = 280, 400
+                        
+                        # Set the second value based on a 0-1 range for shininess
+                        # For shininess values close to 10 (as in your example), 
+                        # we use a lower factor to prevent over-roughening
+                        normalized_shininess = min(1.0, max(0.0, shininess / 100.0))
+                        multiply_node.inputs[1].default_value = normalized_shininess
+                        
+                        links.new(invert_node.outputs[0], multiply_node.inputs[0])
+                        links.new(multiply_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
+
+        if map == "Specular":
             print("Adding Specular Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Specular Tint'])
+                # If the material uses gloss in alpha channel, connect it to Roughness inverted
+                if "StringGenMask" in material_xml.keys() and "%SPECULARPOW_GLOSSALPHA%" in material_xml.attrib["StringGenMask"]:
+                    invert_node = tree_nodes.nodes.new('ShaderNodeInvert')
+                    invert_node.location = 150, 200
+                    links.new(texture_node.outputs[1], invert_node.inputs[1])
+                    links.new(invert_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
         if map == "Bumpmap" or map == "TexSlot2":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
-                texture_node.location = -300, 0
+                texture_node.location = -500, 0  # Move further left to make room for nodes
                 texture_node.image.colorspace_settings.name = "Non-Color"
+                
+                # Add a normal map node
                 normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
                 normal_map_node.location = 50, 0
-                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Coat Normal'])
-                links.new(texture_node.outputs[0], normal_map_node.inputs[1])
+                process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links)
+                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Normal'])
     pass
 
 def create_mech_shader_material(material_xml, material, file_extension):
@@ -243,12 +334,14 @@ def create_mech_shader_material(material_xml, material, file_extension):
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
             if texture_node:
-                texture_node.location = -300, 0
+                texture_node.location = -500, 0  # Move further left to make room for nodes
                 texture_node.image.colorspace_settings.name = "Non-Color"
+                
+                # Add a normal map node
                 normal_map_node = tree_nodes.nodes.new('ShaderNodeNormalMap')
                 normal_map_node.location = 50, 0
-                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Coat Normal'])
-                links.new(texture_node.outputs[0], normal_map_node.inputs[1])
+                process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links)
+                links.new(normal_map_node.outputs[0], shaderPrincipledBSDF.inputs['Normal'])
     pass
 
 def create_image_texture_node(tree_nodes, texture, file_extension):
@@ -371,8 +464,66 @@ def create_principle_bsdf_root_node(material_xml, tree_nodes):
             shaderPrincipledBSDF.inputs['Specular IOR Level'].default_value = 0.3
     
     return shaderPrincipledBSDF
-    
+
 def remove_unlinked_materials():
     for material in bpy.data.materials:
         if material.users == 0:
             bpy.data.materials.remove(material)
+
+def process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links):
+    """
+    Creates a node setup to fix normal maps with missing blue channel.
+    This uses the node editor to split the color channels, check and fix the blue channel,
+    then recombine them before connecting to the normal map node.
+    
+    Args:
+        tree_nodes: The material's node tree
+        texture_node: The image texture node containing the normal map
+        normal_map_node: The normal map node to connect to
+        links: The links object for the node tree
+    """
+    # Create a Separate RGB node to split the color channels
+    separate_rgb = tree_nodes.nodes.new('ShaderNodeSeparateRGB')
+    separate_rgb.location = texture_node.location[0] + 200, texture_node.location[1]
+    
+    # Link texture to separate RGB
+    links.new(texture_node.outputs[0], separate_rgb.inputs[0])
+    
+    # Create a Compare node to check if blue channel is near zero
+    # Using a Math node with "LESS_THAN" operation
+    compare_blue = tree_nodes.nodes.new('ShaderNodeMath')
+    compare_blue.operation = 'LESS_THAN'
+    compare_blue.inputs[1].default_value = 0.1  # Threshold for "near black"
+    compare_blue.location = separate_rgb.location[0] + 200, separate_rgb.location[1] - 100
+    
+    # Connect blue channel to compare node
+    links.new(separate_rgb.outputs[2], compare_blue.inputs[0])
+    
+    # Create a Math node to set value to 1.0 if blue is too dark
+    set_blue = tree_nodes.nodes.new('ShaderNodeMath')
+    set_blue.operation = 'MAXIMUM'
+    set_blue.inputs[1].default_value = 1.0  # Set to 1.0 if needed
+    set_blue.location = compare_blue.location[0] + 200, compare_blue.location[1]
+    
+    # Create a Mix node to blend between original blue and fixed value
+    mix_blue = tree_nodes.nodes.new('ShaderNodeMixRGB')
+    mix_blue.blend_type = 'MIX'
+    mix_blue.location = set_blue.location[0] + 200, set_blue.location[1]
+    
+    # Connect nodes for blue channel correction
+    links.new(separate_rgb.outputs[2], set_blue.inputs[0])  # Original blue to max
+    links.new(compare_blue.outputs[0], mix_blue.inputs[0])  # Compare result to mix factor
+    links.new(separate_rgb.outputs[2], mix_blue.inputs[1])  # Original blue to first input
+    links.new(set_blue.outputs[0], mix_blue.inputs[2])      # Fixed blue to second input
+    
+    # Create Combine RGB node to put channels back together
+    combine_rgb = tree_nodes.nodes.new('ShaderNodeCombineRGB')
+    combine_rgb.location = mix_blue.location[0] + 200, texture_node.location[1]
+    
+    # Connect RGB channels back, using modified blue
+    links.new(separate_rgb.outputs[0], combine_rgb.inputs[0])  # Red
+    links.new(separate_rgb.outputs[1], combine_rgb.inputs[1])  # Green
+    links.new(mix_blue.outputs[0], combine_rgb.inputs[2])      # Fixed Blue
+    
+    # Connect combined result to normal map node
+    links.new(combine_rgb.outputs[0], normal_map_node.inputs[1])

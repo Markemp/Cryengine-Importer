@@ -48,27 +48,18 @@ def set_bone_collections(armature):
     deform_collection.is_visible = False
     control_collection.is_visible = True
 
-    # Create bone groups if not already present
-    if len(armature.pose.bone_groups) == 0:
-        control_group = armature.pose.bone_groups.new(name="Control Bones")
-        control_group.color_set = 'THEME02'
-        deform_group = armature.pose.bone_groups.new(name="Deform Bones")
-        deform_group.color_set = 'THEME09'
-
-    # Assign bones to the appropriate collection and group
+    # Assign bones to the appropriate collection and set colors
     for bone in armature.pose.bones:
         if bone.name in constants.control_bones:
             # Assign to control collection
-            control_collection.assign(bone)
-            # Set bone group
-            if "Control Bones" in armature.pose.bone_groups:
-                bone.bone_group = armature.pose.bone_groups["Control Bones"]
+            control_collection.assign(bone.bone)
+            # Set bone color - control bones use THEME02
+            bone.bone.color.palette = 'THEME02'
         else:
             # Assign to deform collection
-            deform_collection.assign(bone)
-            # Set bone group
-            if "Deform Bones" in armature.pose.bone_groups:
-                bone.bone_group = armature.pose.bone_groups["Deform Bones"]
+            deform_collection.assign(bone.bone)
+            # Set bone color - deform bones use THEME09
+            bone.bone.color.palette = 'THEME09'
 
     # Restore original mode
     if original_mode != 'POSE':

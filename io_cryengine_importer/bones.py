@@ -27,10 +27,15 @@ def import_armature(rig, mech_name):
 def set_bone_collections(armature):
     print("set_bone_collections: Setting bone collections for armature.")
     
-    original_context = bpy.context.mode
-    bpy.ops.object.mode_set(mode='POSE')
+    # Store current mode
+    original_mode = armature.mode
     
-    # Create or get the bone groups for control and deform bones
+    # Set to pose mode
+    if original_mode != 'POSE':
+        bpy.context.view_layer.objects.active = armature
+        bpy.ops.object.mode_set(mode='POSE')
+    
+    # Create or get the bone collections
     control_collection = armature.data.collections.get(constants.CONTROL_BONES_COLLECTION)
     if control_collection is None:
         control_collection = armature.data.collections.new(name=constants.CONTROL_BONES_COLLECTION)
@@ -38,19 +43,36 @@ def set_bone_collections(armature):
     deform_collection = armature.data.collections.get(constants.DEFORM_BONES_COLLECTION)
     if deform_collection is None:
         deform_collection = armature.data.collections.new(name=constants.DEFORM_BONES_COLLECTION)
+    
+    # Set visibility
     deform_collection.is_visible = False
+    control_collection.is_visible = True
 
-    # Assign bones to the appropriate bone group
+    # Create bone groups if not already present
+    if len(armature.pose.bone_groups) == 0:
+        control_group = armature.pose.bone_groups.new(name="Control Bones")
+        control_group.color_set = 'THEME02'
+        deform_group = armature.pose.bone_groups.new(name="Deform Bones")
+        deform_group.color_set = 'THEME09'
+
+    # Assign bones to the appropriate collection and group
     for bone in armature.pose.bones:
         if bone.name in constants.control_bones:
+            # Assign to control collection
             control_collection.assign(bone)
-            bone.color.palette = 'THEME02'
+            # Set bone group
+            if "Control Bones" in armature.pose.bone_groups:
+                bone.bone_group = armature.pose.bone_groups["Control Bones"]
         else:
+            # Assign to deform collection
             deform_collection.assign(bone)
-            bone.color.palette = 'THEME09'
+            # Set bone group
+            if "Deform Bones" in armature.pose.bone_groups:
+                bone.bone_group = armature.pose.bone_groups["Deform Bones"]
 
-    # Restore the original context
-    bpy.ops.object.mode_set(mode=original_context)
+    # Restore original mode
+    if original_mode != 'POSE':
+        bpy.ops.object.mode_set(mode=original_mode)
 
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':

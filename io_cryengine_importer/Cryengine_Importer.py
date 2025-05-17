@@ -19,7 +19,7 @@
 # <pep8 compliant>
 #
 
-# Cryengine Importer 3.0 (Blender Python module)
+# Cryengine Importer 3.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub/Cryengine-Importer
 
 import os, os.path
@@ -772,7 +772,7 @@ def set_object_location(object, added_obj):
         added_obj.location = location
         added_obj.scale = scale
         added_obj.rotation_mode = 'QUATERNION'
-        dg = bpy.context.evaluated_depsgraph_get() 
-        dg.update()
+        # Use view layer update instead of explicit depsgraph update
+        bpy.context.view_layer.update()
     else:
         print("Unable to find Brush entity " + added_obj.name)

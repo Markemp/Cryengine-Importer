@@ -67,8 +67,8 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                     indirectColor = utilities.convert_to_rgba(str(material_xml.attrib["IndirectColor"]))
                     shaderPrincipledBSDF.inputs['IOR'].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
                 if "Opacity" in material_xml.keys():
-                    transmission = material_xml.attrib["Opacity"]
-                    shaderPrincipledBSDF.inputs['Anisotropic Rotation'].default_value = float(transmission)
+                    transmission = float(material_xml.attrib["Opacity"])
+                    shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 1.0 - transmission                
                 if "Shininess" in material_xml.keys():
                     clearcoat = material_xml.attrib["Shininess"]
                     shaderPrincipledBSDF.inputs['Specular IOR Level'].default_value = float(clearcoat) / 255
@@ -76,7 +76,7 @@ def create_materials(matfile, basedir, use_dds=True, use_tif=False):
                     # Glass material.  Make a Glass node layout.
                     create_glass_material(material_xml, tree_nodes, shaderPrincipledBSDF, file_extension)
                 else:
-                    shaderPrincipledBSDF.inputs['Anisotropic Rotation'].default_value = 0.0         # If it's not glass, the transmission should be 0.
+                    shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 0.0         # If it's not glass, the transmission should be 0.
                     shout=tree_nodes.nodes.new('ShaderNodeOutputMaterial')
                     shout.location = 500,500
                     links.new(shaderPrincipledBSDF.outputs[0], shout.inputs[0])
@@ -301,21 +301,49 @@ def create_principle_bsdf_root_node(material_xml, tree_nodes):
     shaderPrincipledBSDF = tree_nodes.nodes.new('ShaderNodeBsdfPrincipled')
     shaderPrincipledBSDF.inputs['Metallic'].default_value = 1.0
     shaderPrincipledBSDF.location = 300, 600
+    
+    # Map CryEngine Diffuse to Blender Base Color
     if "Diffuse" in material_xml.keys():
         diffuseColor = utilities.convert_to_rgba(str(material_xml.attrib["Diffuse"]))
         shaderPrincipledBSDF.inputs['Base Color'].default_value = (diffuseColor[0], diffuseColor[1], diffuseColor[2], diffuseColor[3])
+    
+    # Map CryEngine Specular to Blender Specular IOR Level
     if "Specular" in material_xml.keys():
         specColor = utilities.convert_to_rgba(str(material_xml.attrib["Specular"]))
-        shaderPrincipledBSDF.inputs['Specular Tint'].default_value = specColor
+        specValue = (specColor[0] + specColor[1] + specColor[2]) / 3.0
+        # Set Specular IOR Level (still a float)
+        shaderPrincipledBSDF.inputs['Specular IOR Level'].default_value = specValue
+        
+        # In Blender 4.4, Specular Tint is now a color (RGB) not a float
+        # Set it to the original specular color to maintain tint
+        shaderPrincipledBSDF.inputs['Specular Tint'].default_value = (specColor[0], specColor[1], specColor[2], 1.0)
+    
+    # Map CryEngine IndirectColor to Blender Emission
     if "IndirectColor" in material_xml.keys():
         indirectColor = utilities.convert_to_rgba(str(material_xml.attrib["IndirectColor"]))
-        shaderPrincipledBSDF.inputs['IOR'].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
+        averageIndirect = (indirectColor[0] + indirectColor[1] + indirectColor[2]) / 3.0
+        # Use correct emission inputs
+        shaderPrincipledBSDF.inputs['Emission'].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
+        shaderPrincipledBSDF.inputs['Emission Strength'].default_value = averageIndirect
+    
+    # Map CryEngine Opacity to Blender Alpha
     if "Opacity" in material_xml.keys():
-        transmission = material_xml.attrib["Opacity"]
-        shaderPrincipledBSDF.inputs['Anisotropic Rotation'].default_value = float(transmission)
+        opacity = float(material_xml.attrib["Opacity"])
+        # For typical opacity/transparency handling (0=transparent, 1=opaque)
+        shaderPrincipledBSDF.inputs['Alpha'].default_value = opacity
+        
+        # Alternative: For glass-like transmission (1=fully transmissive)
+        # Blender 4.4 uses 'Transmission Weight' instead of 'Transmission'
+        shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 1.0 - opacity
+    
+    # Map CryEngine Shininess to Blender Roughness (inverse relationship)
     if "Shininess" in material_xml.keys():
-        clearcoat = material_xml.attrib["Shininess"]
-        shaderPrincipledBSDF.inputs['Specular IOR Level'].default_value = float(clearcoat) / 255.0
+        shininess = float(material_xml.attrib["Shininess"])
+        # Convert shininess to roughness (inverse relationship)
+        # Higher shininess = lower roughness
+        normalizedShininess = shininess / 255.0
+        shaderPrincipledBSDF.inputs['Roughness'].default_value = 1.0 - normalizedShininess
+    
     return shaderPrincipledBSDF
 
 def remove_unlinked_materials():

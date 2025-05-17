@@ -156,6 +156,13 @@ def create_mechcockpit_shader_material(material_xml, material, file_extension):
                 texture_node.location = 0, 300
                 texture_node.image.colorspace_settings.name = "Non-Color"
                 links.new(texture_node.outputs[0], shaderPrincipledBSDF.inputs['Specular Tint'])
+                
+                # If the material uses gloss in alpha channel, connect it to Roughness inverted
+                if "StringGenMask" in material_xml.keys() and "%SPECULARPOW_GLOSSALPHA%" in material_xml.attrib["StringGenMask"]:
+                    invert_node = tree_nodes.nodes.new('ShaderNodeInvert')
+                    invert_node.location = 150, 200
+                    links.new(texture_node.outputs[1], invert_node.inputs[1])
+                    links.new(invert_node.outputs[0], shaderPrincipledBSDF.inputs['Roughness'])
         if map == "Bumpmap":
             print("Adding Bump Map")
             texture_node = create_image_texture_node(tree_nodes, texture, file_extension)
@@ -324,28 +331,47 @@ def create_principle_bsdf_root_node(material_xml, tree_nodes):
         averageIndirect = (indirectColor[0] + indirectColor[1] + indirectColor[2]) / 3.0
         # Use correct emission inputs
         shaderPrincipledBSDF.inputs['Emission'].default_value = (indirectColor[0], indirectColor[1], indirectColor[2], indirectColor[3])
-        shaderPrincipledBSDF.inputs['Emission Strength'].default_value = averageIndirect
+        shaderPrincipledBSDF.inputs['Emission Strength'].default_value = averageIndirect * 0.5  # Reduce emission strength
     
-    # Map CryEngine Opacity to Blender Alpha
+    # Map CryEngine Opacity to Blender Alpha and Transmission Weight
     if "Opacity" in material_xml.keys():
-        opacity = float(material_xml.attrib["Opacity"])
+        transmission = float(material_xml.attrib["Opacity"])  # Fix variable name to match usage
         # For typical opacity/transparency handling (0=transparent, 1=opaque)
-        shaderPrincipledBSDF.inputs['Alpha'].default_value = opacity
+        shaderPrincipledBSDF.inputs['Alpha'].default_value = transmission
         
-        # Alternative: For glass-like transmission (1=fully transmissive)
-        # Blender 4.4 uses 'Transmission Weight' instead of 'Transmission'
-        shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 1.0 - opacity
+        # For glass-like transmission (1=fully transmissive)
+        # In Blender 4.4, "Transmission" is renamed to "Transmission Weight"
+        shaderPrincipledBSDF.inputs['Transmission Weight'].default_value = 1.0 - transmission
     
-    # Map CryEngine Shininess to Blender Roughness (inverse relationship)
+    # Improved roughness handling from Shininess
+    # CryEngine uses 0-255 for shininess, where 255 is very glossy (0 roughness in PBR)
     if "Shininess" in material_xml.keys():
         shininess = float(material_xml.attrib["Shininess"])
         # Convert shininess to roughness (inverse relationship)
-        # Higher shininess = lower roughness
-        normalizedShininess = shininess / 255.0
-        shaderPrincipledBSDF.inputs['Roughness'].default_value = 1.0 - normalizedShininess
+        # For CryEngine, higher values (255) mean less roughness
+        # Map 0-255 to 1-0 (inverted) with a curve adjustment for better results
+        normalized_shininess = shininess / 255.0
+        # Apply a curve for better visual results - this gives a more balanced conversion
+        roughness = 1.0 - (normalized_shininess ** 0.5)  # Square root for a better curve
+        shaderPrincipledBSDF.inputs['Roughness'].default_value = roughness
+    else:
+        # Default to a medium roughness if not specified
+        shaderPrincipledBSDF.inputs['Roughness'].default_value = 0.5
+    
+    # Check for shader flags in GenMask to make further adjustments
+    if "StringGenMask" in material_xml.keys():
+        genMask = material_xml.attrib["StringGenMask"]
+        
+        # Lower the metallic value for more realistic metals if not specifically set to be very metallic
+        if "%METAL%" not in genMask:
+            shaderPrincipledBSDF.inputs['Metallic'].default_value = 0.7  # Less extreme metallic value
+        
+        # Reduce specular for non-metal materials
+        if "%GLOSS_MAP%" in genMask and "%METAL%" not in genMask:
+            shaderPrincipledBSDF.inputs['Specular IOR Level'].default_value = 0.3
     
     return shaderPrincipledBSDF
-
+    
 def remove_unlinked_materials():
     for material in bpy.data.materials:
         if material.users == 0:

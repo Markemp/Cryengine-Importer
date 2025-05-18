@@ -517,8 +517,18 @@ def set_viewport_shading():
                     space.shading.type = 'MATERIAL'
 
 def add_objects_to_collections():
+    # First, get all the objects that need to be sorted into collections
     armature = bpy.data.objects['Armature']
-    collections.move_object_to_collection(armature, constants.MECH_COLLECTION)
+    
+    # Clear armature from any existing collections (in case it's already in any)
+    for collection in armature.users_collection:
+        collection.objects.unlink(armature)
+    
+    # Get the Mech collection and add armature as the first object
+    mech_collection = bpy.data.collections[constants.MECH_COLLECTION]
+    mech_collection.objects.link(armature)
+    
+    # Now handle the rest of the objects
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
                or 'physics_proxy' in obj.name 

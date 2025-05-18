@@ -27,10 +27,15 @@ def import_armature(rig, mech_name):
 def set_bone_collections(armature):
     print("set_bone_collections: Setting bone collections for armature.")
     
-    original_context = bpy.context.mode
-    bpy.ops.object.mode_set(mode='POSE')
+    # Store current mode
+    original_mode = armature.mode
     
-    # Create or get the bone groups for control and deform bones
+    # Set to pose mode
+    if original_mode != 'POSE':
+        bpy.context.view_layer.objects.active = armature
+        bpy.ops.object.mode_set(mode='POSE')
+    
+    # Create or get the bone collections
     control_collection = armature.data.collections.get(constants.CONTROL_BONES_COLLECTION)
     if control_collection is None:
         control_collection = armature.data.collections.new(name=constants.CONTROL_BONES_COLLECTION)
@@ -38,19 +43,27 @@ def set_bone_collections(armature):
     deform_collection = armature.data.collections.get(constants.DEFORM_BONES_COLLECTION)
     if deform_collection is None:
         deform_collection = armature.data.collections.new(name=constants.DEFORM_BONES_COLLECTION)
+    
+    # Set visibility
     deform_collection.is_visible = False
+    control_collection.is_visible = True
 
-    # Assign bones to the appropriate bone group
+    # Assign bones to the appropriate collection and set colors
     for bone in armature.pose.bones:
         if bone.name in constants.control_bones:
-            control_collection.assign(bone)
-            bone.color.palette = 'THEME02'
+            # Assign to control collection
+            control_collection.assign(bone.bone)
+            # Set bone color - control bones use THEME02
+            bone.bone.color.palette = 'THEME02'
         else:
-            deform_collection.assign(bone)
-            bone.color.palette = 'THEME09'
+            # Assign to deform collection
+            deform_collection.assign(bone.bone)
+            # Set bone color - deform bones use THEME09
+            bone.bone.color.palette = 'THEME09'
 
-    # Restore the original context
-    bpy.ops.object.mode_set(mode=original_context)
+    # Restore original mode
+    if original_mode != 'POSE':
+        bpy.ops.object.mode_set(mode=original_mode)
 
 def obj_to_bone(obj, rig, bone_name):
     if bpy.context.mode == 'EDIT_ARMATURE':

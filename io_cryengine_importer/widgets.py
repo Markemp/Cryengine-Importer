@@ -4,30 +4,41 @@ from . import collections, constants, bones
 def create_widget(armature, bone_name, bone_transform_name=None):
     if bone_transform_name is None:
         bone_transform_name = bone_name
-    print("Creating Widget " + constants.WIDGET_PREFIX + armature.name + '_' + bone_name)
+    
     obj_name = constants.WIDGET_PREFIX + armature.name + '_' + bone_name
-    scene = bpy.context.scene
+    print(f"Creating Widget {obj_name}")
+    
     # Check if it already exists in the scene
-    if obj_name in scene.objects:
+    obj = bpy.data.objects.get(obj_name)
+    if obj and obj.users > 0:
         # Move object to bone position, in case it changed
-        obj = scene.objects[obj_name]
         bones.obj_to_bone(obj, armature, bone_transform_name)
-        return None
+        return obj
     else:
-        # Delete object if it exists in blend data but not scene data.
-        # This is necessary so we can then create the object without name conflicts.
-        if obj_name in bpy.data.objects:
-            bpy.data.objects[obj_name].user_clear()
-            bpy.data.objects.remove(bpy.data.objects[obj_name])
+        # Remove old object if it exists
+        if obj:
+            bpy.data.objects.remove(obj, do_unlink=True)
+            
         # Create mesh object
         mesh = bpy.data.meshes.new(obj_name)
         obj = bpy.data.objects.new(obj_name, mesh)
-        # Move object to bone position and set layers
+        
+        # Move object to bone position
         bones.obj_to_bone(obj, armature, bone_transform_name)
+        
+        # Set parent if widget group exists
         wgts_group_name = 'WGTS_' + armature.name
-        if wgts_group_name in bpy.data.objects.keys():
-            obj.parent = bpy.data.objects[wgts_group_name]
-        collections.link_object_to_collection(obj, constants.WIDGETS_COLLECTION)
+        wgts_obj = bpy.data.objects.get(wgts_group_name)
+        if wgts_obj:
+            obj.parent = wgts_obj
+            
+        # Link to collection
+        widget_collection = bpy.data.collections.get(constants.WIDGETS_COLLECTION)
+        if not widget_collection:
+            widget_collection = bpy.data.collections.new(constants.WIDGETS_COLLECTION)
+            bpy.context.scene.collection.children.link(widget_collection)
+            
+        widget_collection.objects.link(obj)
         return obj
 
 def create_hand_widget(rig, bone_name, size=1.0, bone_transform_name=None):

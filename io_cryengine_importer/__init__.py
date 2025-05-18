@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 
-# Cryengine Importer 2.0 (Blender Python module)
+# Cryengine Importer 3.1 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
 import bpy
@@ -28,7 +28,7 @@ from bpy.props import (
         BoolProperty,
         StringProperty,
         EnumProperty)
-from bpy_extras.io_utils import ImportHelper
+from bpy_extras.io_utils import ImportHelper, orientation_helper
 
 from . import Cryengine_Importer
 
@@ -37,39 +37,40 @@ bl_info = {
     "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (3, 0, 0),
+    "version": (3, 1, 0),
     "blender": (4, 0, 0),
     "location": 'File > Import-Export',
     "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
-    "wiki_url": 'https://github.com/markemp/Cryengine-Importer',
+    "doc_url": 'https://github.com/markemp/Cryengine-Importer',
     "support": "COMMUNITY"
     }
 
-#@orientation_helper(axis_forward='Y', axis_up='Z')
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mech"
     bl_label = "Import Mech"
     bl_options = {'PRESET', 'UNDO'}
     filename_ext = ".cdf"
-    check_extension = True
+    check_extension: BoolProperty(
+        default=True)
     auto_save_file: BoolProperty(
-        name = "Save File",
-        description = "Automatically save file",
-        default = True)
+        name="Save File",
+        description="Automatically save file",
+        default=True)
     filter_glob: StringProperty(
         default="*.cdf",
         options={'HIDDEN'}
-        ,)
+    )
     add_control_bones: BoolProperty(
-        name = "Add Control Bones",
-        description = "Add IK bones to make creating animations easier",
-        default = True)
+        name="Add Control Bones",
+        description="Add IK bones to make creating animations easier",
+        default=True)
     texture_type: EnumProperty(
         name="Texture Type",
-        description = "Identify the type of texture file imported into the Texture nodes.",
-        items = (('ON', "DDS", "Reference DDS files for textures."),
-                 ('OFF', "TIF", "Reference TIF files for textures."),
-                 ),)
+        description="Identify the type of texture file imported into the Texture nodes.",
+        items=(('ON', "DDS", "Reference DDS files for textures."),
+               ('OFF', "TIF", "Reference TIF files for textures."),
+        ))
     use_dds: BoolProperty(
         name = "Use DDS",
         description = "Use DDS format for image textures",
@@ -89,7 +90,10 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords(ignore=("texture_type", 
                                             "filter_glob",
                                             "path_mode",
-                                            "filepath"))
+                                            "filepath",
+                                            "check_extension",
+                                            "axis_forward",
+                                            "axis_up"))
         if bpy.data.is_saved and context.preferences.filepaths.use_relative_paths:
             import os
             keywords["relpath"] = os.path.dirname(bpy.data.filepath)
@@ -111,28 +115,28 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "add_control_bones")
 
-#@orientation_helper(axis_forward='Y', axis_up='Z')
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.prefab"
     bl_label = "Import Cryengine Prefab"
     bl_options = {'PRESET', 'UNDO'}
     filename_ext = ".xml"
-    #path_mode = path_reference_mode
-    check_extension = True
+    check_extension: BoolProperty(
+        default=True)
     auto_save_file: BoolProperty(
-        name = "Save File",
-        description = "Automatically save file",
-        default = True)
+        name="Save File",
+        description="Automatically save file",
+        default=True)
     filter_glob: StringProperty(
         default="*.xml",
-        options={'HIDDEN'},
-        )
+        options={'HIDDEN'}
+    )
     texture_type: EnumProperty(
         name="Texture Type",
-        description = "Identify the type of texture file imported into the Texture nodes.",
-        items = (('ON', "DDS", "Reference DDS files for textures."),
-                 ('OFF', "TIF", "Reference TIF files for textures."),
-                 ),
+        description="Identify the type of texture file imported into the Texture nodes.",
+        items=(('ON', "DDS", "Reference DDS files for textures."),
+               ('OFF', "TIF", "Reference TIF files for textures."),
+        )
     )
     use_dds: BoolProperty(
         name = "Use DDS",
@@ -152,7 +156,10 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
         keywords = self.as_keywords(ignore=("texture_type", 
                                             "filter_glob",
                                             "path_mode",
-                                            "filepath"
+                                            "filepath",
+                                            "check_extension",
+                                            "axis_forward",
+                                            "axis_up"
                                             ))
         fdir = self.properties.filepath
         keywords["path"] = fdir
@@ -195,18 +202,16 @@ classes = (
  )
 
 def register():
-    from bpy.utils import register_class
     for cls in classes:
-        register_class(cls)
+        bpy.utils.register_class(cls)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_prefab_import)
 
 def unregister():
-    from bpy.utils import unregister_class
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_prefab_import)
     for cls in reversed(classes):
-        unregister_class(cls)
+        bpy.utils.unregister_class(cls)
 
 if __name__ == "__main__":
     register()

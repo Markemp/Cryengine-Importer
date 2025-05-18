@@ -37,11 +37,18 @@ def get_collection_object(collection_name):
 
 def set_up_collections(file_path):
     mech_collection = create_collection(constants.MECH_COLLECTION, "Scene Collection")
-    create_collection(constants.WIDGETS_COLLECTION, constants.MECH_COLLECTION)
-    create_collection(constants.EMPTIES_COLLECTION, constants.MECH_COLLECTION)
-    create_collection(constants.WEAPONS_COLLECTION, constants.MECH_COLLECTION)
-    create_collection(constants.DAMAGED_PARTS_COLLECTION, constants.MECH_COLLECTION)
-    create_collection(constants.VARIANTS_COLLECTION, constants.MECH_COLLECTION)
+    widgets_collection = create_collection(constants.WIDGETS_COLLECTION, constants.MECH_COLLECTION)
+    empties_collection = create_collection(constants.EMPTIES_COLLECTION, constants.MECH_COLLECTION)
+    weapons_collection = create_collection(constants.WEAPONS_COLLECTION, constants.MECH_COLLECTION)
+    damaged_parts_collection = create_collection(constants.DAMAGED_PARTS_COLLECTION, constants.MECH_COLLECTION)
+    variants_collection = create_collection(constants.VARIANTS_COLLECTION, constants.MECH_COLLECTION)
+    
+    # Disable visibility of subcollections
+    widgets_collection.hide_viewport = True
+    empties_collection.hide_viewport = True
+    weapons_collection.hide_viewport = True
+    damaged_parts_collection.hide_viewport = True
+    
     variants = get_variant_names(file_path)
     for variant in variants:
         create_collection(variant, constants.VARIANTS_COLLECTION)

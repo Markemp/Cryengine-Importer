@@ -19,8 +19,8 @@
 # <pep8 compliant>
 #
 
-# Cryengine Importer 1.1 (Blender Python module)
-# https://www.heffaypresents.com/GitHub
+# Cryengine Importer 3.1 (Blender Python module)
+# https://www.heffaypresents.com/GitHub/Cryengine-Importer
 
 import os, os.path
 import bpy
@@ -517,8 +517,18 @@ def set_viewport_shading():
                     space.shading.type = 'MATERIAL'
 
 def add_objects_to_collections():
+    # First, get all the objects that need to be sorted into collections
     armature = bpy.data.objects['Armature']
-    collections.move_object_to_collection(armature, constants.MECH_COLLECTION)
+    
+    # Clear armature from any existing collections (in case it's already in any)
+    for collection in armature.users_collection:
+        collection.objects.unlink(armature)
+    
+    # Get the Mech collection and add armature as the first object
+    mech_collection = bpy.data.collections[constants.MECH_COLLECTION]
+    mech_collection.objects.link(armature)
+    
+    # Now handle the rest of the objects
     empties = [obj for obj in bpy.data.objects 
                if obj.name.startswith('fire') 
                or 'physics_proxy' in obj.name 
@@ -772,7 +782,7 @@ def set_object_location(object, added_obj):
         added_obj.location = location
         added_obj.scale = scale
         added_obj.rotation_mode = 'QUATERNION'
-        dg = bpy.context.evaluated_depsgraph_get() 
-        dg.update()
+        # Use view layer update instead of explicit depsgraph update
+        bpy.context.view_layer.update()
     else:
         print("Unable to find Brush entity " + added_obj.name)

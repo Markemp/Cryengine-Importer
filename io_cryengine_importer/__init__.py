@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 
-# Cryengine Importer 3.1 (Blender Python module)
+# Cryengine Importer 4.0 (Blender Python module)
 # https://www.heffaypresents.com/GitHub
 
 import bpy
@@ -33,14 +33,14 @@ from bpy_extras.io_utils import ImportHelper, orientation_helper
 from . import Cryengine_Importer
 
 bl_info = {
-    "name": 'Cryengine Importer', 
-    "description": 'Imports Cryengine assets that have been converted to Collada with Cryengine Converter.',
+    "name": 'Cryengine Importer',
+    "description": 'Imports Cryengine assets converted to USD with Cryengine Converter.',
     "author": 'Geoff Gerber',
     "category": 'Import-Export',
-    "version": (3, 1, 0),
-    "blender": (4, 0, 0),
+    "version": (4, 0, 0),
+    "blender": (5, 0, 0),
     "location": 'File > Import-Export',
-    "warning": 'Requires all Cryengine .cga and .cgf files to be converted to Collada (.dae) using Cryengine Converter prior to use.',
+    "warning": 'Requires all Cryengine .cga and .cgf files to be converted to USD (.usda) using Cryengine Converter 2.0 prior to use.',
     "doc_url": 'https://github.com/markemp/Cryengine-Importer',
     "support": "COMMUNITY"
     }

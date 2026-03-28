@@ -19,7 +19,7 @@
 # <pep8 compliant>
 #
 
-# Cryengine Importer 3.1 (Blender Python module)
+# Cryengine Importer 4.0 (Blender Python module)
 # https://www.heffaypresents.com/GitHub/Cryengine-Importer
 
 import os, os.path
@@ -68,7 +68,7 @@ def create_collections():
 # This subroutine needs to be broken up in smaller parts
 def create_IKs(mech):
     bpy.ops.object.mode_set(mode='EDIT')
-    armature = bpy.data.objects['Armature']
+    armature = bones.find_armature_in_objects(bpy.data.objects)
     amt = armature.data
     bpy.context.view_layer.objects.active = armature
     # EDIT MODE CHANGES
@@ -365,16 +365,18 @@ def set_custom_shapes(armature, mech):
     armature.pose.bones['Hip_Root'].custom_shape = bpy.data.objects[constants.WIDGET_PREFIX + armature.name + "_" + "Hip_Root"]
     print("End setting up widgets")
 
-def import_geometry(dae_file, basedir):
+def import_geometry(usd_file, basedir):
     try:
-        bpy.ops.wm.collada_import(filepath=dae_file,find_chains=True,auto_connect=True)
-        return bpy.context.selected_objects[:]      # Return the objects added.
+        objects_before = set(bpy.data.objects)
+        bpy.ops.wm.usd_import(filepath=usd_file, import_skeletons=True, import_meshes=True,
+                               import_materials=True, import_usd_preview=True)
+        objects_after = set(bpy.data.objects)
+        return list(objects_after - objects_before)
     except:
-        # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
-        print("Error importing Collada file: " + dae_file + ", basedir: " + basedir)
+        print(f"Error importing USD file: {usd_file}, basedir: {basedir}")
     
 def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
-    armature = bpy.data.objects['Armature']
+    armature = bones.find_armature_in_objects(bpy.data.objects)
     print("Importing mech geometry...")
     cry_xml = CryXmlSerializer()
     geometry = cry_xml.read_file(cdf_file)
@@ -387,7 +389,7 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
             location = utilities.convert_to_vector(geo.attrib["Position"])
             bonename = process_bonename(geo, aname)
             print("*** *** Bonename: " + bonename)
-            binding  = os.path.join(basedir, os.path.splitext(geo.attrib["Binding"])[0] + ".dae")
+            binding  = os.path.join(basedir, os.path.splitext(geo.attrib["Binding"])[0] + ".usda")
             flags    = geo.attrib["Flags"]
             # Materials depend on the part type.  For most, <mech>_body.  Weapons is <mech>_variant.  Window/cockpit is 
             # <mech>_window.
@@ -404,11 +406,14 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
             # We now have all the geometry parts that need to be imported, their loc/rot, and material.  Import.
             print('Material: ' + materialname)
             try:
-                bpy.ops.wm.collada_import(filepath=binding,find_chains=True,auto_connect=True)
+                objects_before = set(bpy.data.objects)
+                bpy.ops.wm.usd_import(filepath=binding, import_skeletons=True, import_meshes=True,
+                                       import_materials=True, import_usd_preview=True)
+                objects_after = set(bpy.data.objects)
+                obj_objects = list(objects_after - objects_before)
             except:
                 # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
                 continue
-            obj_objects = bpy.context.selected_objects[:]
             collections.move_object_to_collection(obj_objects[0], constants.MECH_COLLECTION) # Move root object to Mech Collection
             i = 0
             for obj in obj_objects:
@@ -518,7 +523,7 @@ def set_viewport_shading():
 
 def add_objects_to_collections():
     # First, get all the objects that need to be sorted into collections
-    armature = bpy.data.objects['Armature']
+    armature = bones.find_armature_in_objects(bpy.data.objects)
     
     # Clear armature from any existing collections (in case it's already in any)
     for collection in armature.users_collection:
@@ -639,7 +644,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     set_viewport_shading()
     collections.set_up_collections(path)
     # Try to import the armature.  If we can't find it, then return error.
-    bones.import_armature(os.path.join(bodydir, mech + ".dae"), mech)
+    bones.import_armature(os.path.join(bodydir, mech + ".usda"), mech)
 
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
@@ -702,8 +707,8 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
         print("Processing Object type " + object_type)            
         if object_type == "Brush":
             cgf_file = obj_element.attrib["Prefab"]
-            dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
-            bpy.ops.wm.collada_import(filepath=dae_file)
+            usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
+            bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
             added_obj = get_root(bpy.context.object)
             object_dictionary[obj_element.attrib["Id"]] = added_obj
             if "Parent" in obj_element.attrib:
@@ -715,8 +720,8 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
             properties = obj_element[0]
             if "objModel" in properties.attrib:
                 cgf_file = properties.attrib["objModel"]
-                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.collada_import(filepath=dae_file)
+                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
                 added_obj = get_root(bpy.context.object)
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
@@ -724,8 +729,8 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
                     collections.move_object_to_collection(obj, collection.name)
             elif "object_Model" in properties.attrib:
                 cgf_file = properties.attrib["object_Model"]
-                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.collada_import(filepath=dae_file)
+                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
                 added_obj = get_root(bpy.context.object)
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)
@@ -740,8 +745,8 @@ def import_element(basedir, prefab_element, collection, matrix = mathutils.Matri
         elif object_type == "GeomEntity":
             if "Geometry" in obj_element.attrib:
                 cgf_file = obj_element.attrib["Geometry"]
-                dae_file = os.path.join(basedir, cgf_file).replace(".cgf",".dae").replace(".cga",".dae").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.collada_import(filepath=dae_file)
+                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
+                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
                 added_obj = get_root(bpy.context.object)
                 object_dictionary[obj_element.attrib["Id"]] = added_obj
                 set_object_location(obj_element, added_obj)

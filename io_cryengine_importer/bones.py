@@ -32,7 +32,7 @@ def import_armature(rig, mech_name):
 
         bpy.context.view_layer.objects.active = armature
         armature.show_in_front = True
-        armature.show_axes = False
+        armature.data.show_axes = False
         armature.data.display_type = 'BBONE'
         armature.display_type = 'WIRE'
 

@@ -56,11 +56,20 @@ class AssetImporter(bpy.types.Operator, ImportHelper):
     filter_glob: StringProperty(
         default="*.usda",
         options={'HIDDEN'})
+    import_animations: BoolProperty(
+        name="Import Animations",
+        description="Import animation files found in the same directory",
+        default=True)
 
     def execute(self, context):
         filepath = self.properties.filepath
-        Cryengine_Importer.import_asset(filepath)
+        Cryengine_Importer.import_asset(filepath, import_animations=self.import_animations)
         return {'FINISHED'}
+
+    def draw(self, context):
+        layout = self.layout
+        row = layout.row(align=True)
+        row.prop(self, "import_animations")
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):

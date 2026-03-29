@@ -28,7 +28,7 @@ import bpy.types
 import bpy.utils
 import mathutils
 
-from . import collections, constants, bones, widgets, materials, utilities
+from . import animations, collections, constants, bones, widgets, materials, utilities
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
 object_dictionary = {}
@@ -604,11 +604,30 @@ def import_light(object):
     obj.matrix_world = matrix
     return obj
 
-def import_asset(filepath):
+def import_asset(filepath, import_animations=True):
     print("Import Asset.  File: " + filepath)
     set_viewport_shading()
     import_geometry(filepath, get_base_dir(filepath))
+
+    if import_animations:
+        directory = os.path.dirname(filepath)
+        armature = bones.find_armature_in_objects(bpy.data.objects)
+        skeleton_name = discover_skeleton_name(directory)
+        if skeleton_name and armature:
+            animations.import_all_animations(directory, skeleton_name, armature)
+
     return {'FINISHED'}
+
+def discover_skeleton_name(directory):
+    """Find the skeleton name by looking for *_anim_*.usda files in a directory.
+    Extracts the prefix before '_anim_' as the skeleton name.
+    """
+    import glob
+    anim_files = glob.glob(os.path.join(directory, "*_anim_*.usda"))
+    if not anim_files:
+        return None
+    basename = os.path.basename(anim_files[0])
+    return basename.split("_anim_")[0]
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
     print("Import Mech")

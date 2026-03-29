@@ -19,7 +19,7 @@ def import_armature(rig, mech_name):
         objects_before = set(bpy.data.objects)
         bpy.ops.wm.usd_import(filepath=rig, import_skeletons=True, import_meshes=True)
         objects_after = set(bpy.data.objects)
-        new_objects = objects_after - objects_before
+        new_objects = set(utilities.cleanup_usd_import(objects_after - objects_before))
 
         armature = find_armature_in_objects(new_objects)
         if armature is None:

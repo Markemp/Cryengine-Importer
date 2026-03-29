@@ -371,7 +371,8 @@ def import_geometry(usd_file, basedir):
         bpy.ops.wm.usd_import(filepath=usd_file, import_skeletons=True, import_meshes=True,
                                import_materials=True, import_usd_preview=True)
         objects_after = set(bpy.data.objects)
-        return list(objects_after - objects_before)
+        new_objects = list(objects_after - objects_before)
+        return utilities.cleanup_usd_import(new_objects)
     except:
         print(f"Error importing USD file: {usd_file}, basedir: {basedir}")
     
@@ -410,38 +411,42 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                 bpy.ops.wm.usd_import(filepath=binding, import_skeletons=True, import_meshes=True,
                                        import_materials=True, import_usd_preview=True)
                 objects_after = set(bpy.data.objects)
-                obj_objects = list(objects_after - objects_before)
+                obj_objects = utilities.cleanup_usd_import(list(objects_after - objects_before))
             except:
                 # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
                 continue
-            collections.move_object_to_collection(obj_objects[0], constants.MECH_COLLECTION) # Move root object to Mech Collection
+            # Delete component's imported skeleton (redundant — we use the main armature)
+            component_armatures = [obj for obj in obj_objects if obj.type == 'ARMATURE']
+            for obj in component_armatures:
+                bpy.data.objects.remove(obj, do_unlink=True)
+            mesh_objects = [obj for obj in obj_objects if obj.type == 'MESH']
             i = 0
-            for obj in obj_objects:
-                if not obj.type == 'EMPTY':
-                    armature.select_set(True)
-                    bpy.context.view_layer.objects.active = armature
-                    bpy.context.view_layer.objects.active = obj
-                    # If this is a parent node, rotate/translate it. Otherwise skip it.
-                    if i == 0:
-                        matrix = utilities.get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
-                        #parent this first object to the appropriate bone
-                        obj.rotation_mode = 'QUATERNION'
-                        obj.parent = armature
-                        obj.parent_bone = bonename
-                        obj.parent_type = 'BONE'
-                        obj.matrix_world = matrix
-                        i = i + 1
-                    # Vertex groups
-                    vg = obj.vertex_groups.new(name=bonename)
-                    nverts = len(obj.data.vertices)
-                    for i in range(nverts):
-                        vg.add([i], 1.0, 'REPLACE')
-                    if len(bpy.context.object.material_slots) == 0:
-                        bpy.context.object.data.materials.append(bpy.data.materials[materialname])  # If there is no material, add a dummy mat.
-                    if "_prop" in obj.name:
-                        materialname = mechname + "_body"
-                    bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
-                    obj.select_set(False)
+            for obj in mesh_objects:
+                collections.move_object_to_collection(obj, constants.MECH_COLLECTION)
+                armature.select_set(True)
+                bpy.context.view_layer.objects.active = armature
+                bpy.context.view_layer.objects.active = obj
+                # If this is a parent node, rotate/translate it. Otherwise skip it.
+                if i == 0:
+                    matrix = utilities.get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
+                    #parent this first object to the appropriate bone
+                    obj.rotation_mode = 'QUATERNION'
+                    obj.parent = armature
+                    obj.parent_bone = bonename
+                    obj.parent_type = 'BONE'
+                    obj.matrix_world = matrix
+                    i = i + 1
+                # Vertex groups
+                vg = obj.vertex_groups.new(name=bonename)
+                nverts = len(obj.data.vertices)
+                for i in range(nverts):
+                    vg.add([i], 1.0, 'REPLACE')
+                if len(bpy.context.object.material_slots) == 0:
+                    bpy.context.object.data.materials.append(bpy.data.materials[materialname])  # If there is no material, add a dummy mat.
+                if "_prop" in obj.name:
+                    materialname = mechname + "_body"
+                bpy.context.object.data.materials[0] = bpy.data.materials[materialname]
+                obj.select_set(False)
 
 def process_bonename(geo, aname):
     if aname in constants.bad_bonename_map:

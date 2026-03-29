@@ -612,22 +612,15 @@ def import_asset(filepath, import_animations=True):
     if import_animations:
         directory = os.path.dirname(filepath)
         armature = bones.find_armature_in_objects(bpy.data.objects)
-        skeleton_name = discover_skeleton_name(directory)
-        if skeleton_name and armature:
-            animations.import_all_animations(directory, skeleton_name, armature)
+        # Find the CDF file matching the model name to get the skeleton name
+        model_name = os.path.splitext(os.path.basename(filepath))[0]
+        cdf_path = os.path.join(directory, model_name + ".cdf")
+        if os.path.isfile(cdf_path) and armature:
+            skeleton_name = animations.get_skeleton_name_from_cdf(cdf_path)
+            if skeleton_name:
+                animations.import_all_animations(directory, skeleton_name, armature)
 
     return {'FINISHED'}
-
-def discover_skeleton_name(directory):
-    """Find the skeleton name by looking for *_anim_*.usda files in a directory.
-    Extracts the prefix before '_anim_' as the skeleton name.
-    """
-    import glob
-    anim_files = glob.glob(os.path.join(directory, "*_anim_*.usda"))
-    if not anim_files:
-        return None
-    basename = os.path.basename(anim_files[0])
-    return basename.split("_anim_")[0]
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
     print("Import Mech")

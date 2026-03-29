@@ -1,8 +1,21 @@
 import os
 import glob
 import bpy
-from . import utilities
-from .bones import find_armature_in_objects
+from .CryXmlB.CryXmlReader import CryXmlSerializer
+
+
+def get_skeleton_name_from_cdf(cdf_path):
+    """Parse a CDF file to extract the skeleton name.
+    The CDF's Model File attribute references the .chr skeleton file,
+    e.g. 'objects/characters/animals/hen/skeleton_hen_01.chr' → 'skeleton_hen_01'
+    """
+    cry_xml = CryXmlSerializer()
+    cdf = cry_xml.read_file(cdf_path)
+    model = cdf.find(".//Model")
+    if model is not None and "File" in model.attrib:
+        chr_path = model.attrib["File"]
+        return os.path.splitext(os.path.basename(chr_path))[0]
+    return None
 
 
 def discover_animation_files(directory, skeleton_name):

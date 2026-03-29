@@ -46,6 +46,23 @@ bl_info = {
     }
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
+class AssetImporter(bpy.types.Operator, ImportHelper):
+    bl_idname = "import_scene.cryassets"
+    bl_label = "Import Cryengine Asset"
+    bl_options = {'PRESET', 'UNDO'}
+    filename_ext = ".usda"
+    check_extension: BoolProperty(
+        default=True)
+    filter_glob: StringProperty(
+        default="*.usda",
+        options={'HIDDEN'})
+
+    def execute(self, context):
+        filepath = self.properties.filepath
+        Cryengine_Importer.import_asset(filepath)
+        return {'FINISHED'}
+
+@orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
     bl_idname = "import_scene.mech"
     bl_label = "Import Mech"
@@ -192,10 +209,14 @@ class MessageOperator(bpy.types.Operator):
 def menu_func_mech_import(self, context):
     self.layout.operator(MechImporter.bl_idname, text="Import Mech")
 
+def menu_func_asset_import(self, context):
+    self.layout.operator(AssetImporter.bl_idname, text="Import Cryengine Asset")
+
 def menu_func_prefab_import(self, context):
     self.layout.operator(PrefabImporter.bl_idname, text="Import Cryengine Prefab")
 
 classes = (
+     AssetImporter,
      MechImporter,
      PrefabImporter,
      MessageOperator
@@ -204,10 +225,12 @@ classes = (
 def register():
     for cls in classes:
         bpy.utils.register_class(cls)
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_asset_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.append(menu_func_prefab_import)
 
 def unregister():
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_asset_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_mech_import)
     bpy.types.TOPBAR_MT_file_import.remove(menu_func_prefab_import)
     for cls in reversed(classes):

@@ -428,8 +428,9 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                 bpy.context.view_layer.objects.active = obj
                 # If this is a parent node, rotate/translate it. Otherwise skip it.
                 if i == 0:
-                    matrix = utilities.get_transform_matrix(rotation, location)       # Converts the location vector and rotation quat into a 4x4 matrix.
-                    #parent this first object to the appropriate bone
+                    matrix = utilities.get_transform_matrix(rotation, location)
+                    # Clear residual transform from deleted USD hierarchy
+                    obj.matrix_world = mathutils.Matrix.Identity(4)
                     obj.rotation_mode = 'QUATERNION'
                     obj.parent = armature
                     obj.parent_bone = bonename
@@ -603,34 +604,10 @@ def import_light(object):
     obj.matrix_world = matrix
     return obj
 
-#def import_asset(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
-def import_asset(filepath, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, **kwargs):
+def import_asset(filepath):
     print("Import Asset.  File: " + filepath)
-    constants.basedir = get_base_dir(filepath)
     set_viewport_shading()
-    collections.set_up_asset_collections()
-
-    for material in constants.materials.keys():
-        print("   Material: " + material)
-    objects = import_geometry(filepath, constants.basedir)
-
-    objects = bpy.data.objects
-    for obj in objects:
-        if not obj.name == "Light" and not obj.name == "Camera" and not obj.name == "Cube":
-            print("   Assigning materials for " + obj.name)
-            for obj_mat in obj.material_slots:
-                print("   Material slot matname is " + obj_mat.name)
-                mat = obj_mat.name.split('.')[0]
-                print("      Assigning material " + mat + " to " + obj.name)
-                if mat in constants.materials.keys():
-                    obj_mat.material = constants.materials[mat]
-    create_collections()
-    # Save the file in the directory being read, given the directory name.  Then
-    # the user can create the thumbnails into the given blend file.
-    # if auto_save_file == True:
-    #     save_file(path)
-    # if auto_save_file == True and auto_generate_preview == True:
-    #     generate_preview(bpy.data.filepath)            #  Only generate the preview if the file is saved.
+    import_geometry(filepath, get_base_dir(filepath))
     return {'FINISHED'}
 
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):

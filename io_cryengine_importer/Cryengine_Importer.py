@@ -420,22 +420,32 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
             for obj in component_armatures:
                 bpy.data.objects.remove(obj, do_unlink=True)
             mesh_objects = [obj for obj in obj_objects if obj.type == 'MESH']
+            # Remove armature modifiers from USD import to prevent double-transform
+            # (bone parenting + armature modifier would both move the mesh)
+            for obj in mesh_objects:
+                for mod in [m for m in obj.modifiers if m.type == 'ARMATURE']:
+                    obj.modifiers.remove(mod)
             i = 0
             for obj in mesh_objects:
                 collections.move_object_to_collection(obj, constants.MECH_COLLECTION)
                 armature.select_set(True)
                 bpy.context.view_layer.objects.active = armature
                 bpy.context.view_layer.objects.active = obj
+                print(f"  [{aname}] After cleanup - loc: {obj.location[:]}, rot: {obj.rotation_quaternion[:]}, matrix_world diagonal: {obj.matrix_world.to_translation()[:]}")
                 # If this is a parent node, rotate/translate it. Otherwise skip it.
                 if i == 0:
                     matrix = utilities.get_transform_matrix(rotation, location)
+                    print(f"  [{aname}] CDF transform - loc: {location[:]}, rot: {rotation[:]}")
                     # Clear residual transform from deleted USD hierarchy
                     obj.matrix_world = mathutils.Matrix.Identity(4)
+                    print(f"  [{aname}] After identity reset - matrix_world pos: {obj.matrix_world.to_translation()[:]}")
                     obj.rotation_mode = 'QUATERNION'
                     obj.parent = armature
                     obj.parent_bone = bonename
                     obj.parent_type = 'BONE'
+                    print(f"  [{aname}] After parenting to {bonename} - matrix_world pos: {obj.matrix_world.to_translation()[:]}")
                     obj.matrix_world = matrix
+                    print(f"  [{aname}] After matrix_world set - matrix_world pos: {obj.matrix_world.to_translation()[:]}")
                     i = i + 1
                 # Vertex groups
                 vg = obj.vertex_groups.new(name=bonename)
@@ -622,7 +632,7 @@ def import_asset(filepath, import_animations=True):
 
     return {'FINISHED'}
 
-def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
+def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, debug_import=False, path):
     print("Import Mech")
     print(path)
     cdf_file = path      # The input file
@@ -632,7 +642,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     mechdir = os.path.dirname(path)
     mech = get_mech_name(path)
     matfile = os.path.join(bodydir, mech + "_body.mtl")
-    cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech + 
+    cockpit_matfile = os.path.join(mechdir, "cockpit_standard", mech +
                                    "_a_cockpit_standard.mtl")
     # Set material mode. # iterate through areas in current screen
     set_viewport_shading()
@@ -640,17 +650,24 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     # Try to import the armature.  If we can't find it, then return error.
     bones.import_armature(os.path.join(bodydir, mech + ".usda"), mech)
 
+    # Create IKs before geometry import so bone hierarchy is finalized
+    # before meshes are parented to bones
+    if add_control_bones:
+        create_IKs(mech)
+
     # Create the materials.
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
     constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
     import_mech_geometry(cdf_file, constants.basedir, bodydir, mech)
+
+    if debug_import:
+        print("DEBUG: Skipping post-geometry steps (collections)")
+        bpy.ops.object.mode_set(mode='OBJECT')
+        return {'FINISHED'}
+
     # Set the layers for existing objects
     add_objects_to_collections()
-    
-    # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
-    if add_control_bones == True:
-        create_IKs(mech)
 
     # set to Object mode
     bpy.ops.object.mode_set(mode='OBJECT')

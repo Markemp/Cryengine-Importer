@@ -91,6 +91,10 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         name="Add Control Bones",
         description="Add IK bones to make creating animations easier",
         default=True)
+    debug_import: BoolProperty(
+        name="Debug Import",
+        description="Skip post-geometry steps (IKs, widgets, collection sorting) to inspect raw import",
+        default=False)
     texture_type: EnumProperty(
         name="Texture Type",
         description="Identify the type of texture file imported into the Texture nodes.",
@@ -140,6 +144,8 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row.prop(self, "auto_save_file")
         row = layout.row(align=True)
         row.prop(self, "add_control_bones")
+        row = layout.row(align=True)
+        row.prop(self, "debug_import")
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):

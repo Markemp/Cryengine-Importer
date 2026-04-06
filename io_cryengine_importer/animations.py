@@ -1,7 +1,106 @@
 import os
 import glob
+import xml.etree.ElementTree as ET
 import bpy
 from .CryXmlB.CryXmlReader import CryXmlSerializer
+
+# Names in chrparams AnimationList that are metadata, not animation files
+_CHRPARAMS_SPECIAL_NAMES = frozenset({
+    "$AnimEventDatabase", "$TracksDatabase", "$facelib", "$Include"
+})
+
+
+def get_skeleton_name_from_chrparams(chrparams_path):
+    """Return the skeleton name from a chrparams file path.
+    The filename stem IS the skeleton name.
+    """
+    return os.path.splitext(os.path.basename(chrparams_path))[0]
+
+
+def parse_chrparams(chrparams_path, game_root, _depth=0, _max_depth=5):
+    """Parse a chrparams file and follow $Include directives to collect
+    the animation base filepath and wildcard patterns.
+
+    Returns dict with:
+        filepath: str or None — the #filepath base path (relative to game root)
+        patterns: list[str] — wildcard glob patterns for animation files
+    """
+    result = {"filepath": None, "patterns": []}
+
+    if _depth >= _max_depth:
+        print(f"  chrparams include depth limit reached at {chrparams_path}")
+        return result
+
+    cry_xml = CryXmlSerializer()
+    tree = cry_xml.read_file(chrparams_path)
+    if tree is None:
+        return result
+
+    # CryXmlSerializer returns ElementTree for text XML, or an Element for binary
+    root = tree.getroot() if isinstance(tree, ET.ElementTree) else tree
+    anim_list = root.find("AnimationList")
+    if anim_list is None:
+        return result
+
+    for anim in anim_list.findall("Animation"):
+        name = anim.get("name", "")
+        path = anim.get("path", "")
+
+        if name == "$Include":
+            include_path = os.path.join(game_root, path.replace("\\", os.sep))
+            if os.path.isfile(include_path):
+                included = parse_chrparams(include_path, game_root,
+                                           _depth + 1, _max_depth)
+                if included["filepath"] and not result["filepath"]:
+                    result["filepath"] = included["filepath"]
+                result["patterns"].extend(included["patterns"])
+            else:
+                print(f"  chrparams $Include not found: {include_path}")
+
+        elif name == "#filepath":
+            result["filepath"] = path.replace("\\", "/")
+
+        elif name.startswith("$") or name.startswith("#"):
+            # Skip other special directives
+            continue
+
+        elif name == "Comment":
+            continue
+
+        else:
+            # Wildcard pattern entry like name="*" path="*/*.caf"
+            result["patterns"].append(path.replace("\\", "/"))
+
+    return result
+
+
+def discover_animations_from_chrparams(chrparams_path, game_root, skeleton_name):
+    """Discover animation USDA files using chrparams information.
+
+    Searches both the chrparams directory (where the converter places files)
+    and any resolved #filepath directory from the chrparams.
+    Returns a sorted list of unique file paths.
+    """
+    parsed = parse_chrparams(chrparams_path, game_root)
+    search_dirs = set()
+
+    # Always search the directory containing the chrparams
+    search_dirs.add(os.path.dirname(chrparams_path))
+
+    # Also search the resolved #filepath directory
+    if parsed["filepath"]:
+        resolved = os.path.join(game_root, parsed["filepath"].replace("/", os.sep))
+        if os.path.isdir(resolved):
+            search_dirs.add(os.path.normpath(resolved))
+
+    # Collect matching USDA files from all search directories
+    found = set()
+    pattern_name = f"{skeleton_name}_anim_*.usda"
+    for search_dir in search_dirs:
+        for f in glob.glob(os.path.join(search_dir, pattern_name)):
+            found.add(os.path.normpath(f))
+
+    return sorted(found)
 
 
 def get_skeleton_name_from_cdf(cdf_path):
@@ -70,16 +169,15 @@ def import_animation(anim_file, main_armature):
     return action
 
 
-def import_all_animations(directory, skeleton_name, main_armature):
-    """Discover and import all animations for a skeleton.
+def import_all_animations_from_files(anim_files, main_armature):
+    """Import a list of animation USDA files.
     Returns a list of imported Actions.
     """
-    anim_files = discover_animation_files(directory, skeleton_name)
     if not anim_files:
-        print(f"No animation files found for {skeleton_name} in {directory}")
+        print("No animation files to import")
         return []
 
-    print(f"Found {len(anim_files)} animation files for {skeleton_name}")
+    print(f"Importing {len(anim_files)} animation files")
     actions = []
     for anim_file in anim_files:
         action = import_animation(anim_file, main_armature)
@@ -88,3 +186,11 @@ def import_all_animations(directory, skeleton_name, main_armature):
 
     print(f"Imported {len(actions)} animations")
     return actions
+
+
+def import_all_animations(directory, skeleton_name, main_armature):
+    """Discover and import all animations for a skeleton.
+    Returns a list of imported Actions.
+    """
+    anim_files = discover_animation_files(directory, skeleton_name)
+    return import_all_animations_from_files(anim_files, main_armature)

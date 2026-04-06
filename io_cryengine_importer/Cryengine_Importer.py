@@ -621,14 +621,31 @@ def import_asset(filepath, import_animations=True):
 
     if import_animations:
         directory = os.path.dirname(filepath)
+        game_root = get_base_dir(filepath)
         armature = bones.find_armature_in_objects(bpy.data.objects)
-        # Find the CDF file matching the model name to get the skeleton name
         model_name = os.path.splitext(os.path.basename(filepath))[0]
-        cdf_path = os.path.join(directory, model_name + ".cdf")
-        if os.path.isfile(cdf_path) and armature:
-            skeleton_name = animations.get_skeleton_name_from_cdf(cdf_path)
-            if skeleton_name:
-                animations.import_all_animations(directory, skeleton_name, armature)
+
+        if armature:
+            skeleton_name = None
+            anim_files = []
+
+            # Try CDF first (e.g. MWO mechs)
+            cdf_path = os.path.join(directory, model_name + ".cdf")
+            if os.path.isfile(cdf_path):
+                skeleton_name = animations.get_skeleton_name_from_cdf(cdf_path)
+                if skeleton_name:
+                    anim_files = animations.discover_animation_files(directory, skeleton_name)
+
+            # Fall back to chrparams (e.g. Pandemic Express, KCD2)
+            if not anim_files:
+                chrparams_path = os.path.join(directory, model_name + ".chrparams")
+                if os.path.isfile(chrparams_path):
+                    skeleton_name = animations.get_skeleton_name_from_chrparams(chrparams_path)
+                    anim_files = animations.discover_animations_from_chrparams(
+                        chrparams_path, game_root, skeleton_name)
+
+            if anim_files:
+                animations.import_all_animations_from_files(anim_files, armature)
 
     return {'FINISHED'}
 

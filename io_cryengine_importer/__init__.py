@@ -26,11 +26,21 @@ import bpy.types
 import bpy.utils
 from bpy.props import (
         BoolProperty,
+        IntProperty,
         StringProperty,
         EnumProperty)
 from bpy_extras.io_utils import ImportHelper, orientation_helper
 
+import os
 from . import Cryengine_Importer
+from . import animations
+
+# Handoff state for the modal animation import operator
+_anim_import_state = {
+    "anim_files": [],
+    "armature": None,
+    "asset_name": "",
+}
 
 bl_info = {
     "name": 'Cryengine Importer',
@@ -60,16 +70,53 @@ class AssetImporter(bpy.types.Operator, ImportHelper):
         name="Import Animations",
         description="Import animation files found in the same directory",
         default=True)
+    animation_filter: StringProperty(
+        name="Animation Filter",
+        description="Filename pattern to filter animations (e.g. *idle*, *run*)",
+        default="*")
+    animation_max_count: IntProperty(
+        name="Max Animations",
+        description="Maximum number of animations to import (0 = unlimited)",
+        default=0,
+        min=0)
 
     def execute(self, context):
+        import fnmatch
         filepath = self.properties.filepath
-        Cryengine_Importer.import_asset(filepath, import_animations=self.import_animations)
+        Cryengine_Importer.import_asset_geometry(filepath)
+
+        if self.import_animations:
+            anim_files, armature = Cryengine_Importer.discover_asset_animations(filepath)
+            if anim_files and armature:
+                # Apply filename filter — auto-wrap as *filter* if no wildcards
+                if self.animation_filter and self.animation_filter != "*":
+                    pattern = self.animation_filter
+                    if "*" not in pattern and "?" not in pattern:
+                        pattern = f"*{pattern}*"
+                    anim_files = [f for f in anim_files
+                                  if fnmatch.fnmatch(os.path.basename(f).lower(),
+                                                     pattern.lower())]
+
+                # Apply max count limit
+                if self.animation_max_count > 0:
+                    anim_files = anim_files[:self.animation_max_count]
+
+                if anim_files:
+                    _anim_import_state["anim_files"] = anim_files
+                    _anim_import_state["armature"] = armature
+                    _anim_import_state["asset_name"] = os.path.basename(filepath)
+                    bpy.ops.import_scene.cryassets_anims('INVOKE_DEFAULT')
+
         return {'FINISHED'}
 
     def draw(self, context):
         layout = self.layout
         row = layout.row(align=True)
         row.prop(self, "import_animations")
+        sub = layout.column()
+        sub.enabled = self.import_animations
+        sub.prop(self, "animation_filter")
+        sub.prop(self, "animation_max_count")
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
 class MechImporter(bpy.types.Operator, ImportHelper):
@@ -206,6 +253,71 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
         row = layout.row(align=True)
         row.prop(self, "auto_save_file")
 
+class AnimationImportModal(bpy.types.Operator):
+    """Import animations one at a time with progress feedback."""
+    bl_idname = "import_scene.cryassets_anims"
+    bl_label = "Importing Animations..."
+    bl_options = {'INTERNAL'}
+
+    def invoke(self, context, event):
+        self._anim_files = _anim_import_state["anim_files"]
+        self._armature = _anim_import_state["armature"]
+        self._asset_name = _anim_import_state["asset_name"]
+        self._total = len(self._anim_files)
+        self._index = 0
+        self._imported = 0
+
+        # Find a 3D viewport area for header text
+        self._area = None
+        for area in context.screen.areas:
+            if area.type == 'VIEW_3D':
+                self._area = area
+                break
+
+        self._timer = context.window_manager.event_timer_add(0.01, window=context.window)
+        context.window_manager.modal_handler_add(self)
+
+        if self._area:
+            self._area.header_text_set(
+                f"{self._asset_name} — Importing animation 0/{self._total}...")
+
+        return {'RUNNING_MODAL'}
+
+    def modal(self, context, event):
+        if event.type == 'ESC':
+            self._cleanup(context)
+            self.report({'INFO'},
+                        f"Animation import cancelled. Imported {self._imported}/{self._total}.")
+            return {'CANCELLED'}
+
+        if event.type == 'TIMER':
+            if self._index >= self._total:
+                self._cleanup(context)
+                self.report({'INFO'},
+                            f"Imported {self._imported} animations for {self._asset_name}.")
+                return {'FINISHED'}
+
+            anim_file = self._anim_files[self._index]
+            anim_name = os.path.splitext(os.path.basename(anim_file))[0]
+
+            if self._area:
+                self._area.header_text_set(
+                    f"{self._asset_name} — Importing animation "
+                    f"{self._index + 1}/{self._total}: {anim_name}")
+
+            action = animations.import_animation(anim_file, self._armature)
+            if action:
+                self._imported += 1
+
+            self._index += 1
+
+        return {'RUNNING_MODAL'}
+
+    def _cleanup(self, context):
+        context.window_manager.event_timer_remove(self._timer)
+        if self._area:
+            self._area.header_text_set(None)
+
 # -----------------------------------------------------------------------------
 #                                                                          Menu
 
@@ -234,6 +346,7 @@ classes = (
      AssetImporter,
      MechImporter,
      PrefabImporter,
+     AnimationImportModal,
      MessageOperator
  )
 

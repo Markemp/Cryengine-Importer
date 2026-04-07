@@ -271,5 +271,82 @@ class TestDiscoverAnimationsFromChrparams(unittest.TestCase):
         self.assertEqual(files, [])
 
 
+class TestDiscoverAssetAnimations(unittest.TestCase):
+    def setUp(self):
+        self.test_dir = tempfile.mkdtemp()
+        # Structure: test_dir/Objects/chars/ is the asset dir
+        # test_dir is the game root (parent of Objects)
+        self.objects_dir = os.path.join(self.test_dir, "Objects", "chars")
+        os.makedirs(self.objects_dir, exist_ok=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.test_dir)
+
+    def _write_file(self, relative_path, content=""):
+        full_path = os.path.join(self.test_dir, relative_path)
+        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+        with open(full_path, "w") as f:
+            f.write(content)
+        return full_path
+
+    def test_discovers_via_chrparams(self):
+        """Should find animations when chrparams exists alongside the asset."""
+        from unittest.mock import patch
+        from io_cryengine_importer.Cryengine_Importer import discover_asset_animations
+
+        # Create the chrparams and animation files
+        self._write_file("Objects/chars/skeleton.chrparams", """<?xml version="1.0" ?>
+<Params>
+    <AnimationList>
+        <Animation name="#filepath" path="animations"/>
+        <Animation name="*" path="*.caf"/>
+    </AnimationList>
+</Params>""")
+        self._write_file("Objects/chars/skeleton_anim_idle.usda")
+        self._write_file("Objects/chars/skeleton_anim_run.usda")
+        asset_path = os.path.join(self.objects_dir, "skeleton.usda")
+        self._write_file("Objects/chars/skeleton.usda")
+
+        mock_armature = MagicMock()
+        with patch("io_cryengine_importer.bones.find_armature_in_objects",
+                   return_value=mock_armature):
+            anim_files, armature = discover_asset_animations(asset_path)
+
+        self.assertEqual(len(anim_files), 2)
+        self.assertIs(armature, mock_armature)
+
+    def test_returns_empty_when_no_armature(self):
+        """Should return empty list when no armature is found."""
+        from unittest.mock import patch
+        from io_cryengine_importer.Cryengine_Importer import discover_asset_animations
+
+        self._write_file("Objects/chars/skeleton.chrparams", """<?xml version="1.0" ?>
+<Params><AnimationList/></Params>""")
+        asset_path = os.path.join(self.objects_dir, "skeleton.usda")
+        self._write_file("Objects/chars/skeleton.usda")
+
+        with patch("io_cryengine_importer.bones.find_armature_in_objects",
+                   return_value=None):
+            anim_files, armature = discover_asset_animations(asset_path)
+
+        self.assertEqual(anim_files, [])
+        self.assertIsNone(armature)
+
+    def test_returns_empty_when_no_cdf_or_chrparams(self):
+        """Should return empty when neither CDF nor chrparams exists."""
+        from unittest.mock import patch
+        from io_cryengine_importer.Cryengine_Importer import discover_asset_animations
+
+        asset_path = os.path.join(self.objects_dir, "skeleton.usda")
+        self._write_file("Objects/chars/skeleton.usda")
+
+        mock_armature = MagicMock()
+        with patch("io_cryengine_importer.bones.find_armature_in_objects",
+                   return_value=mock_armature):
+            anim_files, armature = discover_asset_animations(asset_path)
+
+        self.assertEqual(anim_files, [])
+
+
 if __name__ == "__main__":
     unittest.main()

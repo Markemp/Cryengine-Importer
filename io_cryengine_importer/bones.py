@@ -36,6 +36,30 @@ def import_armature(rig, mech_name):
         armature.data.display_type = 'BBONE'
         armature.display_type = 'WIRE'
 
+        # USD imports bones with arbitrary tail positions and ~90° roll offsets.
+        # Fix tails to form proper chains (parent.tail → child.head) and zero rolls
+        # before geometry import so mesh binds to corrected bone transforms.
+        # Filter out auxiliary bones (target*, bolton*) so chain bones point
+        # at the correct skeleton child instead of an averaged centroid.
+        bpy.ops.object.mode_set(mode='EDIT')
+        auxiliary_prefixes = ('target', 'bolton')
+        for eb in armature.data.edit_bones:
+            children = list(eb.children)
+            if children:
+                filtered = [c for c in children if not c.name.lower().startswith(auxiliary_prefixes)]
+                if not filtered:
+                    filtered = children
+                if len(filtered) == 1:
+                    eb.tail = filtered[0].head.copy()
+                else:
+                    centroid = Vector((0, 0, 0))
+                    for child in filtered:
+                        centroid += child.head
+                    centroid /= len(filtered)
+                    eb.tail = centroid
+            eb.roll = 0
+        bpy.ops.object.mode_set(mode='OBJECT')
+
         # Move armature to Mech collection
         for collection in armature.users_collection:
             collection.objects.unlink(armature)

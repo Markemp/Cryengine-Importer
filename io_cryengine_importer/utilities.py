@@ -3,6 +3,16 @@ import bpy
 import mathutils
 from . import constants
 
+def cleanup_usd_import(new_objects):
+    """Delete all EMPTY objects created by USD import hierarchy.
+    USD import creates container empties (root, _materials, Armature/SkelRoot)
+    that are not needed. Returns filtered list with only non-EMPTY objects.
+    """
+    empties = [obj for obj in new_objects if obj.type == 'EMPTY']
+    for obj in empties:
+        bpy.data.objects.remove(obj, do_unlink=True)
+    return [obj for obj in new_objects if obj not in empties]
+
 def get_scaling_factor(o):
     local_bbox_center = 0.125 * sum((mathutils.Vector(b) for b in o.bound_box), mathutils.Vector())
     global_bbox_center = o.matrix_world @ local_bbox_center

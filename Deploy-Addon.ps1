@@ -1,7 +1,7 @@
 ﻿# Improved deploy script for Cryengine Importer Blender addon
 [CmdletBinding()]
 param (
-    [string]$BlenderVersion = "4.0",
+    [string]$BlenderVersion = "5.0",
     [string]$SourceDir = "$env:HOME\source\repos\Cryengine Importer",
     [switch]$Force = $false
 )

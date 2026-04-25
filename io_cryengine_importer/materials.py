@@ -483,7 +483,7 @@ def process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links):
         links: The links object for the node tree
     """
     # Create a Separate RGB node to split the color channels
-    separate_rgb = tree_nodes.nodes.new('ShaderNodeSeparateRGB')
+    separate_rgb = tree_nodes.nodes.new('ShaderNodeSeparateColor')
     separate_rgb.location = texture_node.location[0] + 200, texture_node.location[1]
     
     # Link texture to separate RGB
@@ -506,24 +506,25 @@ def process_normal_map_nodes(tree_nodes, texture_node, normal_map_node, links):
     set_blue.location = compare_blue.location[0] + 200, compare_blue.location[1]
     
     # Create a Mix node to blend between original blue and fixed value
-    mix_blue = tree_nodes.nodes.new('ShaderNodeMixRGB')
+    mix_blue = tree_nodes.nodes.new('ShaderNodeMix')
+    mix_blue.data_type = 'RGBA'
     mix_blue.blend_type = 'MIX'
     mix_blue.location = set_blue.location[0] + 200, set_blue.location[1]
     
     # Connect nodes for blue channel correction
     links.new(separate_rgb.outputs[2], set_blue.inputs[0])  # Original blue to max
     links.new(compare_blue.outputs[0], mix_blue.inputs[0])  # Compare result to mix factor
-    links.new(separate_rgb.outputs[2], mix_blue.inputs[1])  # Original blue to first input
-    links.new(set_blue.outputs[0], mix_blue.inputs[2])      # Fixed blue to second input
-    
+    links.new(separate_rgb.outputs[2], mix_blue.inputs[6])  # Original blue to A input
+    links.new(set_blue.outputs[0], mix_blue.inputs[7])      # Fixed blue to B input
+
     # Create Combine RGB node to put channels back together
-    combine_rgb = tree_nodes.nodes.new('ShaderNodeCombineRGB')
+    combine_rgb = tree_nodes.nodes.new('ShaderNodeCombineColor')
     combine_rgb.location = mix_blue.location[0] + 200, texture_node.location[1]
-    
+
     # Connect RGB channels back, using modified blue
     links.new(separate_rgb.outputs[0], combine_rgb.inputs[0])  # Red
     links.new(separate_rgb.outputs[1], combine_rgb.inputs[1])  # Green
-    links.new(mix_blue.outputs[0], combine_rgb.inputs[2])      # Fixed Blue
-    
+    links.new(mix_blue.outputs[2], combine_rgb.inputs[2])      # Fixed Blue
+
     # Connect combined result to normal map node
     links.new(combine_rgb.outputs[0], normal_map_node.inputs[1])

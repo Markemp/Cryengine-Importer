@@ -42,12 +42,14 @@ def set_up_collections(file_path):
     weapons_collection = create_collection(constants.WEAPONS_COLLECTION, constants.MECH_COLLECTION)
     damaged_parts_collection = create_collection(constants.DAMAGED_PARTS_COLLECTION, constants.MECH_COLLECTION)
     variants_collection = create_collection(constants.VARIANTS_COLLECTION, constants.MECH_COLLECTION)
-    
+    cockpit_collection = create_collection(constants.COCKPIT_COLLECTION, constants.MECH_COLLECTION)
+
     # Disable visibility of subcollections
     widgets_collection.hide_viewport = True
     empties_collection.hide_viewport = True
     weapons_collection.hide_viewport = True
     damaged_parts_collection.hide_viewport = True
+    cockpit_collection.hide_viewport = True
     
     variants = get_variant_names(file_path)
     for variant in variants:

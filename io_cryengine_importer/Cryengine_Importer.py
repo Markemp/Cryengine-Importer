@@ -28,7 +28,8 @@ import bpy.types
 import bpy.utils
 import mathutils
 
-from . import animations, collections, constants, bones, widgets, materials, utilities
+from . import animations, cockpit, collections, constants, bones, widgets, materials, utilities
+from .import_report import ImportReport
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
 object_dictionary = {}
@@ -283,7 +284,7 @@ def import_geometry(usd_file, basedir):
     except:
         print(f"Error importing USD file: {usd_file}, basedir: {basedir}")
     
-def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
+def import_mech_geometry(cdf_file, basedir, bodydir, mechname, report=None):
     armature = bones.find_armature_in_objects(bpy.data.objects)
     print("Importing mech geometry...")
     cry_xml = CryXmlSerializer()
@@ -319,9 +320,17 @@ def import_mech_geometry(cdf_file, basedir, bodydir, mechname):
                                        import_materials=True, import_usd_preview=True)
                 objects_after = set(bpy.data.objects)
                 obj_objects = utilities.cleanup_usd_import(list(objects_after - objects_before))
-            except:
+            except Exception as e:
                 # Unable to open the file.  Probably not found (like Urbie lights, under purchasable).
+                if report is not None:
+                    report.add_skipped(aname, f"USD import failed: {e}")
                 continue
+            if not obj_objects:
+                if report is not None:
+                    report.add_skipped(aname, "USD import returned no objects")
+                continue
+            if report is not None:
+                report.add_imported(aname)
             # Delete component's imported skeleton (redundant — we use the main armature)
             component_armatures = [obj for obj in obj_objects if obj.type == 'ARMATURE']
             for obj in component_armatures:
@@ -564,6 +573,7 @@ def import_asset(filepath, import_animations=True):
 def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
     print("Import Mech")
     print(path)
+    report = ImportReport()
     cdf_file = path      # The input file
     # Split up path into the variables we want.
     constants.basedir = get_base_dir(path)
@@ -583,7 +593,16 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
     constants.materials = materials.create_materials(matfile, constants.basedir, use_dds, use_tif)
     constants.cockpit_materials = materials.create_materials(cockpit_matfile, constants.basedir, use_dds, use_tif)
     # Import the geometry and assign materials.
-    import_mech_geometry(cdf_file, constants.basedir, bodydir, mech)
+    import_mech_geometry(cdf_file, constants.basedir, bodydir, mech, report=report)
+
+    # Import the interior cockpit (separate sub-CDF) into its own hidden collection.
+    armature_obj = bones.find_armature_in_objects(bpy.data.objects)
+    if armature_obj is not None:
+        cdf_xml = CryXmlSerializer().read_file(cdf_file)
+        cockpit_attachment = cockpit.find_cockpit_attachment(cdf_xml)
+        if cockpit_attachment is not None:
+            cockpit.import_cockpit(cockpit_attachment, constants.basedir, mech, armature_obj, report=report)
+
     # Set the layers for existing objects
     add_objects_to_collections()
 
@@ -598,7 +617,7 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
 
     if auto_save_file == True:
         save_file(path)
-    return {'FINISHED'}
+    return report
 
 def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
     set_viewport_shading()

@@ -173,7 +173,9 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         fdir = self.properties.filepath
         keywords["path"] = fdir
         self.add_control_bones
-        Cryengine_Importer.import_mech(context, **keywords)
+        report = Cryengine_Importer.import_mech(context, **keywords)
+        if report is not None:
+            self.report({report.severity}, report.summary())
         return { 'FINISHED'}
 
     def draw(self, context):

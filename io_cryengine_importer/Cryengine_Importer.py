@@ -28,7 +28,7 @@ import bpy.types
 import bpy.utils
 import mathutils
 
-from . import animations, cockpit, collections, constants, bones, widgets, materials, utilities
+from . import animations, cockpit, collections, constants, bones, widgets, loadouts, materials, utilities
 from .import_report import ImportReport
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
@@ -414,20 +414,20 @@ def get_all_child_objects(object, include_root=True):
     return result
 
 def save_file(file):
-    # Save the Blender file as the name of the directory it is in.
-    # file is the value put into the file selector.  The cdf file for mech importer,
-    # directory for asset importer.
-    print("Saving " + file)
+    # Save the Blender scene as a .blend named after the imported asset.
+    # `file` is the path the user chose in the file selector — the .cdf for
+    # the mech importer, a directory for the asset importer. The .cdf is
+    # never written; only the .blend file is created.
     if not os.path.isfile(file):  # Directory
         basename = os.path.basename(os.path.dirname(file))
-        if not bpy.path.abspath("//"):      # not saved yet
-            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(file, basename + ".blend"), check_existing = True)
+        blend_path = os.path.join(file, basename + ".blend")
     else:
-        if file.endswith(".cdf"):
-            file = file.replace(".cdf", "")
-        basename = os.path.basename(file)
-        if not bpy.path.abspath("//"):      # not saved yet
-            bpy.ops.wm.save_as_mainfile(filepath=os.path.join(os.path.dirname(file), basename + ".blend"), check_existing = True)  # CDF file
+        stem = file[:-4] if file.lower().endswith(".cdf") else file
+        basename = os.path.basename(stem)
+        blend_path = os.path.join(os.path.dirname(stem), basename + ".blend")
+    print("Saving " + blend_path)
+    if not bpy.path.abspath("//"):  # not saved yet
+        bpy.ops.wm.save_as_mainfile(filepath=blend_path, check_existing=True)
     
 def generate_preview(file):
     if os.path.isfile(file):
@@ -465,11 +465,62 @@ def add_objects_to_collections():
                or obj.name.startswith('.animation')]
     for empty in empties:
         collections.move_object_to_collection(empty, constants.EMPTIES_COLLECTION)
-    # Set weapons and special geometry to Weapons Collection
+    # Set weapons and special geometry to Weapons Collection.  Per-object
+    # eyeballs stay open; collection-level hides drive what's visible
+    # (Weapons + Variants/<VARIANT> are hidden by default).
     for weapon in bpy.data.objects:
         if any(x in weapon.name for x in constants.weapons):
             collections.move_object_to_collection(weapon, constants.WEAPONS_COLLECTION)
     move_damaged_parts_to_collection()
+
+def apply_loadouts(mech_dir, basedir, report=None):
+    """For each <variant>.mdf in mech_dir, resolve the variant's stock loadout
+    and link the matching weapon objects into its variant collection.
+    Variant collections are pre-created by collections.set_up_collections()
+    using uppercased filenames (e.g. ADR-A)."""
+    for filename in os.listdir(mech_dir):
+        if not filename.lower().endswith(".mdf"):
+            continue
+        variant_name = os.path.splitext(filename)[0]
+        variant_collection_name = variant_name.upper()
+        if variant_collection_name not in bpy.data.collections:
+            if report is not None:
+                report.add_warning(f"Variant collection missing: {variant_collection_name}")
+            continue
+
+        try:
+            resolved = loadouts.resolve_variant(variant_name, basedir, mech_dir)
+        except Exception as e:
+            if report is not None:
+                report.add_skipped(variant_name, f"loadout resolution failed: {e}")
+            continue
+
+        if resolved is None:
+            if report is not None:
+                report.add_skipped(variant_name, "loadout files not found")
+            continue
+
+        # Dedupe ANames across components so we link each object once per variant.
+        anames = {a for v in resolved.values() for a in v["attachments"]}
+        unresolved = [(c, w) for c, v in resolved.items() for w in v["unresolved"]]
+        linked = 0
+        missing = []
+        for aname in anames:
+            obj = bpy.data.objects.get(aname)
+            if obj is None:
+                missing.append(aname)
+                continue
+            collections.link_object_to_collection(obj, variant_collection_name)
+            linked += 1
+
+        if report is not None:
+            for comp, (wid, wname) in unresolved:
+                report.add_warning(
+                    f"{variant_name}: {comp} weapon {wid} ({wname}) has no matching hardpoint")
+            for aname in missing:
+                report.add_warning(f"{variant_name}: imported object not found for {aname}")
+            report.add_imported(f"{variant_collection_name} loadout ({linked} weapons)")
+
 
 def move_damaged_parts_to_collection():
     for obj in bpy.data.objects:
@@ -570,7 +621,8 @@ def import_asset(filepath, import_animations=True):
 
     return {'FINISHED'}
 
-def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, add_control_bones=True, path):
+def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True,
+                add_control_bones=True, import_loadouts=True, path):
     print("Import Mech")
     print(path)
     report = ImportReport()
@@ -605,6 +657,10 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True, ad
 
     # Set the layers for existing objects
     add_objects_to_collections()
+
+    # Link variant-specific weapons into Variants/<VARIANT> collections.
+    if import_loadouts:
+        apply_loadouts(mechdir, constants.basedir, report=report)
 
     # Advanced Rigging stuff.  Make bone shapes, IKs, etc.
     if add_control_bones == True:

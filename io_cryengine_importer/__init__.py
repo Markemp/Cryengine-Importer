@@ -245,7 +245,10 @@ class PrefabImporter(bpy.types.Operator, ImportHelper):
                                             ))
         fdir = self.properties.filepath
         keywords["path"] = fdir
-        return Cryengine_Importer.import_prefab(context, **keywords)
+        report = Cryengine_Importer.import_prefab(context, **keywords)
+        if report is not None and hasattr(report, "severity"):
+            self.report({report.severity}, report.summary())
+        return {'FINISHED'}
     def draw(self, context):
         layout = self.layout
         row = layout.row(align = True)

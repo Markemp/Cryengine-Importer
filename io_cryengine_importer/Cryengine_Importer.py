@@ -28,7 +28,7 @@ import bpy.types
 import bpy.utils
 import mathutils
 
-from . import animations, cockpit, collections, constants, bones, widgets, loadouts, materials, utilities
+from . import animations, cockpit, collections, constants, bones, widgets, loadouts, materials, prefabs, utilities
 from .import_report import ImportReport
 from .CryXmlB.CryXmlReader import CryXmlSerializer
 
@@ -675,127 +675,17 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True,
         save_file(path)
     return report
 
-def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True, auto_generate_preview=False, path):
+def import_prefab(context, *, use_dds=True, use_tif=False, auto_save_file=True,
+                  auto_generate_preview=False, path):
+    """Import a Cryengine PrefabsLibrary XML. Texture flags are kept for
+    operator-preset compatibility but unused — USD materials drive textures."""
     set_viewport_shading()
     basedir = get_base_dir(path)
     print("Basedir: " + basedir)
 
-    if os.path.isfile(path):
-        cry_xml = CryXmlSerializer()
-        prefabs_xml = cry_xml.read_file(path)
-    else:
-        return {'FINISHED'}  # Couldn't parse the prefab xml.
+    report = ImportReport()
+    library_name = prefabs.import_prefab_library(path, basedir, report)
 
-    # Set up root collection
-    root_name = prefabs_xml.getroot().attrib["Name"]
-    print('Root name: ' + root_name)
-    root_collection = collections.create_collection(root_name)
-    collections.add_collection_to_parent(bpy.context.scene.collection, root_collection)
-
-    # Go through the prefabs and add each object to the appropriate collection
-    for prefab_element in prefabs_xml.iter("Prefab"):
-        collection = collections.create_collection(prefab_element.attrib["Name"])
-        print("\n*** Creating collection " + prefab_element.attrib["Name"])
-        parent_col = collections.get_collection_object(prefab_element.attrib["Library"])
-        parent_col.children.link(collection)
-
-        import_element(basedir, prefab_element, collection)
-    return {'FINISHED'}
-
-def add_empty(object):
-    print("Adding empty " + object.attrib["Name"])
-    new_object = bpy.data.objects.new(object.attrib["Name"], None)
-    new_object.empty_display_type = 'SPHERE'
-    set_object_location(object, new_object)
-    return new_object
-
-def import_element(basedir, prefab_element, collection, matrix = mathutils.Matrix()):
-    for obj_element in prefab_element.iter("Object"):
-        object_type = obj_element.attrib["Type"]
-        print("Processing Object type " + object_type)            
-        if object_type == "Brush":
-            cgf_file = obj_element.attrib["Prefab"]
-            usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
-            bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
-            added_obj = get_root(bpy.context.object)
-            object_dictionary[obj_element.attrib["Id"]] = added_obj
-            if "Parent" in obj_element.attrib:
-                added_obj.parent = object_dictionary[obj_element.attrib["Parent"]]
-            set_object_location(obj_element, added_obj)
-            for obj in get_all_child_objects(added_obj):
-                collections.move_object_to_collection(obj, collection.name)
-        elif object_type == "Entity":
-            properties = obj_element[0]
-            if "objModel" in properties.attrib:
-                cgf_file = properties.attrib["objModel"]
-                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
-                added_obj = get_root(bpy.context.object)
-                object_dictionary[obj_element.attrib["Id"]] = added_obj
-                set_object_location(obj_element, added_obj)
-                for obj in get_all_child_objects(added_obj):
-                    collections.move_object_to_collection(obj, collection.name)
-            elif "object_Model" in properties.attrib:
-                cgf_file = properties.attrib["object_Model"]
-                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
-                added_obj = get_root(bpy.context.object)
-                object_dictionary[obj_element.attrib["Id"]] = added_obj
-                set_object_location(obj_element, added_obj)
-                for obj in get_all_child_objects(added_obj):
-                    collections.move_object_to_collection(obj, collection.name)
-            else:  # Light or particle (TODO: Could also be gamemode object which has multiple geometry assets)
-                light_data = bpy.data.lights.new(name=obj_element.attrib["Name"], type='POINT')
-                light_object = bpy.data.objects.new(name=obj_element.attrib["Name"], object_data=light_data)
-                object_dictionary[obj_element.attrib["Id"]] = light_object
-                collections.move_object_to_collection(light_object, collection.name)
-                set_object_location(obj_element, light_object)
-        elif object_type == "GeomEntity":
-            if "Geometry" in obj_element.attrib:
-                cgf_file = obj_element.attrib["Geometry"]
-                usd_file = os.path.join(basedir, cgf_file).replace(".cgf",".usda").replace(".cga",".usda").replace("\\","\\\\").replace("/", "\\\\")
-                bpy.ops.wm.usd_import(filepath=usd_file, import_materials=True, import_usd_preview=True)
-                added_obj = get_root(bpy.context.object)
-                object_dictionary[obj_element.attrib["Id"]] = added_obj
-                set_object_location(obj_element, added_obj)
-                for obj in get_all_child_objects(added_obj):
-                    collections.move_object_to_collection(obj, collection.name)
-            else:
-                add_empty(obj_element)
-                added_obj = get_root(bpy.context.object)
-                object_dictionary[obj_element.attrib["Id"]] = added_obj
-                set_object_location(obj_element, added_obj)
-                collections.move_object_to_collection(added_obj, collection.name)
-        elif object_type == "Group":
-            print("Group type object.")
-            group_container = add_empty(obj_element)
-            set_object_location(obj_element, group_container)
-            collections.move_object_to_collection(group_container, collection.name)
-            object_dictionary[obj_element.attrib["Id"]] = group_container
-            objects = obj_element[0]
-            for obj in objects.iter("Object"):
-                import_element(basedir, obj, collection)
-
-def set_object_location(object, added_obj):
-    if not added_obj == None:
-        added_obj.rotation_mode = 'QUATERNION'
-        if "Pos" in object.attrib:
-            location = utilities.convert_to_vector(object.attrib["Pos"])
-        else:
-            location = utilities.convert_to_vector("0.0, 0.0, 0.0")
-        if "Rotate" in object.attrib:
-            rotation = utilities.convert_to_quaternion(object.attrib["Rotate"])
-        else:
-            rotation = utilities.convert_to_quaternion("1, 0, 0, 0")
-        if "Scale" in object.attrib:
-            scale = utilities.convert_to_vector(object.attrib["Scale"])
-        else:
-            scale = utilities.convert_to_vector("1, 1, 1")
-        added_obj.rotation_quaternion = rotation
-        added_obj.location = location
-        added_obj.scale = scale
-        added_obj.rotation_mode = 'QUATERNION'
-        # Use view layer update instead of explicit depsgraph update
-        bpy.context.view_layer.update()
-    else:
-        print("Unable to find Brush entity " + added_obj.name)
+    if auto_save_file and library_name is not None:
+        save_file(path)
+    return report

@@ -11,6 +11,25 @@ def create_collection(collection_name, as_child_of=""):
                 col.children.link(collection)
         return collection
 
+
+def _find_layer_collection(layer_collection, name):
+    if layer_collection.collection.name == name:
+        return layer_collection
+    for child in layer_collection.children:
+        result = _find_layer_collection(child, name)
+        if result is not None:
+            return result
+    return None
+
+
+def hide_in_view_layer(collection_name):
+    """Close the outliner eyeball for a collection in the active view layer
+    without disabling it (so the eye stays clickable, not greyed out)."""
+    root = bpy.context.view_layer.layer_collection
+    layer = _find_layer_collection(root, collection_name)
+    if layer is not None:
+        layer.hide_viewport = True
+
 def add_collection_to_parent(parent_collection, child_collection):
     parent_collection.children.link(child_collection)
 
@@ -44,17 +63,31 @@ def set_up_collections(file_path):
     variants_collection = create_collection(constants.VARIANTS_COLLECTION, constants.MECH_COLLECTION)
     cockpit_collection = create_collection(constants.COCKPIT_COLLECTION, constants.MECH_COLLECTION)
 
-    # Disable visibility of subcollections
-    widgets_collection.hide_viewport = True
-    empties_collection.hide_viewport = True
-    weapons_collection.hide_viewport = True
-    damaged_parts_collection.hide_viewport = True
-    cockpit_collection.hide_viewport = True
-    
     variants = get_variant_names(file_path)
     for variant in variants:
         create_collection(variant, constants.VARIANTS_COLLECTION)
+
+    # Link Mech to the scene FIRST so the LayerCollection tree gets populated
+    # for every child collection.  hide_in_view_layer() walks that tree and is
+    # a no-op for collections that aren't in the view layer yet.
     bpy.data.scenes[0].collection.children.link(mech_collection)
+
+    # Hide collections that hold "showcase" geometry by default.  Per-object
+    # eyeballs stay open; clicking a Variants/<VARIANT> eyeball reveals only
+    # that variant's linked weapons (one-click loadout preview).
+    #
+    # We set the LayerCollection's hide_viewport (the outliner eyeball) so
+    # the user can re-enable with one click.  Setting Collection.hide_viewport
+    # would "Disable in Viewport" instead, which greys out the eyeball.
+    #
+    # The Variants parent stays visible — a parent's hide propagates to
+    # all descendants, which would defeat per-variant toggling.
+    for name in (constants.WIDGETS_COLLECTION, constants.EMPTIES_COLLECTION,
+                 constants.WEAPONS_COLLECTION, constants.DAMAGED_PARTS_COLLECTION,
+                 constants.COCKPIT_COLLECTION):
+        hide_in_view_layer(name)
+    for variant in variants:
+        hide_in_view_layer(variant)
 
 def set_up_asset_collections():
     create_collection(constants.WIDGETS_COLLECTION)

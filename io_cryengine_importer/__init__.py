@@ -138,6 +138,11 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         name="Add Control Bones",
         description="Add IK bones to make creating animations easier",
         default=True)
+    import_loadouts: BoolProperty(
+        name="Import Loadouts",
+        description="Link variant-specific weapons into Variants/<VARIANT> collections "
+                    "by reading Libs/MechLoadout/<variant>.xml",
+        default=True)
     texture_type: EnumProperty(
         name="Texture Type",
         description="Identify the type of texture file imported into the Texture nodes.",
@@ -189,6 +194,8 @@ class MechImporter(bpy.types.Operator, ImportHelper):
         row.prop(self, "auto_save_file")
         row = layout.row(align=True)
         row.prop(self, "add_control_bones")
+        row = layout.row(align=True)
+        row.prop(self, "import_loadouts")
 
 @orientation_helper(axis_forward='Y', axis_up='Z')
 class PrefabImporter(bpy.types.Operator, ImportHelper):

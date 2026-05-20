@@ -666,8 +666,13 @@ def import_mech(context, *, use_dds=True, use_tif=False, auto_save_file=True,
     if add_control_bones == True:
         create_IKs(mech)
 
-    # set to Object mode
-    bpy.ops.object.mode_set(mode='OBJECT')
+    # Ensure there's an active object before switching modes — post-import
+    # steps (cockpit/loadout link/unlink) can leave context.active_object as
+    # None, which makes bpy.ops.object.mode_set fail its poll.
+    if armature_obj is not None:
+        bpy.context.view_layer.objects.active = armature_obj
+    if bpy.context.view_layer.objects.active is not None:
+        bpy.ops.object.mode_set(mode='OBJECT')
 
     materials.remove_unlinked_materials()
 

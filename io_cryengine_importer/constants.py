@@ -8,6 +8,7 @@ WEAPONS_COLLECTION = "Weapons"
 DAMAGED_PARTS_COLLECTION = "Damaged Parts"
 VARIANTS_COLLECTION = "Variants"
 MECH_COLLECTION = "Mech"
+COCKPIT_COLLECTION = "Cockpit"
 
 basedir = ""
 

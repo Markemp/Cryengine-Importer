@@ -5,22 +5,69 @@ from mathutils import Vector, Matrix, Color
 import rna_prop_ui
 from . import collections, constants, utilities
 
+def find_armature_in_objects(objects):
+    """Find the actual Armature object among a list of objects.
+    USD import creates 'Skeleton' as the Armature and 'Armature' as an empty (SkelRoot).
+    """
+    for obj in objects:
+        if obj.type == 'ARMATURE':
+            return obj
+    return None
+
 def import_armature(rig, mech_name):
     try:
-        bpy.ops.wm.collada_import(filepath=rig, find_chains=True, auto_connect=True)
-        armature = bpy.data.objects['Armature']
-        mech_triangle_geometry = bpy.data.objects[mech_name]
-        collections.move_object_to_collection(mech_triangle_geometry, constants.MECH_COLLECTION)
+        objects_before = set(bpy.data.objects)
+        bpy.ops.wm.usd_import(filepath=rig, import_skeletons=True, import_meshes=True)
+        objects_after = set(bpy.data.objects)
+        new_objects = set(utilities.cleanup_usd_import(objects_after - objects_before))
+
+        armature = find_armature_in_objects(new_objects)
+        if armature is None:
+            return False
+
+        # Move non-armature new objects (triangle geometry, empties) to Mech collection
+        for obj in new_objects:
+            if obj.type == 'MESH':
+                collections.move_object_to_collection(obj, constants.MECH_COLLECTION)
+
         bpy.context.view_layer.objects.active = armature
         armature.show_in_front = True
-        armature.show_axes = False
-        bpy.context.object.data.display_type = 'BBONE'
-        bpy.context.object.display_type = 'WIRE'
-        scene = bpy.data.scenes[0]
-        scene.collection.children[0].objects.unlink(armature)
-        scene.collection.children[1].objects.link(armature)
-    except:
-        #File not found
+        armature.data.show_axes = False
+        armature.data.display_type = 'BBONE'
+        armature.display_type = 'WIRE'
+
+        # USD imports bones with arbitrary tail positions and ~90° roll offsets.
+        # Fix tails to form proper chains (parent.tail → child.head) and zero rolls
+        # before geometry import so mesh binds to corrected bone transforms.
+        # Filter out auxiliary bones (target*, bolton*) so chain bones point
+        # at the correct skeleton child instead of an averaged centroid.
+        bpy.ops.object.mode_set(mode='EDIT')
+        auxiliary_prefixes = ('target', 'bolton')
+        for eb in armature.data.edit_bones:
+            children = list(eb.children)
+            if children:
+                filtered = [c for c in children if not c.name.lower().startswith(auxiliary_prefixes)]
+                if not filtered:
+                    filtered = children
+                if len(filtered) == 1:
+                    eb.tail = filtered[0].head.copy()
+                else:
+                    centroid = Vector((0, 0, 0))
+                    for child in filtered:
+                        centroid += child.head
+                    centroid /= len(filtered)
+                    eb.tail = centroid
+            eb.roll = 0
+        bpy.ops.object.mode_set(mode='OBJECT')
+
+        # Move armature to Mech collection
+        for collection in armature.users_collection:
+            collection.objects.unlink(armature)
+        mech_collection = bpy.data.collections.get(constants.MECH_COLLECTION)
+        if mech_collection:
+            mech_collection.objects.link(armature)
+    except Exception as e:
+        print(f"Error importing armature: {e}")
         return False
     return True
 
